@@ -62,18 +62,40 @@ export async function logout() {
   redirect('/login')
 }
 
-export async function signInWithGithub() {
+
+
+export async function signInWithGoogle() {
   const supabase = await createClient()
   
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'github',
+    provider: 'google',
     options: {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
     },
   })
 
   if (data.url) {
-    redirect(data.url) // Redirect to GitHub OAuth page
+    redirect(data.url)
+  }
+
+  if (error) {
+    return { error: error.message }
+  }
+}
+
+export async function signInWithFacebook() {
+  const supabase = await createClient()
+  
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'facebook',
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      scopes: 'public_profile,email',
+    },
+  })
+
+  if (data.url) {
+    redirect(data.url)
   }
 
   if (error) {
