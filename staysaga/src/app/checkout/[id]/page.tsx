@@ -42,13 +42,13 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const end = new Date(checkOut)
   const days = differenceInDays(end, start)
   
-  const basePrice = property.price || property.base_price || 0
+  const basePrice = property.price || (property as any).base_price || 0
   const accommodationsCost = basePrice * days
   const cleaningFee = 300000
   const serviceFee = Math.round(accommodationsCost * 0.12)
   const totalAmount = accommodationsCost + cleaningFee + serviceFee
 
-  const mainImage = property.image || property.images?.[0]?.url || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=400'
+  const mainImage = property.image || (property as any).images?.[0]?.url || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=400'
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
@@ -84,7 +84,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
 
             <hr className="border-gray-200 dark:border-zinc-800" />
 
-            <form action={createBooking} className="space-y-10">
+            <form action={async (fd) => { await createBooking(fd); }} className="space-y-10">
               {/* Hidden Inputs truyền dữ liệu cho Server Action */}
               <input type="hidden" name="propertyId" value={property.id} />
               <input type="hidden" name="slug" value={property.slug} />
@@ -130,7 +130,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                   <h3 className="font-bold text-lg leading-tight line-clamp-2">{property.title}</h3>
                   <div className="flex items-center gap-1 text-sm mt-2 font-medium">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" /> 
-                    {property.rating || '4.9'} ({property.reviews || 128} đánh giá)
+                    {property.rating || '4.9'} ({(property as any).reviews || 128} đánh giá)
                   </div>
                 </div>
               </div>

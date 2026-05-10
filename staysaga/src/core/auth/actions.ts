@@ -74,12 +74,13 @@ export async function signInWithGoogle() {
     },
   })
 
-  if (data.url) {
-    redirect(data.url)
+  if (error) {
+    console.error(error.message)
+    return
   }
 
-  if (error) {
-    return { error: error.message }
+  if (data.url) {
+    redirect(data.url)
   }
 }
 
@@ -94,11 +95,12 @@ export async function signInWithFacebook() {
     },
   })
 
-  if (data.url) {
-    redirect(data.url)
+  if (error) {
+    console.error(error.message)
+    return
   }
 
-  if (error) {
-    return { error: error.message }
+  if (data.url) {
+    redirect(data.url)
   }
 }

@@ -2,17 +2,15 @@ import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Khởi tạo Supabase Admin Client (Bypass RLS cho Webhook Server-to-Server)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-// Fake Stripe implementation
 export async function POST(req: Request) {
   try {
+    // Khởi tạo Supabase Admin Client (Bypass RLS cho Webhook Server-to-Server)
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy_key'
+    )
     const body = await req.text()
-    const signature = headers().get('stripe-signature') as string
+    const signature = (await headers()).get('stripe-signature') as string
 
     // 1. Verify Webhook Signature (Chống giả mạo request từ Hacker)
     // const event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET)

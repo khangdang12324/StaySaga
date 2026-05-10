@@ -45,7 +45,7 @@ export async function createBooking(formData: FormData) {
   const days = differenceInDays(end, start)
   if (days <= 0) return { error: 'Ngày nhận và trả phòng không hợp lệ.' }
 
-  const basePrice = property.price || property.base_price || 0
+  const basePrice = property.price || (property as any).base_price || 0
   const accommodationsCost = basePrice * days
   const cleaningFee = 300000
   const serviceFee = Math.round(accommodationsCost * 0.12)

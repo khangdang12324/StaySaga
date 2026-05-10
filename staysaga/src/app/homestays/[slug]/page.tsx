@@ -16,7 +16,7 @@ export default async function HomestayDetailPage({ params }: Props) {
   }
 
   // Lấy ảnh chính và ảnh phụ
-  const mainImage = homestay.image || homestay.images?.[0]?.url || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=2000'
+  const mainImage = homestay.image || (homestay as any).images?.[0]?.url || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=2000'
   const subImages = [
     'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=1000',
     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=1000',
@@ -35,7 +35,7 @@ export default async function HomestayDetailPage({ params }: Props) {
             <div className="flex items-center gap-1">
               <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
               <span className="text-gray-900 dark:text-white">{homestay.rating || '4.9'}</span>
-              <span className="underline cursor-pointer">({homestay.reviews || 128} đánh giá)</span>
+              <span className="underline cursor-pointer">({(homestay as any).reviews || 128} đánh giá)</span>
             </div>
             <span>·</span>
             <div className="flex items-center gap-1">
@@ -101,7 +101,7 @@ export default async function HomestayDetailPage({ params }: Props) {
 
           {/* Sticky Booking Widget */}
           <div className="relative">
-            <BookingWidget propertyId={homestay.id} basePrice={homestay.price || homestay.base_price || 0} />
+            <BookingWidget propertyId={homestay.id} basePrice={homestay.price || (homestay as any).base_price || 0} />
           </div>
           
         </div>
