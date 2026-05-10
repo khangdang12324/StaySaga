@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Star, MessageSquare } from 'lucide-react'
@@ -20,7 +19,6 @@ export default async function ReviewsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Navbar />
       <div className="pt-28 pb-20 max-w-3xl mx-auto px-4">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Đánh giá của tôi</h1>
         <p className="text-gray-500 mb-8">Xem lại những đánh giá bạn đã viết cho các chỗ ở.</p>

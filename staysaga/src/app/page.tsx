@@ -1,11 +1,9 @@
-import Navbar from '@/components/layout/Navbar'
 import HeroSection from '@/components/home/HeroSection'
 import FeaturedHomestays from '@/components/home/FeaturedHomestays'
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-950">
-      <Navbar />
       <HeroSection />
       <FeaturedHomestays />
       

@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import { Star, MapPin, Filter } from 'lucide-react'
 import Link from 'next/link'
 import { getProperties } from '@/core/properties/actions'
@@ -18,7 +17,6 @@ export default async function HomestaysPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Navbar />
       <div className="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header & Filter */}

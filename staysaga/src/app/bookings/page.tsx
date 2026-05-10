@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { CalendarCheck, MapPin, Clock, ChevronRight } from 'lucide-react'
@@ -21,7 +20,6 @@ export default async function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Navbar />
       <div className="pt-28 pb-20 max-w-4xl mx-auto px-4">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Đặt phòng & Chuyến đi</h1>
         <p className="text-gray-500 mb-8">Quản lý tất cả lịch trình du lịch của bạn tại đây.</p>

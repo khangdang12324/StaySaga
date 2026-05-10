@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import Link from 'next/link'
 
 const destinations = [
@@ -13,7 +12,6 @@ const destinations = [
 export default function DestinationsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950">
-      <Navbar />
       <main className="pt-32 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-6">
           Điểm đến được yêu thích

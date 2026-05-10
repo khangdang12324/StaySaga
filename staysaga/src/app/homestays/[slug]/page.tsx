@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import { Star, MapPin, Wifi, Coffee, Car, Wind, Shield } from 'lucide-react'
 import { getPropertyBySlug } from '@/core/properties/actions'
 import { BookingWidget } from '@/components/features/booking/BookingWidget'
@@ -27,7 +26,6 @@ export default async function HomestayDetailPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950">
-      <Navbar />
       
       <main className="pt-24 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Title Section */}

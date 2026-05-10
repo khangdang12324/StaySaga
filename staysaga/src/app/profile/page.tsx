@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import Navbar from '@/components/layout/Navbar'
 import { motion } from 'framer-motion'
 import { 
   User, MapPin, CalendarCheck, Heart, Star, Settings, Shield, Wallet, 
@@ -69,7 +68,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
-      <Navbar />
 
       {/* Hero */}
       <div className="relative pt-20 overflow-hidden">

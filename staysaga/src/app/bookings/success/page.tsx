@@ -1,11 +1,9 @@
-import Navbar from '@/components/layout/Navbar'
 import { CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 
 export default function BookingSuccessPage({ searchParams }: { searchParams: { [key: string]: string | undefined } }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Navbar />
       <div className="flex items-center justify-center min-h-[80vh] px-4">
         <div className="bg-white dark:bg-zinc-900 p-8 md:p-12 rounded-3xl shadow-2xl max-w-lg w-full text-center border border-gray-100 dark:border-zinc-800">
           <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">

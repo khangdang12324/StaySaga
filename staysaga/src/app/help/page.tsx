@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import { HelpCircle, MessageCircle, Mail, BookOpen, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -13,7 +12,6 @@ export default function HelpPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Navbar />
       <div className="pt-28 pb-20 max-w-3xl mx-auto px-4">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Trung tâm Trợ giúp</h1>
         <p className="text-gray-500 mb-8">Tìm câu trả lời cho các câu hỏi thường gặp hoặc liên hệ với chúng tôi.</p>

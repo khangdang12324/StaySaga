@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import { ChevronLeft, Star } from 'lucide-react'
 import Link from 'next/link'
 import { getPropertyBySlug } from '@/core/properties/actions'
@@ -53,7 +52,6 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Navbar />
       <div className="pt-24 pb-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link href={`/homestays/${property.slug}`} className="inline-flex items-center gap-2 text-gray-900 dark:text-white font-semibold mb-8 hover:bg-gray-100 dark:hover:bg-zinc-800 p-2 rounded-full transition-colors">
           <ChevronLeft className="w-5 h-5" /> Trở về chỗ ở

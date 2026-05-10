@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import Link from 'next/link'
 
 const posts = [
@@ -10,7 +9,6 @@ const posts = [
 export default function BlogPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Navbar />
       <main className="pt-32 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-6">

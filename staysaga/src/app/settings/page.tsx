@@ -1,4 +1,3 @@
-import Navbar from '@/components/layout/Navbar'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Settings, Bell, Shield, Globe, Moon, Trash2 } from 'lucide-react'
@@ -11,7 +10,6 @@ export default async function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
-      <Navbar />
       <div className="pt-28 pb-20 max-w-3xl mx-auto px-4">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-8">Cài đặt</h1>
 
