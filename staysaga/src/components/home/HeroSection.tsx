@@ -17,12 +17,12 @@ export default function HeroSection() {
       </div>
 
       {/* Content */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center mt-16">
+      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center mt-12 md:mt-16">
         <motion.h1 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 tracking-tight leading-tight"
+          className="text-3xl sm:text-4xl md:text-7xl lg:text-8xl font-black text-white mb-4 md:mb-6 tracking-tight leading-tight"
         >
           Khám phá những điểm lưu trú <br className="hidden md:block"/>
           <span className="text-rose-500 inline-block drop-shadow-[0_0_15px_rgba(244,63,94,0.4)]">tuyệt vời nhất</span>
@@ -32,7 +32,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-          className="text-xl md:text-2xl text-gray-200 mb-12 max-w-3xl font-medium drop-shadow-md"
+          className="text-lg md:text-2xl text-gray-200 mb-8 md:mb-12 max-w-3xl font-medium drop-shadow-md"
         >
           Trải nghiệm kỳ nghỉ hoàn hảo với StaySaga. Từ những căn villa sang trọng đến homestay ấm cúng.
         </motion.p>

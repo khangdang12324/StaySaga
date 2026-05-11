@@ -182,8 +182,8 @@ export function AdvancedSearchBar() {
   return (
     <div ref={containerRef} className="w-full max-w-4xl mx-auto relative z-20">
       {/* ===== SEARCH BAR ===== */}
-      <div className="bg-white dark:bg-zinc-900 rounded-full shadow-2xl p-2 border border-gray-100 dark:border-zinc-800">
-        <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-gray-200 dark:divide-zinc-800">
+      <div className="bg-[#febb02] rounded-xl md:rounded-full shadow-2xl p-1 md:p-1.5 border-4 border-[#febb02]">
+        <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-stretch md:items-center gap-1">
 
           {/* LOCATION */}
           <div
@@ -191,11 +191,11 @@ export function AdvancedSearchBar() {
               setActivePanel('location')
               setTimeout(() => inputRef.current?.focus(), 50)
             }}
-            className={`flex-1 w-full px-6 py-3 rounded-full cursor-pointer transition-all ${activePanel === 'location' ? 'bg-gray-50 dark:bg-zinc-800 shadow-inner' : 'hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
+            className={`flex-1 bg-white dark:bg-zinc-900 px-4 py-3 rounded-lg md:rounded-l-full cursor-pointer transition-all flex items-center border-2 ${activePanel === 'location' ? 'border-blue-600' : 'border-transparent'}`}
           >
-            <label className="block text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-1">Địa điểm</label>
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 text-rose-500 mr-2 shrink-0" />
+            <MapPin className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <label className="hidden md:block text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Địa điểm</label>
               <input
                 ref={inputRef}
                 type="text"
@@ -207,7 +207,7 @@ export function AdvancedSearchBar() {
                   setActivePanel('location')
                 }}
                 onFocus={() => setActivePanel('location')}
-                className="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 font-medium truncate"
+                className="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-500 font-medium text-sm md:text-base truncate"
               />
             </div>
           </div>
@@ -215,42 +215,42 @@ export function AdvancedSearchBar() {
           {/* DATES */}
           <div
             onClick={() => setActivePanel('calendar')}
-            className={`flex-[1.3] w-full px-6 py-3 rounded-full cursor-pointer transition-all ${activePanel === 'calendar' ? 'bg-gray-50 dark:bg-zinc-800 shadow-inner' : 'hover:bg-gray-50 dark:hover:bg-zinc-800'}`}
+            className={`flex-1 bg-white dark:bg-zinc-900 px-4 py-3 rounded-lg md:rounded-none cursor-pointer transition-all flex items-center border-2 ${activePanel === 'calendar' ? 'border-blue-600' : 'border-transparent'}`}
           >
-            <label className="block text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-1">Nhận - Trả phòng</label>
-            <div className="flex items-center">
-              <CalendarIcon className="w-4 h-4 text-rose-500 mr-2 shrink-0" />
-              <span className={`font-medium text-sm truncate ${checkInDate ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+            <CalendarIcon className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <label className="hidden md:block text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Thời gian</label>
+              <span className={`block font-medium text-sm md:text-base truncate ${checkInDate ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
                 {dateDisplay}
               </span>
-              {nightsCount > 0 && (
-                <span className="ml-2 text-xs bg-rose-100 dark:bg-rose-900/30 text-rose-600 px-2 py-0.5 rounded-full font-bold shrink-0">
-                  {nightsCount} đêm
-                </span>
-              )}
             </div>
+            {nightsCount > 0 && (
+              <span className="ml-2 text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold shrink-0">
+                {nightsCount} đêm
+              </span>
+            )}
           </div>
 
           {/* GUESTS */}
-          <div className="flex-1 w-full pl-6 pr-2 py-2 flex items-center justify-between">
-            <div
-              onClick={() => setActivePanel(activePanel === 'guests' ? null : 'guests')}
-              className={`flex-1 cursor-pointer rounded-full py-1 transition-all`}
-            >
-              <label className="block text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-1">Khách & Phòng</label>
-              <div className="flex items-center">
-                <Users className="w-4 h-4 text-rose-500 mr-2 shrink-0" />
-                <span className="text-gray-900 dark:text-white font-medium text-sm truncate">{guestSummary}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 ml-1 shrink-0 transition-transform duration-200 ${activePanel === 'guests' ? 'rotate-180' : ''}`} />
-              </div>
+          <div
+            onClick={() => setActivePanel(activePanel === 'guests' ? null : 'guests')}
+            className={`flex-1 bg-white dark:bg-zinc-900 px-4 py-3 rounded-lg md:rounded-none cursor-pointer transition-all flex items-center border-2 ${activePanel === 'guests' ? 'border-blue-600' : 'border-transparent'}`}
+          >
+            <Users className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <label className="hidden md:block text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Số khách</label>
+              <span className="block text-gray-900 dark:text-white font-medium text-sm md:text-base truncate">{guestSummary}</span>
             </div>
-            <button
-              type="submit"
-              className="ml-3 bg-rose-600 hover:bg-rose-700 text-white p-4 rounded-full flex items-center justify-center transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 shrink-0"
-            >
-              <Search className="w-5 h-5" />
-            </button>
+            <ChevronDown className={`w-4 h-4 text-gray-400 ml-1 shrink-0 transition-transform duration-200 ${activePanel === 'guests' ? 'rotate-180' : ''}`} />
           </div>
+
+          {/* SEARCH BUTTON */}
+          <button
+            type="submit"
+            className="md:w-auto bg-[#006ce4] hover:bg-[#0057b8] text-white px-8 py-3 md:py-4 rounded-lg md:rounded-r-full font-bold text-lg transition-all shadow-md active:scale-[0.98] shrink-0"
+          >
+            Tìm kiếm
+          </button>
         </form>
       </div>
 
@@ -258,61 +258,57 @@ export function AdvancedSearchBar() {
 
       {/* LOCATION PANEL — Agoda style grid */}
       {activePanel === 'location' && (
-        <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-50" style={{ animation: 'fadeSlideIn 200ms ease-out' }}>
-          <div className="p-6">
-            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
-              {locationInput.trim() ? '🔍 Kết quả tìm kiếm' : '🔥 Điểm đến thịnh hành tại Việt Nam'}
+        <div className="absolute top-full md:top-full left-0 right-0 mt-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-50" style={{ animation: 'fadeSlideIn 200ms ease-out' }}>
+          <div className="p-4 md:p-6">
+            <h3 className="text-xs md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
+              {locationInput.trim() ? '🔍 Kết quả tìm kiếm' : '🔥 Điểm đến thịnh hành'}
             </h3>
 
             {filteredDestinations.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
                 {filteredDestinations.map((dest) => (
                   <button
                     key={dest.name}
                     type="button"
                     onClick={() => handleSelectCity(dest.name)}
-                    className="group flex flex-col items-center text-center p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all hover:shadow-md cursor-pointer"
+                    className="group flex flex-col items-center text-center p-2 md:p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all hover:shadow-md cursor-pointer"
                   >
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden mb-2.5 ring-2 ring-transparent group-hover:ring-rose-500 transition-all shadow-sm">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl overflow-hidden mb-2 ring-2 ring-transparent group-hover:ring-blue-500 transition-all shadow-sm">
                       <img
                         src={dest.image}
                         alt={dest.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
-                    <p className="font-semibold text-sm text-gray-900 dark:text-white leading-tight">{dest.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{dest.count.toLocaleString()} chỗ ở</p>
+                    <p className="font-semibold text-[10px] md:text-sm text-gray-900 dark:text-white leading-tight truncate w-full">{dest.name}</p>
+                    <p className="text-[9px] md:text-xs text-gray-400 mt-0.5">{dest.count.toLocaleString()}</p>
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10 text-gray-400">
-                <MapPin className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                <p className="font-medium">Không tìm thấy điểm đến phù hợp</p>
-                <p className="text-sm mt-1">Thử tìm với từ khóa khác</p>
+              <div className="text-center py-6 md:py-10 text-gray-400">
+                <MapPin className="w-8 h-8 md:w-10 md:h-10 mx-auto mb-3 opacity-20" />
+                <p className="font-medium text-sm md:text-base">Không tìm thấy kết quả</p>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* CALENDAR PANEL — Booking.com style 2 months */}
+      {/* CALENDAR PANEL */}
       {activePanel === 'calendar' && (
         <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-50" style={{ animation: 'fadeSlideIn 200ms ease-out' }}>
-          <div className="p-6">
-            {/* Header with nav */}
-            <div className="flex items-center justify-between mb-5">
+          <div className="p-4 md:p-6">
+            <div className="flex items-center justify-between mb-4 md:mb-5">
               <button type="button" onClick={prevMonth} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
                 <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
-              <div className="flex-1" />
               <button type="button" onClick={nextMonth} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
                 <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
 
-            {/* 2 Month grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 overflow-y-auto max-h-[60vh] md:max-h-none">
               <MonthGrid
                 year={calendarBaseMonth.year}
                 month={calendarBaseMonth.month}
@@ -320,33 +316,33 @@ export function AdvancedSearchBar() {
                 checkOut={checkOutDate}
                 onDayClick={handleDayClick}
               />
-              <MonthGrid
-                year={month2.year}
-                month={month2.month}
-                checkIn={checkInDate}
-                checkOut={checkOutDate}
-                onDayClick={handleDayClick}
-              />
+              <div className="hidden md:block">
+                <MonthGrid
+                  year={month2.year}
+                  month={month2.month}
+                  checkIn={checkInDate}
+                  checkOut={checkOutDate}
+                  onDayClick={handleDayClick}
+                />
+              </div>
             </div>
 
-            {/* Footer */}
             {checkInDate && (
-              <div className="mt-5 pt-4 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+                <div className="text-xs md:text-sm text-gray-500 truncate">
                   {checkOutDate ? (
                     <span>
                       <strong className="text-gray-900 dark:text-white">{formatDate(checkInDate)}</strong> → <strong className="text-gray-900 dark:text-white">{formatDate(checkOutDate)}</strong>
-                      <span className="ml-2 text-rose-600 font-bold">({nightsCount} đêm)</span>
                     </span>
                   ) : (
-                    <span>Nhận phòng: <strong className="text-gray-900 dark:text-white">{formatDate(checkInDate)}</strong> — Chọn ngày trả phòng</span>
+                    <span>Nhận: <strong className="text-gray-900 dark:text-white">{formatDate(checkInDate)}</strong></span>
                   )}
                 </div>
                 {checkOutDate && (
                   <button
                     type="button"
                     onClick={() => setActivePanel('guests')}
-                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-6 py-2.5 rounded-xl transition-colors text-sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 md:px-6 py-2 rounded-xl transition-colors text-xs md:text-sm shrink-0"
                   >
                     Tiếp tục
                   </button>
@@ -359,14 +355,14 @@ export function AdvancedSearchBar() {
 
       {/* GUEST PANEL */}
       {activePanel === 'guests' && (
-        <div className="absolute top-full right-0 mt-3 w-[340px] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 p-5 z-50" style={{ animation: 'fadeSlideIn 200ms ease-out' }}>
-          <GuestRow label="Người lớn" desc="Từ 13 tuổi trở lên" value={adults} min={1} max={16} onChange={setAdults} />
-          <GuestRow label="Trẻ em" desc="Từ 0 – 12 tuổi" value={children} min={0} max={10} onChange={setChildren} />
-          <GuestRow label="Phòng" desc="Số phòng cần đặt" value={rooms} min={1} max={8} onChange={setRooms} isLast />
+        <div className="absolute top-full right-0 mt-3 w-full md:w-[340px] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 p-4 md:p-5 z-50" style={{ animation: 'fadeSlideIn 200ms ease-out' }}>
+          <GuestRow label="Người lớn" desc="Từ 13 tuổi" value={adults} min={1} max={16} onChange={setAdults} />
+          <GuestRow label="Trẻ em" desc="0 – 12 tuổi" value={children} min={0} max={10} onChange={setChildren} />
+          <GuestRow label="Phòng" desc="Số phòng" value={rooms} min={1} max={8} onChange={setRooms} isLast />
           <button
             type="button"
             onClick={() => setActivePanel(null)}
-            className="w-full mt-4 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-colors"
+            className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors text-sm"
           >
             Xong
           </button>
