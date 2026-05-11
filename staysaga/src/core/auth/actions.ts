@@ -67,7 +67,10 @@ export async function logout() {
 
 export async function signInWithGoogle() {
   const supabase = await createClient()
-  const origin = (await headers()).get('origin') || process.env.NEXT_PUBLIC_SITE_URL
+  const headerStore = await headers()
+  const host = headerStore.get('host')
+  const protocol = host?.includes('localhost') || host?.match(/^\d+\.\d+\.\d+\.\d+/) ? 'http' : 'https'
+  const origin = host ? `${protocol}://${host}` : process.env.NEXT_PUBLIC_SITE_URL
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -88,7 +91,10 @@ export async function signInWithGoogle() {
 
 export async function signInWithFacebook() {
   const supabase = await createClient()
-  const origin = (await headers()).get('origin') || process.env.NEXT_PUBLIC_SITE_URL
+  const headerStore = await headers()
+  const host = headerStore.get('host')
+  const protocol = host?.includes('localhost') || host?.match(/^\d+\.\d+\.\d+\.\d+/) ? 'http' : 'https'
+  const origin = host ? `${protocol}://${host}` : process.env.NEXT_PUBLIC_SITE_URL
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'facebook',
