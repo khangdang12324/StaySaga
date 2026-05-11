@@ -6,7 +6,7 @@ export default function HeroSearch() {
       {/* Background image + overlay */}
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2070"
+          src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070"
           alt="Homestay view"
           className="h-full w-full object-cover"
         />

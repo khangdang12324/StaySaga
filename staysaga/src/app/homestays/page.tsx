@@ -26,9 +26,27 @@ export default async function HomestaysPage({ searchParams }: Props) {
     typeof resolvedParams.maxPrice === "string"
       ? parseInt(resolvedParams.maxPrice)
       : undefined;
+  const checkIn =
+    typeof resolvedParams.checkIn === "string"
+      ? resolvedParams.checkIn
+      : undefined;
+  const checkOut =
+    typeof resolvedParams.checkOut === "string"
+      ? resolvedParams.checkOut
+      : undefined;
+
+  const detailParams = new URLSearchParams();
+  if (checkIn) detailParams.set("checkIn", checkIn);
+  if (checkOut) detailParams.set("checkOut", checkOut);
+  if (typeof guests === "number" && !Number.isNaN(guests)) {
+    detailParams.set("guests", String(guests));
+  }
+  const detailQuery = detailParams.toString();
 
   const { properties, total } = await getProperties({
     location,
+    checkIn,
+    checkOut,
     guests,
     minPrice,
     maxPrice,
@@ -69,7 +87,11 @@ export default async function HomestaysPage({ searchParams }: Props) {
               const isFavorited = favoriteIds.includes(homestay.id);
               return (
                 <Link
-                  href={`/homestays/${homestay.slug}`}
+                  href={
+                    detailQuery
+                      ? `/homestays/${homestay.slug}?${detailQuery}`
+                      : `/homestays/${homestay.slug}`
+                  }
                   key={homestay.id}
                   className="group flex flex-col bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 dark:border-zinc-800"
                 >
@@ -78,7 +100,7 @@ export default async function HomestaysPage({ searchParams }: Props) {
                       src={
                         homestay.image ||
                         homestay.property_images?.[0]?.url ||
-                        "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=2000"
+                        "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=2000"
                       }
                       alt={homestay.title}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"

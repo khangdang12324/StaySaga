@@ -1,20 +1,85 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { differenceInDays } from "date-fns";
 
 interface BookingWidgetProps {
   propertyId: string;
   basePrice: number;
+  bookingStatus?: {
+    status: string;
+    checkIn?: string | null;
+    checkOut?: string | null;
+  };
 }
 
-export function BookingWidget({ propertyId, basePrice }: BookingWidgetProps) {
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Chờ thanh toán",
+  CONFIRMED: "Đã xác nhận",
+  COMPLETED: "Hoàn thành",
+  CANCELLED: "Đã hủy",
+};
+
+export function BookingWidget({
+  propertyId,
+  basePrice,
+  bookingStatus,
+}: BookingWidgetProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const checkInRef = useRef<HTMLInputElement>(null);
+  const checkOutRef = useRef<HTMLInputElement>(null);
+  const guestsRef = useRef<HTMLSelectElement>(null);
   const [checkIn, setCheckIn] = useState<string>("");
   const [checkOut, setCheckOut] = useState<string>("");
   const [guests, setGuests] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
+  const bookingLabel = bookingStatus
+    ? STATUS_LABELS[bookingStatus.status] || "Đã đặt phòng"
+    : null;
+
+  useEffect(() => {
+    const checkInParam = searchParams.get("checkIn");
+    const checkOutParam = searchParams.get("checkOut");
+    const guestsParam = searchParams.get("guests");
+
+    if (!checkIn && checkInParam && !Number.isNaN(Date.parse(checkInParam))) {
+      setCheckIn(checkInParam);
+    }
+    if (
+      !checkOut &&
+      checkOutParam &&
+      !Number.isNaN(Date.parse(checkOutParam))
+    ) {
+      setCheckOut(checkOutParam);
+    }
+    if (!Number.isNaN(Number(guestsParam)) && guestsParam && guests === 1) {
+      const parsedGuests = Math.min(8, Math.max(1, Number(guestsParam)));
+      setGuests(parsedGuests);
+    }
+  }, [searchParams, checkIn, checkOut, guests]);
+
+  const openDatePicker = (ref: React.RefObject<HTMLInputElement>) => {
+    const input = ref.current;
+    if (!input) return;
+    if (
+      typeof (input as HTMLInputElement & { showPicker?: () => void })
+        .showPicker === "function"
+    ) {
+      (input as HTMLInputElement & { showPicker: () => void }).showPicker();
+      return;
+    }
+    input.focus();
+  };
+
+  const openGuestsPicker = () => {
+    const select = guestsRef.current;
+    if (!select) return;
+    select.focus();
+    select.click();
+  };
 
   // Enterprise Business Logic: Dynamic Pricing Calculation
   const {
@@ -64,12 +129,30 @@ export function BookingWidget({ propertyId, basePrice }: BookingWidgetProps) {
       checkOut,
       guests: guests.toString(),
       totalAmount: totalAmount.toString(),
+      step: "info",
     });
     router.push(`/checkout/${propertyId}?${params.toString()}`);
   };
 
   return (
     <div className="sticky top-28 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 shadow-xl z-10">
+      {bookingStatus && (
+        <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <p className="font-semibold">Bạn đã đặt phòng ({bookingLabel}).</p>
+          {bookingStatus.checkIn && bookingStatus.checkOut && (
+            <p className="mt-1 text-xs">
+              {bookingStatus.checkIn} → {bookingStatus.checkOut}
+            </p>
+          )}
+          <Link
+            href="/bookings"
+            className="mt-2 inline-flex text-xs font-semibold text-emerald-700 hover:text-emerald-600"
+          >
+            Xem đơn đặt phòng
+          </Link>
+        </div>
+      )}
+
       <div className="flex items-baseline gap-2 mb-6">
         <span className="text-2xl font-black text-rose-600">
           {basePrice.toLocaleString("vi-VN")}đ
@@ -79,11 +162,15 @@ export function BookingWidget({ propertyId, basePrice }: BookingWidgetProps) {
 
       <div className="border border-gray-300 dark:border-zinc-700 rounded-xl overflow-hidden mb-6">
         <div className="flex border-b border-gray-300 dark:border-zinc-700">
-          <div className="flex-1 p-3 border-r border-gray-300 dark:border-zinc-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+          <div
+            className="flex-1 p-3 border-r border-gray-300 dark:border-zinc-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+            onClick={() => openDatePicker(checkInRef)}
+          >
             <label className="text-xs font-bold uppercase block w-full cursor-pointer">
               Nhận phòng
             </label>
             <input
+              ref={checkInRef}
               type="date"
               value={checkIn}
               onChange={(e) => {
@@ -94,11 +181,15 @@ export function BookingWidget({ propertyId, basePrice }: BookingWidgetProps) {
               className="w-full bg-transparent border-none outline-none mt-1 text-sm font-medium cursor-pointer"
             />
           </div>
-          <div className="flex-1 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+          <div
+            className="flex-1 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+            onClick={() => openDatePicker(checkOutRef)}
+          >
             <label className="text-xs font-bold uppercase block w-full cursor-pointer">
               Trả phòng
             </label>
             <input
+              ref={checkOutRef}
               type="date"
               value={checkOut}
               onChange={(e) => {
@@ -110,11 +201,15 @@ export function BookingWidget({ propertyId, basePrice }: BookingWidgetProps) {
             />
           </div>
         </div>
-        <div className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+        <div
+          className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+          onClick={openGuestsPicker}
+        >
           <label className="text-xs font-bold uppercase block w-full cursor-pointer">
             Khách
           </label>
           <select
+            ref={guestsRef}
             value={guests}
             onChange={(e) => setGuests(Number(e.target.value))}
             className="w-full bg-transparent border-none outline-none mt-1 text-sm font-medium cursor-pointer"

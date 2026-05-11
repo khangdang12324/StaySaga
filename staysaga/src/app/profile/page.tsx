@@ -567,7 +567,7 @@ function TripsTab({
 
         const image =
           booking.homestay?.homestay_images?.[0]?.url ||
-          "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=500";
+          "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500";
 
         const checkIn = booking.check_in_date
           ? new Date(booking.check_in_date).toLocaleDateString("vi-VN")
@@ -674,7 +674,7 @@ function SavedTab({
         const homestay = fav.homestay;
         const image =
           homestay?.homestay_images?.[0]?.url ||
-          "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=500";
+          "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500";
         const price = Number(homestay?.price_per_night || 0);
         const propertyId = fav.property_id || homestay?.id;
 

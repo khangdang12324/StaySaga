@@ -19,61 +19,31 @@ const DESTINATIONS = [
     name: "TP. Hồ Chí Minh",
     count: 2845,
     image:
-      "https://images.unsplash.com/photo-1583417319070-4a69db38a482?q=80&w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=200&h=200&fit=crop",
   },
   {
     name: "Hà Nội",
     count: 1920,
     image:
-      "https://images.unsplash.com/photo-1509030450996-dd1a26613e2c?q=80&w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1501117716987-c8e1ecb210a7?q=80&w=200&h=200&fit=crop",
   },
   {
     name: "Đà Lạt",
     count: 1356,
     image:
-      "https://images.unsplash.com/photo-1552554700-1c3947d6e67e?q=80&w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=200&h=200&fit=crop",
   },
   {
     name: "Nha Trang",
     count: 1124,
     image:
-      "https://images.unsplash.com/photo-1558281050-0cb572183204?q=80&w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1560067174-89451c3b89f2?q=80&w=200&h=200&fit=crop",
   },
   {
     name: "Đà Nẵng",
     count: 1580,
     image:
-      "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=200&h=200&fit=crop",
-  },
-  {
-    name: "Phú Quốc",
-    count: 932,
-    image:
-      "https://images.unsplash.com/photo-1588661605333-f5424dfd414e?q=80&w=200&h=200&fit=crop",
-  },
-  {
-    name: "Hội An",
-    count: 810,
-    image:
-      "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?q=80&w=200&h=200&fit=crop",
-  },
-  {
-    name: "Vũng Tàu",
-    count: 745,
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=200&h=200&fit=crop",
-  },
-  {
-    name: "Sapa",
-    count: 645,
-    image:
-      "https://images.unsplash.com/photo-1543689408-ddc5c16110f6?q=80&w=200&h=200&fit=crop",
-  },
-  {
-    name: "Quy Nhơn",
-    count: 520,
-    image:
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=200&h=200&fit=crop",
+      "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?q=80&w=200&h=200&fit=crop",
   },
 ];
 
@@ -218,8 +188,6 @@ export function AdvancedSearchBar() {
       } else {
         setCheckOutDate(date);
         setFormError(null);
-        // Auto-open guests after selecting dates
-        setTimeout(() => setActivePanel("guests"), 300);
       }
     }
   };
@@ -231,16 +199,14 @@ export function AdvancedSearchBar() {
       setActivePanel("location");
       return;
     }
-    if (!checkInDate || !checkOutDate) {
-      setFormError("Vui lòng chọn ngày nhận và trả phòng.");
-      setActivePanel("calendar");
-      return;
-    }
     setFormError(null);
     const params = new URLSearchParams();
-    if (location) params.set("location", location);
-    if (checkInDate) params.set("checkIn", formatDateISO(checkInDate));
-    if (checkOutDate) params.set("checkOut", formatDateISO(checkOutDate));
+    const locationValue = locationInput.trim();
+    if (locationValue) params.set("location", locationValue);
+    if (checkInDate && checkOutDate) {
+      params.set("checkIn", formatDateISO(checkInDate));
+      params.set("checkOut", formatDateISO(checkOutDate));
+    }
     const totalGuests = adults + children;
     if (totalGuests > 1) params.set("guests", totalGuests.toString());
     if (rooms > 1) params.set("rooms", rooms.toString());
@@ -362,12 +328,9 @@ export function AdvancedSearchBar() {
 
           {/* SEARCH BUTTON */}
           <div className="border-t border-gray-200 md:border-t-0 md:border-l">
-            {formError && (
-              <div className="px-4 py-2 text-xs text-rose-600">{formError}</div>
-            )}
             <button
               type="submit"
-              className="w-full md:w-auto bg-rose-600 hover:bg-rose-500 text-white px-6 py-4 md:py-5 md:px-8 md:rounded-r-xl font-bold text-base transition-colors shrink-0 flex items-center justify-center gap-2"
+              className="w-full md:w-auto md:h-full bg-rose-600 hover:bg-rose-500 text-white px-6 py-4 md:py-5 md:px-8 md:rounded-r-xl font-bold text-base transition-colors shrink-0 flex items-center justify-center gap-2"
             >
               <Search className="w-5 h-5" />
               <span>Tìm kiếm</span>
@@ -376,9 +339,13 @@ export function AdvancedSearchBar() {
         </form>
       </div>
 
+      {formError && (
+        <div className="mt-2 text-sm text-rose-600">{formError}</div>
+      )}
+
       {/* ===== PANELS ===== */}
 
-      {/* LOCATION PANEL — Agoda style grid */}
+      {/* LOCATION PANEL — Booking-style list */}
       {activePanel === "location" && (
         <div
           className="absolute top-full md:top-full left-0 right-0 mt-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-50"
@@ -387,32 +354,30 @@ export function AdvancedSearchBar() {
           <div className="p-4 md:p-6">
             <h3 className="text-xs md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
               {locationInput.trim()
-                ? "🔍 Kết quả tìm kiếm"
-                : "🔥 Điểm đến thịnh hành"}
+                ? "Kết quả tìm kiếm"
+                : "Điểm đến thịnh hành"}
             </h3>
 
             {filteredDestinations.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
+              <div className="max-h-[360px] overflow-y-auto divide-y divide-gray-100 dark:divide-zinc-800">
                 {filteredDestinations.map((dest) => (
                   <button
                     key={dest.name}
                     type="button"
                     onClick={() => handleSelectCity(dest.name)}
-                    className="group flex flex-col items-center text-center p-2 md:p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all hover:shadow-md cursor-pointer"
+                    className="w-full flex items-center gap-4 px-2 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                   >
-                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl overflow-hidden mb-2 ring-2 ring-transparent group-hover:ring-blue-500 transition-all shadow-sm">
-                      <img
-                        src={dest.image}
-                        alt={dest.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
+                    <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                      <MapPin className="h-5 w-5" />
                     </div>
-                    <p className="font-semibold text-[10px] md:text-sm text-gray-900 dark:text-white leading-tight truncate w-full">
-                      {dest.name}
-                    </p>
-                    <p className="text-[9px] md:text-xs text-gray-400 mt-0.5">
-                      {dest.count.toLocaleString()}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                        {dest.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Việt Nam · {dest.count.toLocaleString()} chỗ ở
+                      </p>
+                    </div>
                   </button>
                 ))}
               </div>

@@ -5,12 +5,12 @@ import { AdvancedSearchBar } from "@/components/features/search/AdvancedSearchBa
 
 export default function HeroSection() {
   return (
-    <div className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
+    <div className="relative h-screen min-h-[600px] flex items-center justify-center">
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?q=80&w=2062"
-          alt="Beautiful beach house"
+          src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2062"
+          alt="Hotel room"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />

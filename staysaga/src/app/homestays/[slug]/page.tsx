@@ -4,6 +4,7 @@ import { getFavoriteIds } from "@/core/favorites/actions";
 import { BookingWidget } from "@/components/features/booking/BookingWidget";
 import FavoriteButton from "@/components/features/favorites/FavoriteButton";
 import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -20,16 +21,47 @@ export default async function HomestayDetailPage({ params }: Props) {
   const favoriteIds = await getFavoriteIds([homestay.id]);
   const isFavorited = favoriteIds.includes(homestay.id);
 
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  let bookingStatus: {
+    status: string;
+    checkIn?: string | null;
+    checkOut?: string | null;
+  } | null = null;
+
+  if (session?.user) {
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("status, check_in_date, check_out_date")
+      .eq("user_id", session.user.id)
+      .eq("homestay_id", homestay.id)
+      .in("status", ["PENDING", "CONFIRMED"])
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    const latestBooking = bookings?.[0];
+    if (latestBooking) {
+      bookingStatus = {
+        status: latestBooking.status,
+        checkIn: latestBooking.check_in_date,
+        checkOut: latestBooking.check_out_date,
+      };
+    }
+  }
+
   // Lấy ảnh chính và ảnh phụ
   const mainImage =
     homestay.image ||
     (homestay as any).images?.[0]?.url ||
-    "https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=2000";
+    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=2000";
   const subImages = [
-    "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=1000",
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=1000",
-    "https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=1000",
-    "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?q=80&w=1000",
+    "https://images.unsplash.com/photo-1501117716987-c8e1ecb210a7?q=80&w=1000",
+    "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=1000",
+    "https://images.unsplash.com/photo-1560067174-89451c3b89f2?q=80&w=1000",
+    "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?q=80&w=1000",
   ];
 
   return (
@@ -158,6 +190,7 @@ export default async function HomestayDetailPage({ params }: Props) {
             <BookingWidget
               propertyId={homestay.id}
               basePrice={homestay.price || (homestay as any).base_price || 0}
+              bookingStatus={bookingStatus || undefined}
             />
           </div>
         </div>

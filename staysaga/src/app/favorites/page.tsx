@@ -1,35 +1,50 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { Heart, MapPin, Star } from 'lucide-react'
-import Link from 'next/link'
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { Heart, MapPin, Star } from "lucide-react";
+import Link from "next/link";
 
 export default async function FavoritesPage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!session) redirect('/login')
+  if (!session) redirect("/login");
 
   const { data: favorites } = await supabase
-    .from('favorites')
-    .select('*, homestay:homestays(id, name, slug, city, price_per_night, homestay_images(url))')
-    .eq('user_id', session.user.id)
-    .order('created_at', { ascending: false })
+    .from("favorites")
+    .select(
+      "*, homestay:homestays(id, name, slug, city, price_per_night, homestay_images(url))",
+    )
+    .eq("user_id", session.user.id)
+    .order("created_at", { ascending: false });
 
-  const hasFavorites = favorites && favorites.length > 0
+  const hasFavorites = favorites && favorites.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
       <div className="pt-28 pb-20 max-w-5xl mx-auto px-4">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Đã lưu</h1>
-        <p className="text-gray-500 mb-8">Danh sách những chỗ ở bạn yêu thích.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
+          Đã lưu
+        </h1>
+        <p className="text-gray-500 mb-8">
+          Danh sách những chỗ ở bạn yêu thích.
+        </p>
 
         {hasFavorites ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {favorites.map((fav: any) => (
-              <Link href={`/homestays/${fav.homestay?.slug}`} key={fav.id} className="group bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-xl transition-all">
+              <Link
+                href={`/homestays/${fav.homestay?.slug}`}
+                key={fav.id}
+                className="group bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-xl transition-all"
+              >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
-                    src={fav.homestay?.homestay_images?.[0]?.url || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=500'}
+                    src={
+                      fav.homestay?.homestay_images?.[0]?.url ||
+                      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500"
+                    }
                     alt={fav.homestay?.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
@@ -38,12 +53,19 @@ export default async function FavoritesPage() {
                   </button>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-bold text-gray-900 dark:text-white">{fav.homestay?.name}</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-white">
+                    {fav.homestay?.name}
+                  </h3>
                   <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
                     <MapPin className="w-3 h-3" /> {fav.homestay?.city}
                   </p>
                   <p className="mt-3">
-                    <span className="text-lg font-black text-rose-600">{Number(fav.homestay?.price_per_night).toLocaleString('vi-VN')}đ</span>
+                    <span className="text-lg font-black text-rose-600">
+                      {Number(fav.homestay?.price_per_night).toLocaleString(
+                        "vi-VN",
+                      )}
+                      đ
+                    </span>
                     <span className="text-gray-500 text-sm"> /đêm</span>
                   </p>
                 </div>
@@ -53,14 +75,21 @@ export default async function FavoritesPage() {
         ) : (
           <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
             <Heart className="w-16 h-16 text-gray-200 dark:text-zinc-700 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Chưa lưu chỗ ở nào</h2>
-            <p className="text-gray-500 mb-6">Nhấn vào biểu tượng trái tim để lưu chỗ ở yêu thích.</p>
-            <Link href="/homestays" className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-md inline-block">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Chưa lưu chỗ ở nào
+            </h2>
+            <p className="text-gray-500 mb-6">
+              Nhấn vào biểu tượng trái tim để lưu chỗ ở yêu thích.
+            </p>
+            <Link
+              href="/homestays"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-md inline-block"
+            >
               Khám phá ngay
             </Link>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
