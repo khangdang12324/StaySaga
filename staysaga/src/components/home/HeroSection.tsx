@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { Home, Building, Tent, Landmark, Hotel } from 'lucide-react'
 import { AdvancedSearchBar } from '@/components/features/search/AdvancedSearchBar'
 
 export default function HeroSection() {
@@ -28,14 +29,33 @@ export default function HeroSection() {
           <span className="text-rose-500 inline-block drop-shadow-[0_0_15px_rgba(244,63,94,0.4)]">tuyệt vời nhất</span>
         </motion.h1>
         
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }}
+        {/* CATEGORY BAR (Booking.com style) */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-          className="text-lg md:text-2xl text-gray-200 mb-8 md:mb-12 max-w-3xl font-medium drop-shadow-md"
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="flex items-center gap-2 md:gap-4 mb-8 overflow-x-auto pb-2 no-scrollbar w-full justify-start md:justify-center px-4"
         >
-          Trải nghiệm kỳ nghỉ hoàn hảo với StaySaga. Từ những căn villa sang trọng đến homestay ấm cúng.
-        </motion.p>
+          {[
+            { icon: Home, label: 'Lưu trú', active: true },
+            { icon: Building, label: 'Căn hộ', active: false },
+            { icon: Tent, label: 'Camping', active: false },
+            { icon: Landmark, label: 'Villa', active: false },
+            { icon: Hotel, label: 'Khách sạn', active: false },
+          ].map((cat, i) => (
+            <button
+              key={i}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all shrink-0 font-medium text-sm md:text-base ${
+                cat.active 
+                  ? 'bg-white/20 text-white border-white' 
+                  : 'text-white/70 border-white/20 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <cat.icon className="w-4 h-4 md:w-5 md:h-5" />
+              <span>{cat.label}</span>
+            </button>
+          ))}
+        </motion.div>
 
         {/* CÔNG CỤ TÌM KIẾM NÂNG CAO */}
         <motion.div 
