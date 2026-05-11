@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 
 export async function login(formData: FormData) {
@@ -66,11 +67,12 @@ export async function logout() {
 
 export async function signInWithGoogle() {
   const supabase = await createClient()
+  const origin = (await headers()).get('origin') || process.env.NEXT_PUBLIC_SITE_URL
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo: `${origin}/auth/callback`,
     },
   })
 
@@ -86,11 +88,12 @@ export async function signInWithGoogle() {
 
 export async function signInWithFacebook() {
   const supabase = await createClient()
+  const origin = (await headers()).get('origin') || process.env.NEXT_PUBLIC_SITE_URL
   
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'facebook',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo: `${origin}/auth/callback`,
       scopes: 'public_profile,email',
     },
   })
