@@ -1,42 +1,42 @@
-'use server'
+"use server";
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
-import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
-  const supabase = await createClient()
-  
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const supabase = await createClient();
+
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
   if (!email || !password) {
-    return { error: 'Vui lòng nhập đầy đủ email và mật khẩu' }
+    return { error: "Vui lòng nhập đầy đủ email và mật khẩu" };
   }
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
-  })
+  });
 
   if (error) {
-    return { error: error.message }
+    return { error: error.message };
   }
 
-  revalidatePath('/', 'layout')
-  redirect('/')
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function signup(formData: FormData) {
-  const supabase = await createClient()
-  
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const fullName = formData.get('fullName') as string
+  const supabase = await createClient();
+
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const fullName = formData.get("fullName") as string;
 
   if (!email || !password || !fullName) {
-    return { error: 'Vui lòng nhập đầy đủ thông tin' }
+    return { error: "Vui lòng nhập đầy đủ thông tin" };
   }
 
   const { error } = await supabase.auth.signUp({
@@ -45,71 +45,108 @@ export async function signup(formData: FormData) {
     options: {
       data: {
         full_name: fullName,
-      }
-    }
-  })
+      },
+    },
+  });
 
   if (error) {
-    return { error: error.message }
+    return { error: error.message };
   }
 
-  revalidatePath('/', 'layout')
-  redirect('/')
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export async function logout() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect('/login')
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
 }
 
-
-
 export async function signInWithGoogle() {
-  const supabase = await createClient()
-  const headerStore = await headers()
-  const host = headerStore.get('host')
-  const protocol = host?.includes('localhost') || host?.match(/^\d+\.\d+\.\d+\.\d+/) ? 'http' : 'https'
-  const origin = host ? `${protocol}://${host}` : process.env.NEXT_PUBLIC_SITE_URL
-  
+  const supabase = await createClient();
+  const headerStore = await headers();
+  const host = headerStore.get("host");
+  const protocol =
+    host?.includes("localhost") || host?.match(/^\d+\.\d+\.\d+\.\d+/)
+      ? "http"
+      : "https";
+  const origin = host
+    ? `${protocol}://${host}`
+    : process.env.NEXT_PUBLIC_SITE_URL;
+
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider: "google",
     options: {
       redirectTo: `${origin}/auth/callback`,
     },
-  })
+  });
 
   if (error) {
-    console.error(error.message)
-    return
+    console.error(error.message);
+    return;
   }
 
   if (data.url) {
-    redirect(data.url)
+    redirect(data.url);
   }
 }
 
 export async function signInWithFacebook() {
-  const supabase = await createClient()
-  const headerStore = await headers()
-  const host = headerStore.get('host')
-  const protocol = host?.includes('localhost') || host?.match(/^\d+\.\d+\.\d+\.\d+/) ? 'http' : 'https'
-  const origin = host ? `${protocol}://${host}` : process.env.NEXT_PUBLIC_SITE_URL
-  
+  const supabase = await createClient();
+  const headerStore = await headers();
+  const host = headerStore.get("host");
+  const protocol =
+    host?.includes("localhost") || host?.match(/^\d+\.\d+\.\d+\.\d+/)
+      ? "http"
+      : "https";
+  const origin = host
+    ? `${protocol}://${host}`
+    : process.env.NEXT_PUBLIC_SITE_URL;
+
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'facebook',
+    provider: "facebook",
     options: {
       redirectTo: `${origin}/auth/callback`,
-      scopes: 'public_profile,email',
+      scopes: "public_profile,email",
     },
-  })
+  });
 
   if (error) {
-    console.error(error.message)
-    return
+    console.error(error.message);
+    return;
   }
 
   if (data.url) {
-    redirect(data.url)
+    redirect(data.url);
   }
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const supabase = await createClient();
+
+  const email = formData.get("email") as string;
+  if (!email) {
+    return { error: "Vui lòng nhập email." };
+  }
+
+  const headerStore = await headers();
+  const host = headerStore.get("host");
+  const protocol =
+    host?.includes("localhost") || host?.match(/^\d+\.\d+\.\d+\.\d+/)
+      ? "http"
+      : "https";
+  const origin = host
+    ? `${protocol}://${host}`
+    : process.env.NEXT_PUBLIC_SITE_URL;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?next=/reset-password`,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: true };
 }
