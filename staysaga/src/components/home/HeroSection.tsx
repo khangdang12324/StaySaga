@@ -29,12 +29,13 @@ export default function HeroSection() {
           <span className="text-rose-500 inline-block drop-shadow-[0_0_15px_rgba(244,63,94,0.4)]">tuyệt vời nhất</span>
         </motion.h1>
         
-        {/* CATEGORY BAR (Booking.com style) */}
+        {/* CATEGORY BAR (Minimalist Apple style) */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="flex items-center gap-2 md:gap-4 mb-8 overflow-x-auto pb-2 no-scrollbar w-full justify-start md:justify-center px-4"
+          className="flex items-center gap-6 md:gap-8 mb-10 overflow-x-auto pb-4 no-scrollbar w-full justify-start md:justify-center px-4 scrollbar-hide"
+          style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
         >
           {[
             { icon: Home, label: 'Lưu trú', active: true },
@@ -45,14 +46,20 @@ export default function HeroSection() {
           ].map((cat, i) => (
             <button
               key={i}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all shrink-0 font-medium text-sm md:text-base ${
-                cat.active 
-                  ? 'bg-white/20 text-white border-white' 
-                  : 'text-white/70 border-white/20 hover:bg-white/10 hover:text-white'
-              }`}
+              className={`flex flex-col items-center gap-2 group transition-all shrink-0`}
             >
-              <cat.icon className="w-4 h-4 md:w-5 md:h-5" />
-              <span>{cat.label}</span>
+              <div className={`p-3 rounded-2xl transition-all ${
+                cat.active 
+                  ? 'bg-white text-rose-600 shadow-lg scale-110' 
+                  : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+              }`}>
+                <cat.icon className="w-5 h-5 md:w-6 md:h-6" />
+              </div>
+              <span className={`text-xs md:text-sm font-bold tracking-tight transition-all ${
+                cat.active ? 'text-white' : 'text-white/50 group-hover:text-white/80'
+              }`}>
+                {cat.label}
+              </span>
             </button>
           ))}
         </motion.div>

@@ -181,9 +181,9 @@ export function AdvancedSearchBar() {
 
   return (
     <div ref={containerRef} className="w-full max-w-4xl mx-auto relative z-20 px-4 md:px-0">
-      {/* ===== SEARCH BAR ===== */}
-      <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl rounded-2xl md:rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-1.5 border border-white/20 dark:border-white/10">
-        <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-stretch md:items-center gap-1">
+      {/* ===== SEARCH BAR — Senior Minimalist Design ===== */}
+      <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-3xl md:rounded-[40px] shadow-[0_30px_100px_rgba(0,0,0,0.18)] p-2 md:p-3 border border-white/40 dark:border-white/5">
+        <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-stretch md:items-center">
 
           {/* LOCATION */}
           <div
@@ -191,15 +191,17 @@ export function AdvancedSearchBar() {
               setActivePanel('location')
               setTimeout(() => inputRef.current?.focus(), 50)
             }}
-            className={`flex-1 bg-white/50 dark:bg-zinc-800/50 px-5 py-3.5 rounded-xl md:rounded-l-full cursor-pointer transition-all flex items-center border border-transparent ${activePanel === 'location' ? 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 shadow-sm' : 'hover:bg-white/80 dark:hover:bg-zinc-800/80'}`}
+            className={`flex-[1.2] px-6 py-4 md:py-6 rounded-[28px] md:rounded-l-[32px] cursor-pointer transition-all flex items-center group ${activePanel === 'location' ? 'bg-gray-100/50 dark:bg-white/5' : 'hover:bg-gray-50/50 dark:hover:bg-white/[0.02]'}`}
           >
-            <MapPin className="w-5 h-5 text-rose-500 mr-3 shrink-0" />
+            <div className="bg-rose-50 dark:bg-rose-900/30 p-3 rounded-2xl mr-4 group-hover:scale-110 transition-transform">
+              <MapPin className="w-5 h-5 text-rose-600" />
+            </div>
             <div className="flex-1 min-w-0">
-              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-none mb-1 block">Địa điểm</label>
+              <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] leading-none mb-1.5 block">Địa điểm</label>
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Bạn muốn đi đâu?"
+                placeholder="Tìm điểm đến..."
                 value={locationInput}
                 onChange={(e) => {
                   setLocationInput(e.target.value)
@@ -207,50 +209,55 @@ export function AdvancedSearchBar() {
                   setActivePanel('location')
                 }}
                 onFocus={() => setActivePanel('location')}
-                className="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 font-semibold text-sm md:text-base truncate"
+                className="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-gray-600 font-bold text-base md:text-lg truncate"
               />
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="hidden md:block w-px h-10 bg-gray-200 dark:bg-white/10 mx-2" />
+
           {/* DATES */}
           <div
             onClick={() => setActivePanel('calendar')}
-            className={`flex-1 bg-white/50 dark:bg-zinc-800/50 px-5 py-3.5 rounded-xl md:rounded-none cursor-pointer transition-all flex items-center border border-transparent ${activePanel === 'calendar' ? 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 shadow-sm' : 'hover:bg-white/80 dark:hover:bg-zinc-800/80'}`}
+            className={`flex-1 px-6 py-4 md:py-6 rounded-[28px] md:rounded-none cursor-pointer transition-all flex items-center group ${activePanel === 'calendar' ? 'bg-gray-100/50 dark:bg-white/5' : 'hover:bg-gray-50/50 dark:hover:bg-white/[0.02]'}`}
           >
-            <CalendarIcon className="w-5 h-5 text-rose-500 mr-3 shrink-0" />
+            <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-2xl mr-4 group-hover:scale-110 transition-transform">
+              <CalendarIcon className="w-5 h-5 text-blue-600" />
+            </div>
             <div className="flex-1 min-w-0">
-              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-none mb-1 block">Thời gian</label>
-              <span className={`block font-semibold text-sm md:text-base truncate ${checkInDate ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+              <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] leading-none mb-1.5 block">Thời gian</label>
+              <span className={`block font-bold text-base md:text-lg truncate ${checkInDate ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
                 {dateDisplay}
               </span>
             </div>
-            {nightsCount > 0 && (
-              <span className="ml-2 text-[10px] bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full font-bold shrink-0">
-                {nightsCount} đêm
-              </span>
-            )}
           </div>
+
+          {/* Divider */}
+          <div className="hidden md:block w-px h-10 bg-gray-200 dark:bg-white/10 mx-2" />
 
           {/* GUESTS */}
           <div
             onClick={() => setActivePanel(activePanel === 'guests' ? null : 'guests')}
-            className={`flex-1 bg-white/50 dark:bg-zinc-800/50 px-5 py-3.5 rounded-xl md:rounded-none cursor-pointer transition-all flex items-center border border-transparent ${activePanel === 'guests' ? 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 shadow-sm' : 'hover:bg-white/80 dark:hover:bg-zinc-800/80'}`}
+            className={`flex-1 px-6 py-4 md:py-6 rounded-[28px] md:rounded-none cursor-pointer transition-all flex items-center group ${activePanel === 'guests' ? 'bg-amber-50 dark:bg-amber-900/30' : 'hover:bg-gray-50/50 dark:hover:bg-white/[0.02]'}`}
+            style={activePanel === 'guests' ? { backgroundColor: 'transparent' } : {}}
           >
-            <Users className="w-5 h-5 text-rose-500 mr-3 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-none mb-1 block">Số khách</label>
-              <span className="block text-gray-900 dark:text-white font-semibold text-sm md:text-base truncate">{guestSummary}</span>
+            <div className="bg-amber-50 dark:bg-amber-900/30 p-3 rounded-2xl mr-4 group-hover:scale-110 transition-transform">
+              <Users className="w-5 h-5 text-amber-600" />
             </div>
-            <ChevronDown className={`w-4 h-4 text-gray-400 ml-1 shrink-0 transition-transform duration-200 ${activePanel === 'guests' ? 'rotate-180' : ''}`} />
+            <div className="flex-1 min-w-0">
+              <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] leading-none mb-1.5 block">Khách hàng</label>
+              <span className="block text-gray-900 dark:text-white font-bold text-base md:text-lg truncate">{adults + children} khách</span>
+            </div>
           </div>
 
           {/* SEARCH BUTTON */}
           <button
             type="submit"
-            className="md:w-auto bg-rose-600 hover:bg-rose-700 text-white px-10 py-4 md:py-5 rounded-xl md:rounded-r-full font-bold text-lg transition-all shadow-lg hover:shadow-rose-500/25 active:scale-[0.98] shrink-0"
+            className="md:w-auto bg-rose-600 hover:bg-rose-700 text-white px-10 py-5 md:py-6 rounded-[28px] md:rounded-r-[32px] font-black text-lg transition-all shadow-2xl shadow-rose-500/40 hover:scale-[1.02] active:scale-[0.98] shrink-0 mt-2 md:mt-0 flex items-center justify-center gap-3"
           >
-            <Search className="w-6 h-6 md:mr-2 inline-block" />
-            <span className="md:inline">Tìm kiếm</span>
+            <Search className="w-6 h-6 stroke-[3]" />
+            <span>Tìm kiếm</span>
           </button>
         </form>
       </div>
