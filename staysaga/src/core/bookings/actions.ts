@@ -54,9 +54,7 @@ export async function createBooking(formData: FormData) {
 
   const basePrice = property.price || (property as any).base_price || 0;
   const accommodationsCost = basePrice * days;
-  const cleaningFee = 300000;
-  const serviceFee = Math.round(accommodationsCost * 0.12);
-  const totalAmount = accommodationsCost + cleaningFee + serviceFee;
+  const totalAmount = accommodationsCost;
 
   // 4. KIỂM TRA DOUBLE-BOOKING (Race Condition Prevention)
   if (!isMock) {
@@ -100,7 +98,7 @@ export async function createBooking(formData: FormData) {
 
     bookingId = newBooking?.id || null;
   } else {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const existing = cookieStore.get("mock_bookings");
     let mockBookings: any[] = [];
 
@@ -256,9 +254,7 @@ export async function rescheduleBooking(formData: FormData) {
 
   const basePrice = booking.homestay?.price_per_night || 0;
   const accommodationsCost = basePrice * days;
-  const cleaningFee = 300000;
-  const serviceFee = Math.round(accommodationsCost * 0.12);
-  const totalAmount = accommodationsCost + cleaningFee + serviceFee;
+  const totalAmount = accommodationsCost;
 
   const { error } = await supabase
     .from("bookings")
@@ -275,4 +271,11 @@ export async function rescheduleBooking(formData: FormData) {
 
   revalidatePath("/bookings");
   redirect("/bookings?status=rescheduled");
+}
+
+/**
+ * Wrapper function for form action that returns void
+ */
+export async function finishBooking(formData: FormData) {
+  await createBooking(formData);
 }

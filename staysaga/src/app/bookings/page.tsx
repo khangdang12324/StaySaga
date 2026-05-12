@@ -42,7 +42,7 @@ export default async function BookingsPage({ searchParams }: Props) {
             : undefined;
   const today = new Date().toISOString().split("T")[0];
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const mockCookie = cookieStore.get("mock_bookings");
   let mockBookings: any[] = [];
 

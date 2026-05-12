@@ -85,8 +85,6 @@ export function BookingWidget({
   const {
     totalDays,
     accommodationsCost,
-    cleaningFee,
-    serviceFee,
     totalAmount,
   } = useMemo(() => {
     let days = 0;
@@ -98,17 +96,11 @@ export function BookingWidget({
     }
 
     const cost = days > 0 ? basePrice * days : basePrice;
-    // Phí dọn dẹp cố định
-    const cleaning = 300000;
-    // Nền tảng thu phí dịch vụ 12% trên giá gốc
-    const service = Math.round(cost * 0.12);
 
     return {
       totalDays: days || 1,
       accommodationsCost: cost,
-      cleaningFee: cleaning,
-      serviceFee: service,
-      totalAmount: cost + cleaning + service,
+      totalAmount: cost,
     };
   }, [checkIn, checkOut, basePrice]);
 
@@ -243,14 +235,6 @@ export function BookingWidget({
               {basePrice.toLocaleString("vi-VN")}đ x {totalDays} đêm
             </span>
             <span>{accommodationsCost.toLocaleString("vi-VN")}đ</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="underline">Phí dọn dẹp</span>
-            <span>{cleaningFee.toLocaleString("vi-VN")}đ</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="underline">Phí dịch vụ StaySaga</span>
-            <span>{serviceFee.toLocaleString("vi-VN")}đ</span>
           </div>
         </div>
       )}
