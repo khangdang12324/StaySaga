@@ -1,5 +1,4 @@
 import HeroSection from "@/components/home/HeroSection";
-import FeaturedHomestays from "@/components/home/FeaturedHomestays";
 import TrendingDestinations from "@/components/home/TrendingDestinations";
 import { getProperties } from "@/core/properties/actions";
 
@@ -57,7 +56,6 @@ export default async function Home() {
     <main className="min-h-screen bg-white dark:bg-zinc-950">
       <HeroSection />
       <TrendingDestinations destinations={destinations} copy={TRENDING_COPY} />
-      <FeaturedHomestays />
 
       {/* Why Choose Us - Inline for brevity, but maintains premium feel */}
       <section className="py-24 bg-gray-50 dark:bg-zinc-900/50">

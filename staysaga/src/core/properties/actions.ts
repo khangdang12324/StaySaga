@@ -9,6 +9,12 @@ export type SearchParams = {
   guests?: number;
   minPrice?: number;
   maxPrice?: number;
+  minRating?: number;
+  sort?: string;
+  types?: string[];
+  amenities?: string[];
+  policies?: string[];
+  distanceMax?: number;
   page?: number;
 };
 
@@ -29,6 +35,34 @@ const removeVietnameseTones = (str: string) => {
   str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
   str = str.replace(/Đ/g, "D");
   return str.toLowerCase().replace(/\s+/g, " ").trim();
+};
+
+const getSeedFromString = (value: string) =>
+  value.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+const getDistanceKm = (seed: number) =>
+  Number(((seed % 80) / 10 + 0.5).toFixed(1));
+
+const getPolicyFlags = (seed: number) => ({
+  freeCancellation: seed % 2 === 0,
+  payAtHotel: seed % 3 === 0,
+  noCreditCard: seed % 4 === 0,
+  breakfastIncluded: seed % 5 === 0,
+});
+
+const TYPE_KEYWORDS: Record<string, string[]> = {
+  hotel: ["khach san", "hotel"],
+  apartment: ["can ho", "apartment"],
+  homestay: ["homestay"],
+  villa: ["villa", "biet thu"],
+  resort: ["resort"],
+};
+
+const POLICY_KEYS: Record<string, keyof ReturnType<typeof getPolicyFlags>> = {
+  free_cancellation: "freeCancellation",
+  pay_at_hotel: "payAtHotel",
+  no_credit_card: "noCreditCard",
+  breakfast: "breakfastIncluded",
 };
 
 // Dữ liệu Mẫu (Fallback khi DB chưa có data)
@@ -207,7 +241,10 @@ const buildMockProperties = () => {
       const bathrooms = 1 + ((i + cityIndex) % 3);
       const amenityStart = (i + cityIndex) % (MOCK_AMENITIES.length - 4);
       const amenities = MOCK_AMENITIES.slice(amenityStart, amenityStart + 4);
-      const image = getCityFallbackImage(city.name, i + cityIndex);
+      const seed = getSeedFromString(`${city.slug}-${i}`);
+      const image = getCityFallbackImage(city.name, seed);
+      const policies = getPolicyFlags(seed);
+      const distance_km = getDistanceKm(seed);
 
       items.push({
         id: `mock-${city.slug}-${i}`,
@@ -218,6 +255,8 @@ const buildMockProperties = () => {
         rating: Number(rating.toFixed(1)),
         image,
         amenities,
+        policies,
+        distance_km,
         max_guests: maxGuests,
         bedrooms,
         beds,
@@ -236,10 +275,10 @@ const mockProperties = buildMockProperties();
  */
 function normalizeHomestay(row: any) {
   const seedSource = String(row.id || row.slug || row.city || "");
-  const seed = seedSource
-    .split("")
-    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const seed = getSeedFromString(seedSource);
   const fallbackImage = getCityFallbackImage(row.city, seed);
+  const policies = getPolicyFlags(seed);
+  const distance_km = getDistanceKm(seed);
   return {
     id: row.id,
     slug: row.slug,
@@ -249,6 +288,8 @@ function normalizeHomestay(row: any) {
     rating: row.avg_rating || 4.9,
     image: row.homestay_images?.[0]?.url || fallbackImage,
     amenities: row.homestay_amenities?.map((a: any) => a.amenities?.name) || [],
+    policies,
+    distance_km,
     max_guests: row.max_guests,
     bedrooms: row.bedrooms,
     beds: row.beds,
@@ -270,8 +311,23 @@ export async function getProperties(params: SearchParams) {
     guests,
     minPrice,
     maxPrice,
+    minRating,
+    sort,
+    types,
+    amenities,
+    policies,
+    distanceMax,
     page = 1,
   } = params;
+  const typeFilters = types?.filter(Boolean) || [];
+  const amenityFilters = amenities?.filter(Boolean) || [];
+  const policyFilters = policies?.filter(Boolean) || [];
+  const hasExtraFilters = Boolean(
+    typeFilters.length ||
+    amenityFilters.length ||
+    policyFilters.length ||
+    distanceMax,
+  );
   const limit = 9;
   const offset = (page - 1) * limit;
   const hasDateRange = Boolean(
@@ -282,8 +338,44 @@ export async function getProperties(params: SearchParams) {
     new Date(checkOut) > new Date(checkIn),
   );
   const hasFilters = Boolean(
-    location || guests || minPrice || maxPrice || hasDateRange,
+    location ||
+    guests ||
+    minPrice ||
+    maxPrice ||
+    minRating ||
+    hasDateRange ||
+    hasExtraFilters,
   );
+
+  const matchesTypeFilters = (title?: string) => {
+    if (typeFilters.length === 0) return true;
+    const normalizedTitle = removeVietnameseTones(title || "");
+    return typeFilters.some((type) => {
+      const keywords = TYPE_KEYWORDS[type] || [];
+      return keywords.some((keyword) => normalizedTitle.includes(keyword));
+    });
+  };
+
+  const matchesAmenityFilters = (list?: string[]) => {
+    if (amenityFilters.length === 0) return true;
+    const amenityList = list || [];
+    return amenityFilters.every((amenity) => amenityList.includes(amenity));
+  };
+
+  const matchesPolicyFilters = (flags?: ReturnType<typeof getPolicyFlags>) => {
+    if (policyFilters.length === 0) return true;
+    if (!flags) return false;
+    return policyFilters.every((policy) => {
+      const key = POLICY_KEYS[policy];
+      return key ? Boolean(flags[key]) : false;
+    });
+  };
+
+  const matchesDistanceFilter = (distance?: number) => {
+    if (!distanceMax) return true;
+    if (!distance) return false;
+    return distance <= distanceMax;
+  };
 
   const applyMockFilters = () => {
     let filtered = [...mockProperties];
@@ -302,6 +394,23 @@ export async function getProperties(params: SearchParams) {
       );
     if (minPrice) filtered = filtered.filter((p) => p.price >= minPrice);
     if (maxPrice) filtered = filtered.filter((p) => p.price <= maxPrice);
+    if (minRating) filtered = filtered.filter((p) => p.rating >= minRating);
+
+    filtered = filtered.filter(
+      (p) =>
+        matchesTypeFilters(p.title) &&
+        matchesAmenityFilters((p as any).amenities) &&
+        matchesPolicyFilters((p as any).policies) &&
+        matchesDistanceFilter((p as any).distance_km),
+    );
+
+    if (sort === "price_asc") {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (sort === "price_desc") {
+      filtered.sort((a, b) => b.price - a.price);
+    } else if (sort === "rating_desc") {
+      filtered.sort((a, b) => b.rating - a.rating);
+    }
 
     return filtered;
   };
@@ -338,11 +447,26 @@ export async function getProperties(params: SearchParams) {
     if (guests) query = query.gte("max_guests", guests);
     if (minPrice) query = query.gte("price_per_night", minPrice);
     if (maxPrice) query = query.lte("price_per_night", maxPrice);
+    if (minRating) query = query.gte("avg_rating", minRating);
+
+    let orderBy = "created_at";
+    let ascending = false;
+
+    if (sort === "price_asc") {
+      orderBy = "price_per_night";
+      ascending = true;
+    } else if (sort === "price_desc") {
+      orderBy = "price_per_night";
+      ascending = false;
+    } else if (sort === "rating_desc") {
+      orderBy = "avg_rating";
+      ascending = false;
+    }
 
     const { data, error, count } = await query
       .eq("is_active", true)
       .range(offset, offset + limit - 1)
-      .order("created_at", { ascending: false });
+      .order(orderBy, { ascending });
 
     if (error || !data || data.length === 0) {
       const filtered = applyMockFilters();
@@ -353,9 +477,20 @@ export async function getProperties(params: SearchParams) {
       };
     }
 
+    const normalized = data.map(normalizeHomestay);
+    const filtered = hasExtraFilters
+      ? normalized.filter(
+          (p) =>
+            matchesTypeFilters(p.title) &&
+            matchesAmenityFilters(p.amenities) &&
+            matchesPolicyFilters((p as any).policies) &&
+            matchesDistanceFilter((p as any).distance_km),
+        )
+      : normalized;
+
     return {
-      properties: data.map(normalizeHomestay),
-      total: count || 0,
+      properties: filtered,
+      total: hasExtraFilters ? filtered.length : count || 0,
       isMock: false,
     };
   } catch (err) {

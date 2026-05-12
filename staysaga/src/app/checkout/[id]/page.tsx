@@ -152,9 +152,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="font-semibold text-lg">Khách</h3>
-                  <p className="text-gray-600 font-medium">
-                    {guests} khách
-                  </p>
+                  <p className="text-gray-600 font-medium">{guests} khách</p>
                 </div>
                 <Link
                   href={`/homestays/${property.slug}`}
@@ -214,7 +212,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold">Số điện thoại</label>
+                      <label className="text-sm font-semibold">
+                        Số điện thoại
+                      </label>
                       <input
                         name="phone"
                         defaultValue={phone}
@@ -246,7 +246,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
               </form>
             ) : (
               <div className="space-y-8">
-                  <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                   <h2 className="text-lg font-bold mb-3">Thông tin khách</h2>
                   <p className="text-sm text-gray-600">
                     {lastName} {firstName}
