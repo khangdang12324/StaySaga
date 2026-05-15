@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, X } from "lucide-react";
+import SafeImage from "@/components/ui/SafeImage";
 
 type Stay = {
   id: string;
@@ -65,14 +66,14 @@ export default function TrendingDestinations({
   );
 
   return (
-    <section className="py-16 md:py-20 bg-gradient-to-b from-rose-50 via-white to-white">
+    <section className="py-16 md:py-20 bg-linear-to-b from-rose-50 via-white to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-rose-500 font-semibold">
               {copy.kicker}
             </p>
-            <h2 className="mt-3 text-3xl md:text-4xl font-semibold text-gray-900 font-[var(--font-display)]">
+            <h2 className="mt-3 text-3xl md:text-4xl font-semibold text-gray-900 font-(--font-display)">
               {copy.title}
             </h2>
             <p className="mt-2 text-gray-600 max-w-2xl">{copy.description}</p>
@@ -95,16 +96,13 @@ export default function TrendingDestinations({
               className="group text-left relative overflow-hidden rounded-3xl border border-rose-100 bg-white shadow-sm hover:shadow-xl transition-all"
             >
               <div className="relative h-56">
-                <img
+                <SafeImage
                   src={destination.image || FALLBACK_IMAGE}
                   alt={`Homestay tai ${destination.name}`}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading={index < 2 ? "eager" : "lazy"}
-                  onError={(event) => {
-                    event.currentTarget.src = FALLBACK_IMAGE;
-                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/20 to-transparent" />
                 <div className="absolute bottom-5 left-5">
                   <h3 className="text-2xl font-semibold text-white">
                     {destination.name}
@@ -126,7 +124,7 @@ export default function TrendingDestinations({
 
       {active && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-8"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-8"
           role="dialog"
           aria-modal="true"
           onClick={() => setActive(null)}
@@ -136,20 +134,17 @@ export default function TrendingDestinations({
             onClick={(event) => event.stopPropagation()}
           >
             <div className="relative h-44 md:h-52">
-              <img
+              <SafeImage
                 src={active.image || FALLBACK_IMAGE}
                 alt={active.name}
                 className="h-full w-full object-cover"
-                onError={(event) => {
-                  event.currentTarget.src = FALLBACK_IMAGE;
-                }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
               <div className="absolute bottom-6 left-6 text-white">
                 <p className="text-xs uppercase tracking-[0.2em] text-white/80">
                   {copy.modalKicker}
                 </p>
-                <h3 className="mt-2 text-3xl font-semibold font-[var(--font-display)]">
+                <h3 className="mt-2 text-3xl font-semibold font-(--font-display)">
                   {active.name}
                 </h3>
                 <p className="mt-2 text-sm text-white/80">
@@ -195,14 +190,11 @@ export default function TrendingDestinations({
                       className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
                     >
                       <div className="h-36 overflow-hidden">
-                        <img
+                        <SafeImage
                           src={stay.image || FALLBACK_IMAGE}
                           alt={stay.title}
                           className="h-full w-full object-cover"
                           loading="lazy"
-                          onError={(event) => {
-                            event.currentTarget.src = FALLBACK_IMAGE;
-                          }}
                         />
                       </div>
                       <div className="p-4">

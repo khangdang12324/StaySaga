@@ -287,6 +287,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                   <input type="hidden" name="country" value={country} />
 
                   {/* Special Requests Section */}
+                  {/* Special Requests Section */}
                   <section>
                     <h2 className="text-2xl font-bold mb-6">Yêu cầu đặc biệt</h2>
                     <div className="space-y-4">
@@ -457,6 +458,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
           {/* Cột Chi tiết giá (Sticky) */}
           <div>
             <div className="bg-white border border-gray-200 p-6 rounded-3xl shadow-xl">
+              {/* Property Header */}
               {/* Property Header */}
               <div className="flex gap-4 pb-6 border-b border-gray-200">
                 <img

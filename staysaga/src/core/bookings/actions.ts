@@ -252,7 +252,10 @@ export async function rescheduleBooking(formData: FormData) {
     redirect("/bookings?error=conflict");
   }
 
-  const basePrice = booking.homestay?.price_per_night || 0;
+  const homestay = Array.isArray(booking.homestay)
+    ? booking.homestay[0]
+    : booking.homestay;
+  const basePrice = homestay?.price_per_night || 0;
   const accommodationsCost = basePrice * days;
   const totalAmount = accommodationsCost;
 

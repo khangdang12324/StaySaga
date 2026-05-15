@@ -9,7 +9,7 @@ export default function BookingSuccessPage({
   const bookingId = searchParams.bookingId;
   const displayCode = bookingId
     ? `#BK-${bookingId.slice(0, 8).toUpperCase()}`
-    : `#BK-${Math.floor(Math.random() * 10000)}`;
+    : "#BK-PENDING";
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">

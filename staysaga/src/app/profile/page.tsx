@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import FavoriteButton from "@/components/features/favorites/FavoriteButton";
+import SafeImage from "@/components/ui/SafeImage";
 
 const LEVELS = [
   { name: "Explorer", min: 0, color: "from-gray-400 to-gray-600", icon: "🌱" },
@@ -214,12 +215,12 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-white text-zinc-900">
       {/* Hero */}
       <div className="relative pt-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-rose-600/20 via-purple-600/10 to-transparent" />
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-rose-500/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-[100px]" />
+        <div className="absolute inset-0 bg-linear-to-br from-rose-50 via-white to-white" />
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-rose-200/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-200/20 rounded-full blur-[100px]" />
 
         <div className="relative max-w-6xl mx-auto px-4 py-12">
           <motion.div
@@ -229,15 +230,15 @@ export default function ProfilePage() {
           >
             {/* Avatar */}
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-rose-500 to-purple-500 rounded-full blur-sm opacity-60 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute -inset-1 bg-linear-to-r from-rose-500 to-pink-500 rounded-full blur-sm opacity-60 group-hover:opacity-100 transition-opacity" />
               {avatar ? (
-                <img
+                <SafeImage
                   src={avatar}
                   alt={name}
-                  className="relative w-28 h-28 rounded-full object-cover border-4 border-zinc-950"
+                  className="relative w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
                 />
               ) : (
-                <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-4xl font-bold border-4 border-zinc-950">
+                <div className="relative w-28 h-28 rounded-full bg-linear-to-br from-rose-500 to-pink-600 flex items-center justify-center text-4xl font-bold border-4 border-white text-white shadow-lg">
                   {name?.[0]?.toUpperCase()}
                 </div>
               )}
@@ -253,20 +254,20 @@ export default function ProfilePage() {
                   Xin chào, {name} {level.icon}
                 </h1>
               </div>
-              <p className="text-zinc-400 mb-4">{user.email}</p>
+              <p className="text-gray-500 mb-4">{user.email}</p>
 
               {/* Level */}
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 max-w-lg">
+              <div className="bg-white border border-gray-200 rounded-2xl p-5 max-w-lg shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`bg-gradient-to-r ${level.color} bg-clip-text text-transparent font-extrabold text-lg`}
+                      className={`bg-linear-to-r ${level.color} bg-clip-text text-transparent font-extrabold text-lg`}
                     >
                       {level.name}
                     </span>
-                    <Crown className="w-4 h-4 text-amber-400" />
+                    <Crown className="w-4 h-4 text-amber-500" />
                   </div>
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs text-gray-500">
                     {totalStays} chuyến · Còn {staysToNext} để lên{" "}
                     {nextLevel.name}
                   </span>
@@ -307,14 +308,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div className="sticky top-[72px] z-40 bg-zinc-950/80 backdrop-blur-xl border-b border-white/5">
+      <div className="sticky top-[72px] z-40 bg-white/90 backdrop-blur-xl border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide py-2">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${activeTab === tab.id ? "bg-white/10 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"}`}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${activeTab === tab.id ? "bg-rose-600 text-white" : "text-zinc-500 hover:text-zinc-900 hover:bg-rose-50"}`}
               >
                 <tab.icon className="w-4 h-4" />
                 {tab.label}

@@ -61,7 +61,7 @@ export function BookingWidget({
     }
   }, [searchParams, checkIn, checkOut, guests]);
 
-  const openDatePicker = (ref: React.RefObject<HTMLInputElement>) => {
+  const openDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
     const input = ref.current;
     if (!input) return;
     if (

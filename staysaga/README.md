@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StaySaga
 
-## Getting Started
+StaySaga la ung dung dat homestay full-stack cho do an mon "Cac cong nghe moi trong phat trien phan mem".
 
-First, run the development server:
+## Cong nghe
+
+- Next.js App Router, Server Components, Client Components, Server Actions
+- TypeScript
+- Tailwind CSS
+- Supabase Auth, Database, Storage, RLS
+- Dockerfile multi-stage va Docker Compose
+
+## Chuc nang chinh
+
+- Dang ky, dang nhap, dang xuat bang Supabase Auth
+- Tim kiem va xem chi tiet homestay
+- Dat phong, doi lich, huy don dat phong
+- Yeu thich homestay
+- Danh gia sau khi hoan tat chuyen di
+- Host dashboard tai `/host`: tao, doc, cap nhat, xoa homestay va upload anh len Supabase Storage
+- Schema/RLS nam trong `supabase/migrations/202605150001_init_staysaga.sql`
+
+## Chay local
+
+Tao file `.env.local` theo mau:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Cap nhat cac bien Supabase:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Cai dependencies va chay dev server:
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Mo `http://localhost:3000`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Supabase
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Tao project Supabase.
+2. Chay SQL trong `supabase/migrations/202605150001_init_staysaga.sql` bang Supabase SQL Editor, hoac dung Supabase CLI.
+3. Bat Auth providers can dung trong Supabase Dashboard.
+4. Bucket `homestay-images` va cac policy Storage da co trong migration.
+5. Them URL callback Auth:
 
-## Deploy on Vercel
+```text
+http://localhost:3000/auth/callback
+https://your-domain.com/auth/callback
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Docker
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Build va chay production container:
+
+```bash
+docker compose up --build
+```
+
+Mac dinh app lang nghe tai `http://localhost:3000`. Doi cong bang bien `APP_PORT`.
+
+## Deploy VPS goi y
+
+1. Clone repository len VPS.
+2. Tao `.env` hoac export cac bien trong `.env.example`.
+3. Chay:
+
+```bash
+docker compose up --build -d
+```
+
+4. Cau hinh reverse proxy Nginx/Caddy tro domain ve port container.
+5. Cap SSL bang Cloudflare, Caddy tu dong, hoac Certbot.
+
+## Kiem tra
+
+Trong moi truong hien tai da kiem tra:
+
+```bash
+next build
+eslint
+```
+
+`next build` thanh cong. `eslint` khong con error, con warning ve `any`, `<img>` va hook dependency trong mot so file cu.
+
+## Phu luc nop bai
+
+- [Phu luc AI prompts](docs/AI_PROMPTS.md)
+- [Huong dan deployment](docs/DEPLOYMENT.md)
+- [Deployment checklist](docs/DEPLOYMENT_CHECKLIST.md)

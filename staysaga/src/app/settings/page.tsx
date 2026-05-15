@@ -64,34 +64,28 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-rose-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
+    <div className="min-h-screen bg-white">
       <div className="pt-28 pb-20 max-w-3xl mx-auto px-4">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-8">
-          Cài đặt
-        </h1>
+        <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Cài đặt</h1>
 
         <div className="space-y-4">
           {/* Notifications */}
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <Bell className="w-5 h-5 text-rose-500" />
-              <h3 className="font-bold text-gray-900 dark:text-white">
-                Thông báo
-              </h3>
+              <h3 className="font-bold text-gray-900">Thông báo</h3>
             </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    Thông báo Email
-                  </p>
+                  <p className="font-medium text-gray-900">Thông báo Email</p>
                   <p className="text-sm text-gray-500">
                     Nhận thông tin về đặt phòng, khuyến mãi
                   </p>
@@ -108,14 +102,12 @@ export default function SettingsPage() {
                     }
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
                 </label>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    Thông báo đẩy
-                  </p>
+                  <p className="font-medium text-gray-900">Thông báo đẩy</p>
                   <p className="text-sm text-gray-500">
                     Nhận thông báo trực tiếp trên trình duyệt
                   </p>
@@ -132,27 +124,23 @@ export default function SettingsPage() {
                     }
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
                 </label>
               </div>
             </div>
           </div>
 
           {/* Security */}
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <Shield className="w-5 h-5 text-rose-500" />
-              <h3 className="font-bold text-gray-900 dark:text-white">
-                Bảo mật
-              </h3>
+              <h3 className="font-bold text-gray-900">Bảo mật</h3>
             </div>
             <Link
               href="/forgot-password"
-              className="block w-full text-left px-4 py-3 bg-gray-50 dark:bg-zinc-800 rounded-xl hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+              className="block w-full text-left px-4 py-3 bg-rose-50 rounded-xl hover:bg-rose-100 transition-colors"
             >
-              <p className="font-medium text-gray-900 dark:text-white">
-                Đổi mật khẩu
-              </p>
+              <p className="font-medium text-gray-900">Đổi mật khẩu</p>
               <p className="text-sm text-gray-500">
                 Cập nhật mật khẩu tài khoản của bạn
               </p>
@@ -160,12 +148,10 @@ export default function SettingsPage() {
           </div>
 
           {/* Language */}
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <Globe className="w-5 h-5 text-rose-500" />
-              <h3 className="font-bold text-gray-900 dark:text-white">
-                Ngôn ngữ & Tiền tệ
-              </h3>
+              <h3 className="font-bold text-gray-900">Ngôn ngữ & Tiền tệ</h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -177,7 +163,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setSettings((prev) => ({ ...prev, locale: e.target.value }))
                   }
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"
                 >
                   <option value="vi">🇻🇳 Tiếng Việt</option>
                   <option value="en">🇺🇸 English</option>
@@ -195,7 +181,7 @@ export default function SettingsPage() {
                       currency: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl outline-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"
                 >
                   <option value="VND">VND (₫)</option>
                   <option value="USD">USD ($)</option>
@@ -222,7 +208,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Danger Zone */}
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-red-200 dark:border-red-900/30 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-red-200 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <Trash2 className="w-5 h-5 text-red-500" />
               <h3 className="font-bold text-red-600">Vùng nguy hiểm</h3>

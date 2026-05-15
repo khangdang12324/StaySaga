@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SafeImage from "@/components/ui/SafeImage";
 
 const destinations = [
   {
@@ -47,12 +48,12 @@ const destinations = [
 
 export default function DestinationsPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950">
+    <div className="min-h-screen bg-white">
       <main className="pt-32 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-6">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">
           Điểm đến được yêu thích
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400 mb-12 max-w-3xl">
+        <p className="text-xl text-gray-600 mb-12 max-w-3xl">
           Khám phá những thành phố, hòn đảo và vùng đất tuyệt đẹp nhất Việt Nam
           thông qua các chỗ ở độc đáo trên StaySaga.
         </p>
@@ -64,12 +65,12 @@ export default function DestinationsPage() {
               key={dest.id}
               className="group relative h-80 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all"
             >
-              <img
+              <SafeImage
                 src={dest.image}
                 alt={dest.name}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
               <div className="absolute bottom-0 left-0 p-8">
                 <h2 className="text-3xl font-bold text-white mb-2">
                   {dest.name}

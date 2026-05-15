@@ -3,8 +3,22 @@ import { getPropertyBySlug } from "@/core/properties/actions";
 import { getFavoriteIds } from "@/core/favorites/actions";
 import { BookingWidget } from "@/components/features/booking/BookingWidget";
 import FavoriteButton from "@/components/features/favorites/FavoriteButton";
+import SafeImage from "@/components/ui/SafeImage";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+
+type HomestayDetail = {
+  id: string;
+  slug: string;
+  title: string;
+  location?: string | null;
+  price?: number | null;
+  base_price?: number | null;
+  rating?: number | null;
+  image?: string | null;
+  images?: { url?: string | null }[];
+  reviews?: number | null;
+};
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -13,13 +27,14 @@ type Props = {
 export default async function HomestayDetailPage({ params }: Props) {
   const resolvedParams = await params;
   const { data: homestay } = await getPropertyBySlug(resolvedParams.slug);
+  const stay = homestay as HomestayDetail | null;
 
-  if (!homestay) {
+  if (!stay) {
     return notFound();
   }
 
-  const favoriteIds = await getFavoriteIds([homestay.id]);
-  const isFavorited = favoriteIds.includes(homestay.id);
+  const favoriteIds = await getFavoriteIds([stay.id]);
+  const isFavorited = favoriteIds.includes(stay.id);
 
   const supabase = await createClient();
   const {
@@ -37,7 +52,7 @@ export default async function HomestayDetailPage({ params }: Props) {
       .from("bookings")
       .select("status, check_in_date, check_out_date")
       .eq("user_id", session.user.id)
-      .eq("homestay_id", homestay.id)
+      .eq("homestay_id", stay.id)
       .in("status", ["PENDING", "CONFIRMED"])
       .order("created_at", { ascending: false })
       .limit(1);
@@ -52,17 +67,18 @@ export default async function HomestayDetailPage({ params }: Props) {
     }
   }
 
-  // Lấy ảnh chính và ảnh phụ
-  const mainImage =
-    homestay.image ||
-    (homestay as any).images?.[0]?.url ||
+  // Lấy ảnh chính và ảnh phụ (ưu tiên ảnh do host tải lên)
+  const mainImage = stay.image || stay.images?.[0]?.url ||
     "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=2000";
-  const subImages = [
-    "https://images.unsplash.com/photo-1501117716987-c8e1ecb210a7?q=80&w=1000",
-    "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=1000",
-    "https://images.unsplash.com/photo-1560067174-89451c3b89f2?q=80&w=1000",
-    "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?q=80&w=1000",
-  ];
+
+  const galleryFromHost = (stay.images || []).map((i) => i.url).filter(Boolean);
+  const subImages =
+    (galleryFromHost.length > 1 ? galleryFromHost.slice(1) : []) || [
+      "https://images.unsplash.com/photo-1501117716987-c8e1ecb210a7?q=80&w=1000",
+      "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=1000",
+      "https://images.unsplash.com/photo-1560067174-89451c3b89f2?q=80&w=1000",
+      "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?q=80&w=1000",
+    ];
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950">
@@ -71,29 +87,29 @@ export default async function HomestayDetailPage({ params }: Props) {
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
-              {homestay.title}
+              {stay.title}
             </h1>
             <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-gray-600 dark:text-gray-300">
               <div className="flex items-center gap-1">
                 <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
                 <span className="text-gray-900 dark:text-white">
-                  {homestay.rating || "4.9"}
+                  {stay.rating || "4.9"}
                 </span>
                 <span className="underline cursor-pointer">
-                  ({(homestay as any).reviews || 128} đánh giá)
+                  ({stay.reviews || 128} đánh giá)
                 </span>
               </div>
               <span>·</span>
               <div className="flex items-center gap-1">
                 <MapPin className="w-5 h-5 text-rose-500" />
                 <span className="underline cursor-pointer">
-                  {homestay.location}, Việt Nam
+                  {stay.location}, Việt Nam
                 </span>
               </div>
             </div>
           </div>
           <FavoriteButton
-            propertyId={homestay.id}
+            propertyId={stay.id}
             initialFavorited={isFavorited}
             className="border border-gray-200 dark:border-zinc-800 p-2 bg-white/90 dark:bg-zinc-900/80 hover:bg-gray-50 dark:hover:bg-zinc-900"
           />
@@ -102,7 +118,7 @@ export default async function HomestayDetailPage({ params }: Props) {
         {/* Image Gallery */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[50vh] min-h-[400px] mb-12 rounded-3xl overflow-hidden">
           <div className="relative h-full w-full cursor-pointer hover:opacity-95 transition-opacity">
-            <img
+            <SafeImage
               src={mainImage}
               className="w-full h-full object-cover"
               alt="Main"
@@ -110,7 +126,7 @@ export default async function HomestayDetailPage({ params }: Props) {
           </div>
           <div className="grid grid-cols-2 grid-rows-2 gap-4 h-full hidden md:grid">
             {subImages.map((img, i) => (
-              <img
+              <SafeImage
                 key={i}
                 src={img}
                 className="w-full h-full object-cover hover:opacity-95 transition-opacity cursor-pointer"
@@ -133,9 +149,10 @@ export default async function HomestayDetailPage({ params }: Props) {
                 </p>
               </div>
               <div className="w-14 h-14 bg-gray-200 rounded-full overflow-hidden">
-                <img
+                <SafeImage
                   src="https://ui-avatars.com/api/?name=Nguyen+A&background=random"
                   alt="Host"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>
@@ -189,7 +206,7 @@ export default async function HomestayDetailPage({ params }: Props) {
           <div className="relative">
             <BookingWidget
               propertyId={homestay.id}
-              basePrice={homestay.price || (homestay as any).base_price || 0}
+              basePrice={stay.price || stay.base_price || 0}
               bookingStatus={bookingStatus || undefined}
             />
           </div>

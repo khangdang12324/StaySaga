@@ -287,6 +287,11 @@ function normalizeHomestay(row: any) {
     price: Number(row.price_per_night),
     rating: row.avg_rating || 4.9,
     image: row.homestay_images?.[0]?.url || fallbackImage,
+    images: (row.homestay_images || []).map((img: any) => ({
+      id: img.id,
+      url: img.url,
+      storage_path: img.storage_path,
+    })),
     amenities: row.homestay_amenities?.map((a: any) => a.amenities?.name) || [],
     policies,
     distance_km,

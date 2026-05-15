@@ -2,18 +2,28 @@
 
 import { motion } from "framer-motion";
 import { AdvancedSearchBar } from "@/components/features/search/AdvancedSearchBar";
+import SafeImage from "@/components/ui/SafeImage";
 
-export default function HeroSection() {
+type HeroSectionProps = {
+  title?: string;
+  subtitle?: string;
+};
+
+export default function HeroSection({
+  title = "Khám phá những điểm lưu trú tuyệt vời nhất",
+  subtitle = "Đặt phòng nhanh, rõ ràng và đẹp mắt theo phong cách Booking/Agoda, nhưng tối ưu cho trải nghiệm Việt Nam.",
+}: HeroSectionProps) {
   return (
-    <div className="relative h-screen min-h-[600px] flex items-center justify-center">
+    <div className="relative h-screen min-h-[600px] flex items-center justify-center bg-white">
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
-        <img
+        <SafeImage
           src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2062"
           alt="Hotel room"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+        <div className="absolute inset-0 bg-linear-to-b from-white/45 via-white/20 to-white/80" />
+        <div className="absolute inset-0 bg-linear-to-t from-rose-50/50 via-transparent to-transparent" />
       </div>
 
       {/* Content */}
@@ -22,27 +32,28 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-3xl sm:text-4xl md:text-7xl lg:text-8xl font-black text-white mb-4 md:mb-6 tracking-tight leading-tight"
+          className="text-3xl sm:text-4xl md:text-7xl lg:text-8xl font-black text-gray-950 mb-4 md:mb-6 tracking-tight leading-tight drop-shadow-[0_6px_24px_rgba(15,23,42,0.08)]"
         >
-          Khám phá những điểm lưu trú <br className="hidden md:block" />
-          <span className="text-rose-500 inline-block drop-shadow-[0_0_15px_rgba(244,63,94,0.4)]">
-            tuyệt vời nhất
-          </span>
+          {title}
         </motion.h1>
+
+        <p className="max-w-3xl text-sm sm:text-base md:text-lg text-gray-700 mb-6 md:mb-8">
+          {subtitle}
+        </p>
 
         {/* CÔNG CỤ TÌM KIẾM NÂNG CAO */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="w-full relative z-30"
+          className="w-full relative z-30 mt-2"
         >
           <AdvancedSearchBar />
         </motion.div>
       </div>
 
       {/* Decorative Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-gray-50 dark:from-zinc-950 to-transparent z-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-white to-transparent z-10 pointer-events-none" />
     </div>
   );
 }

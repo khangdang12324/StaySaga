@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { CalendarCheck, MapPin } from "lucide-react";
 import Link from "next/link";
 import { cancelBooking, rescheduleBooking } from "@/core/bookings/actions";
+import SafeImage from "@/components/ui/SafeImage";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -65,9 +66,9 @@ export default async function BookingsPage({ searchParams }: Props) {
   const hasBookings = allBookings.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950">
+    <div className="min-h-screen bg-white">
       <div className="pt-28 pb-20 max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
           Đặt phòng & Chuyến đi
         </h1>
         <p className="text-gray-500 mb-8">
@@ -75,7 +76,7 @@ export default async function BookingsPage({ searchParams }: Props) {
         </p>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-gray-200 dark:border-zinc-800">
+        <div className="flex gap-2 mb-8 border-b border-gray-200">
           <button className="px-5 py-3 text-sm font-bold text-rose-600 border-b-2 border-rose-600">
             Sắp tới
           </button>
@@ -88,12 +89,12 @@ export default async function BookingsPage({ searchParams }: Props) {
         </div>
 
         {errorMessage && (
-          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
             {errorMessage}
           </div>
         )}
         {statusMessage && (
-          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
             {statusMessage}
           </div>
         )}
@@ -113,11 +114,11 @@ export default async function BookingsPage({ searchParams }: Props) {
               return (
                 <div
                   key={booking.id}
-                  className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex flex-col md:flex-row">
                     <div className="md:w-48 h-32 md:h-auto">
-                      <img
+                      <SafeImage
                         src={
                           booking.homestay?.homestay_images?.[0]?.url ||
                           "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500"
@@ -129,7 +130,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                     <div className="flex-1 p-5">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                          <h3 className="font-bold text-lg text-gray-900">
                             {booking.homestay?.name || "Homestay"}
                           </h3>
                           <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
@@ -138,9 +139,9 @@ export default async function BookingsPage({ searchParams }: Props) {
                           </p>
                         </div>
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
                             booking.status === "CONFIRMED"
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-emerald-100 text-emerald-700"
                               : booking.status === "PENDING"
                                 ? "bg-amber-100 text-amber-700"
                                 : booking.status === "CANCELLED"
@@ -162,13 +163,13 @@ export default async function BookingsPage({ searchParams }: Props) {
                           <CalendarCheck className="w-4 h-4" />{" "}
                           {booking.check_in_date} → {booking.check_out_date}
                         </span>
-                        <span className="font-bold text-gray-900 dark:text-white">
+                        <span className="font-bold text-gray-900">
                           {Number(booking.total_price).toLocaleString("vi-VN")}đ
                         </span>
                       </div>
 
                       {canEdit && (
-                        <div className="mt-5 pt-4 border-t border-gray-100 dark:border-zinc-800 space-y-3">
+                        <div className="mt-5 pt-4 border-t border-gray-100 space-y-3">
                           <form
                             action={rescheduleBooking}
                             className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2"
@@ -185,7 +186,7 @@ export default async function BookingsPage({ searchParams }: Props) {
                               min={today}
                               required
                               aria-label="Ngay nhan phong"
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none"
                             />
                             <input
                               type="date"
@@ -194,11 +195,11 @@ export default async function BookingsPage({ searchParams }: Props) {
                               min={today}
                               required
                               aria-label="Ngay tra phong"
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none"
                             />
                             <button
                               type="submit"
-                              className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-rose-700"
+                              className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-rose-700 shadow-sm"
                             >
                               Doi ngay
                             </button>
@@ -225,9 +226,9 @@ export default async function BookingsPage({ searchParams }: Props) {
             })}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
-            <CalendarCheck className="w-16 h-16 text-gray-200 dark:text-zinc-700 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <CalendarCheck className="w-16 h-16 text-rose-100 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
               Chưa có chuyến đi nào
             </h2>
             <p className="text-gray-500 mb-6">
