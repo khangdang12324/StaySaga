@@ -7,18 +7,23 @@ import SafeImage from "@/components/ui/SafeImage";
 type HeroSectionProps = {
   title?: string;
   subtitle?: string;
+  heroImage?: string;
 };
 
 export default function HeroSection({
   title = "Khám phá những điểm lưu trú tuyệt vời nhất",
   subtitle = "Đặt phòng nhanh, rõ ràng và đẹp mắt theo phong cách Booking/Agoda, nhưng tối ưu cho trải nghiệm Việt Nam.",
+  heroImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2062&auto=format&fit=crop",
 }: HeroSectionProps) {
   return (
-    <div className="relative h-screen min-h-[600px] flex items-center justify-center bg-white">
+    <div
+      className="relative h-screen flex items-center justify-center bg-white"
+      style={{ minHeight: 600 }}
+    >
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
         <SafeImage
-          src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2062"
+          src={heroImage}
           alt="Hotel room"
           className="w-full h-full object-cover"
         />

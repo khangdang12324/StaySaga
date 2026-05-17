@@ -1,10 +1,32 @@
-import { ChevronLeft, Star, CreditCard, Shield, Check, Lock, Calendar, MapPin, Users, Tag, Info, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ChevronLeft,
+  Star,
+  CreditCard,
+  Shield,
+  Check,
+  Lock,
+  Calendar,
+  MapPin,
+  Users,
+  Tag,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  PawPrint,
+  Wifi,
+  CarFront,
+  Clock3,
+} from "lucide-react";
 import Link from "next/link";
 import { getPropertyBySlug } from "@/core/properties/actions";
-import { createBooking, finishBooking } from "@/core/bookings/actions";
+import { finishBooking } from "@/core/bookings/actions";
+import { calculateBookingPricing } from "@/core/bookings/pricing";
 import { differenceInDays, format } from "date-fns";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import SafeImage from "@/components/ui/SafeImage";
+import { getLocationImage } from "@/lib/images/location-images";
+import { cn } from "@/lib/utils";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -24,7 +46,6 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
 
-  // Lấy dữ liệu từ URL truyền từ BookingWidget
   const checkIn = resolvedSearchParams.checkIn;
   const checkOut = resolvedSearchParams.checkOut;
   const guests = resolvedSearchParams.guests
@@ -33,19 +54,19 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const stepParam = resolvedSearchParams.step;
   const firstName = resolvedSearchParams.firstName || "";
   const lastName = resolvedSearchParams.lastName || "";
-  const email = resolvedSearchParams.email || "";
+  const email = resolvedSearchParams.email || session.user.email || "";
   const phone = resolvedSearchParams.phone || "";
   const country = resolvedSearchParams.country || "Việt Nam";
   const hasGuestInfo = Boolean(firstName && lastName && email);
   const activeStep =
-    stepParam === "finish" ? "finish" : 
-    stepParam === "details" && hasGuestInfo ? "details" : "info";
+    stepParam === "finish" && hasGuestInfo
+      ? "finish"
+      : "details";
 
   if (!checkIn || !checkOut) {
     redirect(`/homestays/${resolvedParams.id}`);
   }
 
-  // Fetch Property & Xác thực lại giá (Bảo mật)
   const { data: property } = await getPropertyBySlug(resolvedParams.id);
 
   if (!property) {
@@ -61,562 +82,332 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   }
 
   const basePrice = property.price || (property as any).base_price || 0;
-  const accommodationsCost = basePrice * days;
-  const totalAmount = accommodationsCost;
+  const { accommodationsCost, discount, totalAmount } = calculateBookingPricing(
+    basePrice,
+    days,
+  );
 
   const mainImage =
     property.image ||
     (property as any).images?.[0]?.url ||
-    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=400";
+    getLocationImage(property.location || (property as any).city);
 
-  const detailsQuery = new URLSearchParams();
-  detailsQuery.set("step", "details");
-  if (checkIn) detailsQuery.set("checkIn", checkIn);
-  if (checkOut) detailsQuery.set("checkOut", checkOut);
-  detailsQuery.set("guests", String(guests));
-  if (firstName) detailsQuery.set("firstName", firstName);
-  if (lastName) detailsQuery.set("lastName", lastName);
-  if (email) detailsQuery.set("email", email);
-  if (phone) detailsQuery.set("phone", phone);
-  if (country) detailsQuery.set("country", country);
-  const detailsHref = `/checkout/${resolvedParams.id}?${detailsQuery.toString()}`;
-
-  const finishQuery = new URLSearchParams();
-  finishQuery.set("step", "finish");
-  if (checkIn) finishQuery.set("checkIn", checkIn);
-  if (checkOut) finishQuery.set("checkOut", checkOut);
-  finishQuery.set("guests", String(guests));
-  if (firstName) finishQuery.set("firstName", firstName);
-  if (lastName) finishQuery.set("lastName", lastName);
-  if (email) finishQuery.set("email", email);
-  if (phone) finishQuery.set("phone", phone);
-  if (country) finishQuery.set("country", country);
-  const finishHref = `/checkout/${resolvedParams.id}?${finishQuery.toString()}`;
+  const steps = [
+    { id: 1, label: "Bạn chọn", active: false, done: true },
+    { id: 2, label: "Chi tiết về bạn", active: activeStep === "details", done: activeStep === "finish" },
+    { id: 3, label: "Hoàn tất đặt phòng", active: activeStep === "finish", done: false },
+  ];
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
-      <div className="pt-24 pb-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link
-          href={`/homestays/${property.slug}`}
-          className="inline-flex items-center gap-2 text-gray-900 font-semibold mb-8 hover:bg-gray-100 p-2 rounded-full transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5" /> Trở về chỗ ở
-        </Link>
-        <div className="mb-10">
-          <div className="grid grid-cols-3 items-center text-sm font-semibold text-gray-500">
-            <div
-              className={`flex items-center justify-center gap-2 ${
-                activeStep === "info" ? "text-rose-600" : "text-gray-400"
-              }`}
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full border border-current text-xs">
-                1
-              </span>
-              Your Selection
+    <div className="min-h-screen bg-[#f5f5f5] text-zinc-900">
+      {/* Rose Header */}
+      <header className="bg-rose-600 pt-3 pb-3 shadow-md">
+         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
+            <Link href="/" className="text-white text-2xl font-black tracking-tighter">StaySaga<span className="text-rose-200">.</span></Link>
+            <div className="flex items-center gap-6 text-white text-sm font-bold">
+               <span className="hidden sm:inline">VND</span>
+               <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center text-rose-600">P</div>
+                  <span className="hidden md:inline">{session.user.user_metadata?.full_name || "Phúc Khang Đặng Nguyễn"}</span>
+               </div>
             </div>
-            <div
-              className={`flex items-center justify-center gap-2 ${
-                activeStep === "details" ? "text-rose-600" : "text-gray-400"
-              }`}
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full border border-current text-xs">
-                2
+         </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Stepper */}
+        <div className="mb-8 flex items-center justify-center gap-4 sm:gap-12">
+          {steps.map((step, idx) => (
+            <div key={step.id} className="flex items-center gap-2">
+              <div className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold",
+                step.active || step.done ? "bg-rose-600 text-white border-rose-600" : "border border-zinc-400 text-zinc-500"
+              )}>
+                {step.done ? <Check className="w-4 h-4" /> : step.id}
+              </div>
+              <span className={cn(
+                "text-xs sm:text-sm font-medium",
+                step.active ? "text-zinc-900 font-bold" : "text-zinc-500"
+              )}>
+                {step.label}
               </span>
-              Your Details
+              {idx < steps.length - 1 && <div className="hidden sm:block w-12 h-px bg-zinc-300 ml-4" />}
             </div>
-            <div
-              className={`flex items-center justify-center gap-2 ${
-                activeStep === "finish" ? "text-rose-600" : "text-gray-400"
-              }`}
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full border border-current text-xs">
-                3
-              </span>
-              Finish booking
-            </div>
-          </div>
-          <div className="mt-3 h-1 w-full rounded-full bg-gray-200">
-            <div
-              className={`h-full rounded-full bg-rose-600 transition-all ${
-                activeStep === "details" ? "w-2/3" : activeStep === "finish" ? "w-full" : "w-1/3"
-              }`}
-            />
-          </div>
+          ))}
         </div>
-        <h1 className="text-4xl font-extrabold mb-12">Hoàn tất đặt phòng</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Cột Form thanh toán & Thông tin chuyến đi */}
-          <div className="space-y-10">
-            <section>
-              <h2 className="text-2xl font-bold mb-6">Chuyến đi của bạn</h2>
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="font-semibold text-lg">Ngày</h3>
-                  <p className="text-gray-600 font-medium">
-                    {format(start, "dd/MM/yyyy")} - {format(end, "dd/MM/yyyy")}
-                  </p>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8">
+          {/* Sidebar Summary */}
+          <aside className="space-y-4">
+             {/* Hotel Info Card */}
+             <div className="bg-white rounded-lg border border-zinc-200 overflow-hidden p-4">
+                <div className="flex gap-4">
+                   <div className="w-24 h-24 relative rounded-md overflow-hidden shrink-0">
+                      <SafeImage src={mainImage} fill className="object-cover" />
+                   </div>
+                   <div>
+                      <div className="flex gap-1 mb-1">
+                        {[1, 2].map(i => <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />)}
+                      </div>
+                      <h3 className="font-bold text-sm leading-tight mb-1">{property.title}</h3>
+                      <p className="text-[11px] text-zinc-500 mb-2">{property.location}</p>
+                      <div className="bg-rose-600 text-white px-1.5 py-0.5 rounded text-[10px] inline-block font-bold mb-2">Vị trí xuất sắc — 9.4</div>
+                      <div className="flex items-center gap-2">
+                         <div className="bg-rose-600 text-white p-1 rounded font-bold text-xs">9.3</div>
+                         <div className="text-[11px]">
+                            <p className="font-bold">Tuyệt hảo</p>
+                            <p className="text-zinc-500">65 đánh giá</p>
+                         </div>
+                      </div>
+                   </div>
                 </div>
-                <Link
-                  href={`/homestays/${property.slug}`}
-                  className="font-bold underline text-rose-600 hover:text-rose-700"
-                >
-                  Chỉnh sửa
-                </Link>
-              </div>
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-semibold text-lg">Khách</h3>
-                  <p className="text-gray-600 font-medium">{guests} khách</p>
+                <div className="mt-4 pt-4 border-t border-zinc-100 flex flex-wrap gap-3 text-[11px] text-zinc-700">
+                   <span className="flex items-center gap-1"><PawPrint className="h-3 w-3" /> Cho phép mang theo vật nuôi</span>
+                   <span className="flex items-center gap-1"><Wifi className="h-3 w-3" /> WiFi miễn phí</span>
+                   <span className="flex items-center gap-1"><CarFront className="h-3 w-3" /> Chỗ đỗ xe</span>
                 </div>
-                <Link
-                  href={`/homestays/${property.slug}`}
-                  className="font-bold underline text-rose-600 hover:text-rose-700"
-                >
-                  Chỉnh sửa
-                </Link>
-              </div>
-            </section>
+             </div>
 
-            <hr className="border-gray-200" />
-            {activeStep === "info" ? (
+             {/* Booking Details Box */}
+             <div className="bg-white rounded-lg border border-zinc-200 p-4">
+                <h4 className="font-bold text-sm mb-4">Chi tiết đặt phòng của bạn</h4>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                   <div>
+                      <p className="text-xs font-bold">Nhận phòng</p>
+                      <p className="text-[13px] font-bold">{format(start, "EEE, dd MMM yyyy")}</p>
+                      <p className="text-[11px] text-zinc-500">14:00 – 00:00</p>
+                   </div>
+                   <div>
+                      <p className="text-xs font-bold">Trả phòng</p>
+                      <p className="text-[13px] font-bold">{format(end, "EEE, dd MMM yyyy")}</p>
+                      <p className="text-[11px] text-zinc-500">12:00 – 00:00</p>
+                   </div>
+                </div>
+                <div className="space-y-1 mb-4">
+                   <p className="text-xs font-bold">Bạn đã chọn</p>
+                   <p className="text-[13px]">{days} đêm, 1 phòng cho {guests} người lớn</p>
+                   <p className="text-[13px] font-bold">1 x Phòng Có Giường Cỡ Queen</p>
+                </div>
+                <button className="text-[13px] font-bold text-rose-600 hover:underline">Đổi lựa chọn của bạn</button>
+             </div>
+
+             {/* Price Summary */}
+             <div className="bg-white rounded-lg border border-zinc-200 p-4">
+                <h4 className="font-bold text-sm mb-4">Tóm tắt giá</h4>
+                <div className="space-y-2 text-[13px]">
+                   <div className="flex justify-between">
+                      <span>Giá gốc</span>
+                      <span>VND {accommodationsCost.toLocaleString("vi-VN")}</span>
+                   </div>
+                   <div className="flex justify-between text-green-700">
+                      <span>Giảm giá</span>
+                      <span>- VND {discount.toLocaleString("vi-VN")}</span>
+                   </div>
+                </div>
+                <div className="mt-6 pt-4 border-t border-zinc-100 flex justify-between items-baseline">
+                   <span className="text-lg font-bold">Tổng cộng</span>
+                   <div className="text-right">
+                      <p className="text-xl font-bold">VND {totalAmount.toLocaleString("vi-VN")}</p>
+                      <p className="text-[10px] text-zinc-500 font-medium">Đã bao gồm thuế và phí</p>
+                   </div>
+                </div>
+             </div>
+
+             {/* Cancellation Info */}
+             <div className="bg-white rounded-lg border border-zinc-200 p-4">
+                <h4 className="font-bold text-sm mb-2">Chi phí hủy là bao nhiêu?</h4>
+                <p className="text-[13px] text-zinc-600">Nếu hủy, bạn sẽ phải thanh toán VND {totalAmount.toLocaleString("vi-VN")}</p>
+             </div>
+          </aside>
+
+          {/* Main Form Content */}
+          <main className="space-y-6">
+             {/* Login Status */}
+             {activeStep !== "finish" && (
+               <div className="bg-white rounded-lg border border-zinc-200 p-4 flex items-center gap-4 shadow-sm">
+                  <div className="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500">
+                     <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                     <p className="text-sm font-bold">Bạn đã được đăng nhập</p>
+                     <p className="text-[13px] text-zinc-500">{session.user.email}</p>
+                  </div>
+               </div>
+             )}
+
               <form
-                method="get"
-                action={`/checkout/${property.id}`}
-                className="space-y-8"
+                action={activeStep === "finish" ? finishBooking : `/checkout/${resolvedParams.id}`}
+                method={activeStep === "finish" ? "POST" : "GET"}
+                className="space-y-6"
               >
-                <input type="hidden" name="step" value="details" />
                 <input type="hidden" name="checkIn" value={checkIn} />
                 <input type="hidden" name="checkOut" value={checkOut} />
-                <input type="hidden" name="guests" value={guests} />
+                 <input type="hidden" name="guests" value={guests} />
+                 <input type="hidden" name="step" value="finish" />
+                 <input type="hidden" name="propertyId" value={String(property.id || resolvedParams.id)} />
+                 <input type="hidden" name="slug" value={resolvedParams.id} />
+                 <input type="hidden" name="paymentMethod" value="pay_at_property" />
 
-                <section className="space-y-6">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2">Thông tin khách</h2>
-                    <p className="text-gray-500">
-                      Vui lòng nhập thông tin để hoàn tất đặt phòng.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold">Họ</label>
-                      <input
-                        name="lastName"
-                        defaultValue={lastName}
-                        required
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold">Tên</label>
-                      <input
-                        name="firstName"
-                        defaultValue={firstName}
-                        required
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <label className="text-sm font-semibold">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        defaultValue={email}
-                        required
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold">
-                        Số điện thoại
-                      </label>
-                      <input
-                        name="phone"
-                        defaultValue={phone}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold">Quốc gia</label>
-                      <select
-                        name="country"
-                        defaultValue={country}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
-                      >
-                        <option value="Việt Nam">Việt Nam</option>
-                        <option value="Thái Lan">Thái Lan</option>
-                        <option value="Singapore">Singapore</option>
-                        <option value="Malaysia">Malaysia</option>
+                {activeStep !== "finish" ? (
+                 <>
+                {/* Details Form */}
+                <div className="bg-white rounded-lg border border-zinc-200 p-6 space-y-6 shadow-sm">
+                   <div>
+                      <h2 className="text-xl font-bold mb-2">Nhập thông tin chi tiết của bạn</h2>
+                      <div className="bg-rose-50 p-3 rounded border border-rose-200 flex gap-3 text-[13px]">
+                         <Info className="h-5 w-5 text-rose-500 shrink-0" />
+                         <p>Gần xong rồi! Chỉ cần điền phần thông tin * bắt buộc. Vui lòng nhập thông tin của bạn bằng ký tự Latin để chỗ nghỉ có thể hiểu được.</p>
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                         <label className="text-sm font-bold">Họ (tiếng Anh)*</label>
+                         <input name="lastName" className="w-full border border-zinc-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-rose-600 outline-none" defaultValue={lastName} required />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-sm font-bold">Tên (tiếng Anh)*</label>
+                         <input name="firstName" className="w-full border border-zinc-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-rose-600 outline-none" defaultValue={firstName} required />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                         <label className="text-sm font-bold">Địa chỉ email*</label>
+                         <input name="email" className="w-full border border-zinc-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-rose-600 outline-none" defaultValue={email} required />
+                         <p className="text-[11px] text-zinc-500">Email xác nhận đặt phòng sẽ được gửi đến địa chỉ này</p>
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-sm font-bold">Vùng/quốc gia*</label>
+                          <select name="country" defaultValue={country} className="w-full border border-zinc-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-rose-600 outline-none bg-white">
+                            <option value="Việt Nam">Việt Nam</option>
+                            <option value="Singapore">Singapore</option>
+                         </select>
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-sm font-bold">Số điện thoại*</label>
+                         <div className="flex gap-2">
+                            <div className="w-24 border border-zinc-300 rounded px-2 py-2 text-sm flex items-center justify-between text-zinc-600 bg-zinc-50">+84</div>
+                            <input name="phone" className="flex-1 border border-zinc-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-rose-600 outline-none" defaultValue={phone} placeholder="0918 254 910" required />
+                         </div>
+                         <p className="text-[11px] text-zinc-500">Để xác minh đơn đặt và để chỗ nghỉ liên lạc khi cần</p>
+                      </div>
+                   </div>
+
+                   <div className="space-y-4 pt-4 border-t border-zinc-100">
+                      <p className="text-sm font-bold">Bạn đặt phòng cho ai?</p>
+                      <div className="space-y-3">
+                         <label className="flex items-center gap-3 text-sm cursor-pointer">
+                            <input type="radio" name="bookingFor" value="self" defaultChecked className="h-4 w-4 text-rose-600" />
+                            Tôi là khách lưu trú chính
+                         </label>
+                         <label className="flex items-center gap-3 text-sm cursor-pointer">
+                            <input type="radio" name="bookingFor" value="other" className="h-4 w-4 text-rose-600" />
+                            Đặt phòng này là cho người khác
+                         </label>
+                      </div>
+                   </div>
+
+                   <div className="space-y-4 pt-4 border-t border-zinc-100">
+                      <p className="text-sm font-bold">Bạn sắp đi công tác?</p>
+                      <div className="flex gap-8">
+                         <label className="flex items-center gap-3 text-sm cursor-pointer">
+                            <input type="radio" name="business" value="yes" className="h-4 w-4 text-rose-600" />
+                            Đúng
+                         </label>
+                         <label className="flex items-center gap-3 text-sm cursor-pointer">
+                            <input type="radio" name="business" value="no" defaultChecked className="h-4 w-4 text-rose-600" />
+                            Sai
+                         </label>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Mách nhỏ Box */}
+                <div className="bg-rose-50 rounded-lg border border-rose-200 p-4 flex gap-3">
+                   <Info className="h-5 w-5 text-rose-600" />
+                   <div>
+                      <p className="text-sm font-bold text-rose-700">Mách nhỏ:</p>
+                      <p className="text-[13px] text-rose-800">Không cần thẻ tín dụng. Không cần trả tiền ngay. Bạn sẽ thanh toán tại chỗ nghỉ.</p>
+                   </div>
+                </div>
+
+                {/* Special Requests */}
+                <div className="bg-white rounded-lg border border-zinc-200 p-6 space-y-4 shadow-sm">
+                   <h2 className="text-xl font-bold">Các Yêu Cầu Đặc Biệt</h2>
+                   <p className="text-[13px] text-zinc-600">Các yêu cầu đặc biệt không đảm bảo sẽ được đáp ứng – tuy nhiên, chỗ nghỉ sẽ cố gắng hết sức để thực hiện. Bạn luôn có thể gửi yêu cầu đặc biệt sau khi hoàn tất đặt phòng của mình!</p>
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold">Vui lòng ghi yêu cầu của bạn tại đây.(không bắt buộc)</label>
+                      <textarea name="specialRequests" className="w-full border border-zinc-300 rounded p-3 text-sm focus:ring-1 focus:ring-rose-600 min-h-[120px] outline-none" />
+                   </div>
+                </div>
+
+                {/* Arrival Time */}
+                <div className="bg-white rounded-lg border border-zinc-200 p-6 space-y-4 shadow-sm">
+                   <h2 className="text-xl font-bold">Thời gian đến của bạn</h2>
+                   <div className="flex items-start gap-3 text-sm">
+                      <Clock3 className="h-5 w-5 text-zinc-500 mt-0.5" />
+                      <div>
+                         <p>Phòng của bạn sẽ sẵn sàng để nhận trong khoảng từ 14:00 đến 00:00</p>
+                         <p className="text-zinc-500 text-[13px] mt-1">Lễ tân 24 giờ - Luôn có trợ giúp mỗi khi bạn cần!</p>
+                      </div>
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold">Thêm thời gian đến dự kiến của bạn(không bắt buộc)</label>
+                      <select name="arrivalTime" className="w-full border border-zinc-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-rose-600 outline-none bg-white">
+                         <option value="">Vui lòng chọn</option>
+                         <option value="14:00 - 15:00">14:00 - 15:00</option>
+                         <option value="15:00 - 16:00">15:00 - 16:00</option>
+                         <option value="16:00 - 17:00">16:00 - 17:00</option>
                       </select>
-                    </div>
-                  </div>
-                </section>
+                      <p className="text-[11px] text-zinc-500">Thời gian theo múi giờ của Đà Lạt</p>
+                   </div>
+                </div>
 
-                <button
-                  type="submit"
-                  className="w-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all"
-                >
-                  Tiếp tục đến chi tiết
-                </button>
-              </form>
-            ) : activeStep === "details" ? (
-              <div className="space-y-8">
-                <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                  <h2 className="text-lg font-bold mb-3">Thông tin khách</h2>
-                  <p className="text-sm text-gray-600">
-                    {lastName} {firstName}
-                  </p>
-                  <p className="text-sm text-gray-600">{email}</p>
-                  {phone && <p className="text-sm text-gray-600">{phone}</p>}
-                  <p className="text-sm text-gray-600">{country}</p>
-                </section>
-
-                <form
-                  method="get"
-                  action={`/checkout/${property.id}`}
-                  className="space-y-10"
-                >
-                  <input type="hidden" name="step" value="finish" />
-                  <input type="hidden" name="checkIn" value={checkIn} />
-                  <input type="hidden" name="checkOut" value={checkOut} />
-                  <input type="hidden" name="guests" value={guests} />
+                <div className="flex justify-end pt-4">
+                   <button type="submit" className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-10 py-3 rounded-md text-lg shadow-lg hover:shadow-rose-200 transition-all active:scale-[0.98]">
+                      Tiếp theo: Chi tiết cuối cùng
+                   </button>
+                </div>
+                </>
+                ) : (
+                <>
                   <input type="hidden" name="firstName" value={firstName} />
                   <input type="hidden" name="lastName" value={lastName} />
                   <input type="hidden" name="email" value={email} />
                   <input type="hidden" name="phone" value={phone} />
                   <input type="hidden" name="country" value={country} />
-
-                  {/* Special Requests Section */}
-                  {/* Special Requests Section */}
-                  <section>
-                    <h2 className="text-2xl font-bold mb-6">Yêu cầu đặc biệt</h2>
-                    <div className="space-y-4">
-                      <div className="p-4 bg-gray-50 rounded-xl">
-                        <p className="text-sm text-gray-600 mb-3">
-                          Yêu cầu đặc biệt không được đảm bảo, nhưng chỗ ở sẽ cố gắng hết sức để đáp ứng nhu cầu của bạn.
-                        </p>
-                        <textarea
-                          name="specialRequests"
-                          placeholder="Vui lòng viết yêu cầu của bạn bằng tiếng Anh. (tùy chọn)"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-rose-600 resize-none"
-                          rows={4}
-                        />
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Arrival Time Section */}
-                  <section>
-                    <h2 className="text-2xl font-bold mb-6">Thời gian đến của bạn</h2>
-                    <div className="space-y-4">
-                      <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                        <p className="text-sm text-blue-800 font-medium mb-2">
-                          Bạn có thể nhận phòng lúc 2:00 PM
-                        </p>
-                        <select
-                          name="arrivalTime"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-rose-600"
-                        >
-                          <option value="">Thêm thời gian đến dự kiến (tùy chọn)</option>
-                          <option value="12:00 PM">12:00 PM</option>
-                          <option value="1:00 PM">1:00 PM</option>
-                          <option value="2:00 PM">2:00 PM</option>
-                          <option value="3:00 PM">3:00 PM</option>
-                          <option value="4:00 PM">4:00 PM</option>
-                          <option value="5:00 PM">5:00 PM</option>
-                          <option value="6:00 PM">6:00 PM</option>
-                          <option value="7:00 PM">7:00 PM</option>
-                          <option value="8:00 PM">8:00 PM</option>
-                          <option value="9:00 PM">9:00 PM</option>
-                          <option value="10:00 PM">10:00 PM</option>
-                          <option value="11:00 PM">11:00 PM</option>
-                        </select>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Thời gian theo múi giờ Thành phố Hồ Chí Minh
-                        </p>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* House Rules Section */}
-                  <section>
-                    <h2 className="text-2xl font-bold mb-6">Xem lại Nội quy nhà</h2>
-                    <div className="space-y-4">
-                      <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                        <p className="text-sm text-amber-800 font-medium mb-3">
-                          Chủ nhà muốn bạn đồng ý với các nội quy nhà sau:
-                        </p>
-                        <ul className="space-y-2 text-sm text-gray-700">
-                          <li className="flex items-start gap-2">
-                            <span className="text-amber-600 mt-1">•</span>
-                            <span>Không hút thuốc</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-amber-600 mt-1">•</span>
-                            <span>Không tổ chức tiệc/sự kiện</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-amber-600 mt-1">•</span>
-                            <span>Giờ yên tĩnh từ 12:00 AM đến 6:00 AM</span>
-                          </li>
-                        </ul>
-                        <div className="mt-4">
-                          <label className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              name="agreeToRules"
-                              required
-                              className="w-4 h-4 text-rose-600 mt-1"
-                            />
-                            <span className="text-sm text-gray-700">
-                              Bằng cách tiếp tục đến bước tiếp theo, bạn đồng ý với các nội quy nhà này.
-                            </span>
-                          </label>
+                  
+                  {/* Step 3: Hoàn tất đặt phòng */}
+                  <div className="bg-white rounded-lg border border-zinc-200 p-6 shadow-sm flex items-start gap-4">
+                     <div className="flex-1">
+                        <h2 className="text-lg font-bold mb-2">Không yêu cầu thông tin thanh toán</h2>
+                        <p className="text-[13px] text-zinc-600">Thanh toán của bạn sẽ do <span className="font-bold">{property.title}</span> xử lý, nên bạn không cần nhập thông tin thanh toán cho đơn đặt này.</p>
+                     </div>
+                     <div className="w-16 h-16 shrink-0">
+                        <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200 shadow-sm flex items-center justify-center">
+                           <CreditCard className="w-8 h-8 text-yellow-600" />
                         </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Link
-                      href={detailsHref}
-                      className="inline-flex flex-1 items-center justify-center rounded-xl border border-gray-300 px-4 py-4 text-center text-lg font-bold text-gray-700 hover:border-gray-400"
-                    >
-                      Quay lại
-                    </Link>
-                    <button
-                      type="submit"
-                      className="flex-1 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all"
-                    >
-                      Hoàn tất đặt phòng {(totalAmount + accommodationsCost * 0.1 + 150000).toLocaleString("vi-VN")}đ
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                  <h2 className="text-lg font-bold mb-3">Xác nhận cuối cùng</h2>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Vui lòng kiểm tra lại tất cả thông tin trước khi xác nhận đặt phòng.
-                  </p>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-900">Thông tin khách</p>
-                      <p className="text-sm text-gray-600">{lastName} {firstName}</p>
-                      <p className="text-sm text-gray-600">{email}</p>
-                      {phone && <p className="text-sm text-gray-600">{phone}</p>}
-                    </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-900">Chi tiết đặt phòng</p>
-                      <p className="text-sm text-gray-600">{format(start, "dd/MM/yyyy")} - {format(end, "dd/MM/yyyy")}</p>
-                      <p className="text-sm text-gray-600">{days} đêm, {guests} khách</p>
-                    </div>
-                  </div>
-                </section>
-
-                <form action={finishBooking} className="space-y-6">
-                  <input type="hidden" name="propertyId" value={property.id} />
-                  <input type="hidden" name="slug" value={property.slug} />
-                  <input type="hidden" name="checkIn" value={checkIn} />
-                  <input type="hidden" name="checkOut" value={checkOut} />
-                  <input type="hidden" name="guests" value={guests} />
-                  <input type="hidden" name="firstName" value={firstName} />
-                  <input type="hidden" name="lastName" value={lastName} />
-                  <input type="hidden" name="email" value={email} />
-                  <input type="hidden" name="phone" value={phone} />
-                  <input type="hidden" name="country" value={country} />
-
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                    <p className="text-sm text-green-800 font-medium mb-2">
-                      🎉 Bạn đã sẵn sàng hoàn tất đặt phòng!
-                    </p>
-                    <p className="text-xs text-green-700">
-                      Nhấp vào nút bên dưới để xác nhận đặt phòng của bạn.
-                    </p>
+                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Link
-                      href={detailsHref}
-                      className="inline-flex flex-1 items-center justify-center rounded-xl border border-gray-300 px-4 py-4 text-center text-lg font-bold text-gray-700 hover:border-gray-400"
-                    >
-                      Quay lại
-                    </Link>
-                    <button
-                      type="submit"
-                      className="flex-1 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all"
-                    >
-                      Xác nhận và đặt phòng {totalAmount.toLocaleString("vi-VN")}đ
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
+                  <div className="space-y-4">
+                     <p className="text-[13px] text-zinc-700 leading-relaxed">
+                        Đặt phòng của bạn là đặt phòng trực tiếp với <span className="font-bold">{property.title}</span> và bằng việc hoàn tất đặt phòng này, bạn đồng ý với <a href="#" className="text-rose-600 font-bold hover:underline">điều kiện đặt phòng</a>, <a href="#" className="text-rose-600 font-bold hover:underline">điều khoản chung</a> và <a href="#" className="text-rose-600 font-bold hover:underline">chính sách bảo mật</a>.
+                     </p>
 
-          {/* Cột Chi tiết giá (Sticky) */}
-          <div>
-            <div className="bg-white border border-gray-200 p-6 rounded-3xl shadow-xl">
-              {/* Property Header */}
-              {/* Property Header */}
-              <div className="flex gap-4 pb-6 border-b border-gray-200">
-                <img
-                  src={mainImage}
-                  className="w-32 h-24 object-cover rounded-xl shadow-sm"
-                  alt="Room"
-                />
-                <div className="flex flex-col justify-center">
-                  <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">
-                    Toàn bộ chỗ ở
-                  </span>
-                  <h3 className="font-bold text-lg leading-tight line-clamp-2">
-                    {property.title}
-                  </h3>
-                  <div className="flex items-center gap-1 text-sm mt-2 font-medium">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    {property.rating || "4.9"} (
-                    {(property as any).reviews || 128} đánh giá)
-                  </div>
-                </div>
-              </div>
+                     <div className="flex justify-end pt-2">
+                        <button type="submit" className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-8 py-3 rounded text-[15px] shadow-sm hover:shadow-md transition-all active:scale-[0.98] flex items-center gap-2">
+                           <Lock className="w-4 h-4" />
+                           Hoàn tất đặt chỗ
+                        </button>
+                     </div>
 
-              {/* Booking Details */}
-              <div className="py-6 border-b border-gray-200">
-                <h3 className="font-bold text-lg mb-4">Chi tiết đặt phòng của bạn</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-gray-900">Nhận phòng</p>
-                      <p className="text-gray-600 text-sm">{format(start, "EEEE, MMM dd, yyyy")}</p>
-                      <p className="text-gray-500 text-sm">Từ 2:00 PM</p>
-                    </div>
-                    <Link
-                      href={`/homestays/${property.slug}`}
-                      className="text-rose-600 text-sm font-medium hover:text-rose-700"
-                    >
-                      Chỉnh sửa
-                    </Link>
+                     <div className="flex justify-end">
+                       <a href="#" className="text-[13px] text-rose-600 font-bold hover:underline">Các điều kiện đặt phòng là gì?</a>
+                     </div>
                   </div>
-                  
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-gray-900">Trả phòng</p>
-                      <p className="text-gray-600 text-sm">{format(end, "EEEE, MMM dd, yyyy")}</p>
-                      <p className="text-gray-500 text-sm">Đến 11:00 AM</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold text-gray-900">Tổng số</p>
-                      <p className="text-gray-600 text-sm">{days} đêm, 1 căn hộ cho {guests} người lớn</p>
-                    </div>
-                  </div>
-                  
-                  <div className="pt-4 border-t border-gray-100">
-                    <p className="font-semibold text-gray-900 mb-2">Bạn đã chọn</p>
-                    <p className="text-gray-600 text-sm">1 x Deluxe Studio</p>
-                    <Link
-                      href={`/homestays/${property.slug}`}
-                      className="text-rose-600 text-sm font-medium hover:text-rose-700 mt-2 inline-block"
-                    >
-                      Thay đổi lựa chọn của bạn
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price Summary with Genius Discount */}
-              <div className="py-6 border-b border-gray-200">
-                <h3 className="font-bold text-lg mb-4">Tóm tắt giá của bạn</h3>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Giá gốc</span>
-                    <span className="text-gray-600 line-through">
-                      {(accommodationsCost * 1.15).toLocaleString("vi-VN")}đ
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span className="text-green-600 font-medium">Giảm giá Genius</span>
-                      <p className="text-xs text-gray-500">Bạn nhận được mức giá giảm vì bạn là thành viên Genius.</p>
-                    </div>
-                    <span className="text-green-600 font-medium">
-                      -{(accommodationsCost * 0.15).toLocaleString("vi-VN")}đ
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">{basePrice.toLocaleString("vi-VN")}đ x {days} đêm</span>
-                    <span className="text-gray-600">{accommodationsCost.toLocaleString("vi-VN")}đ</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Total */}
-              <div className="py-6 border-b border-gray-200">
-                <div className="flex justify-between items-center text-xl font-black">
-                  <span>Tổng</span>
-                  <span className="text-rose-600">
-                    {totalAmount.toLocaleString("vi-VN")}đ
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 text-center mt-1">
-                  Bao gồm thuế và phí
-                </p>
-              </div>
-
-              {/* Price Information */}
-              <div className="py-6 border-b border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold">Thông tin giá</h4>
-                  <button className="text-rose-600 text-sm font-medium hover:text-rose-700">
-                    Ẩn chi tiết
-                  </button>
-                </div>
-                <p className="text-sm text-gray-600 mb-3">
-                  Bao gồm {(totalAmount * 0.1).toLocaleString("vi-VN")}đ trong thuế và phí
-                </p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">10% VAT</span>
-                    <span className="text-gray-600">{(totalAmount * 0.1).toLocaleString("vi-VN")}đ</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Schedule */}
-              <div className="py-6 border-b border-gray-200">
-                <h4 className="font-semibold mb-3">Lịch thanh toán của bạn</h4>
-                <p className="text-sm text-gray-600">
-                  Bạn sẽ bị tính phí trả trước tổng giá bất cứ lúc nào.
-                </p>
-              </div>
-
-              {/* Cancellation Cost */}
-              <div className="py-6">
-                <h4 className="font-semibold mb-3">Hủy phòng sẽ tốn bao nhiêu?</h4>
-                <p className="text-sm text-gray-600">
-                  Nếu bạn hủy, bạn sẽ phải trả <span className="font-medium">{totalAmount.toLocaleString("vi-VN")}đ</span>
-                </p>
-              </div>
-
-              {/* Genius Benefits */}
-              <div className="py-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl px-4 mx-6">
-                <h4 className="font-semibold mb-2 text-purple-800">Lợi ích Genius của bạn</h4>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-purple-600 font-bold">15% giảm giá</span>
-                </div>
-                <p className="text-xs text-purple-700">
-                  Bạn đang nhận được giảm giá 15% trên giá của lựa chọn này trước khi áp dụng thuế và phí.
-                </p>
-              </div>
-            </div>
-          </div>
+                </>
+                )}
+              </form>
+          </main>
         </div>
       </div>
     </div>

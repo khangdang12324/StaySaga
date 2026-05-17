@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { differenceInDays } from "date-fns";
 import { getPropertyBySlug } from "../properties/actions"; // We will use this to re-verify price
+import { calculateBookingPricing } from "./pricing";
 
 export type CreateBookingPayload = {
   propertyId: string;
@@ -34,9 +35,12 @@ export async function createBooking(formData: FormData) {
   const propertyId = formData.get("propertyId") as string;
   const checkIn = formData.get("checkIn") as string;
   const checkOut = formData.get("checkOut") as string;
-  const guests = parseInt(formData.get("guests") as string);
-  const paymentMethod = formData.get("paymentMethod") as string;
+  const guests = Number(formData.get("guests"));
   const slug = formData.get("slug") as string;
+
+  if (!Number.isInteger(guests) || guests < 1 || guests > 16) {
+    return { error: "So luong khach khong hop le." };
+  }
 
   // 2. Fetch lại giá phòng từ DB (KHÔNG BAO GIỜ TIN TƯỞNG GIÁ TỪ CLIENT GỬI LÊN)
   const { data: property, isMock } = await getPropertyBySlug(
@@ -50,11 +54,13 @@ export async function createBooking(formData: FormData) {
   const start = new Date(checkIn);
   const end = new Date(checkOut);
   const days = differenceInDays(end, start);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return { error: "Ngay nhan va tra phong khong hop le." };
+  }
   if (days <= 0) return { error: "Ngày nhận và trả phòng không hợp lệ." };
 
   const basePrice = property.price || (property as any).base_price || 0;
-  const accommodationsCost = basePrice * days;
-  const totalAmount = accommodationsCost;
+  const { totalAmount } = calculateBookingPricing(basePrice, days);
 
   // 4. KIỂM TRA DOUBLE-BOOKING (Race Condition Prevention)
   if (!isMock) {
@@ -63,8 +69,8 @@ export async function createBooking(formData: FormData) {
       .select("id")
       .eq("homestay_id", property.id)
       .in("status", ["PENDING", "CONFIRMED"])
-      .lte("check_in_date", checkOut)
-      .gte("check_out_date", checkIn);
+      .lt("check_in_date", checkOut)
+      .gt("check_out_date", checkIn);
 
     if (overlapError) throw new Error("Database error");
     if (overlappingBookings && overlappingBookings.length > 0) {
@@ -241,8 +247,8 @@ export async function rescheduleBooking(formData: FormData) {
     .eq("homestay_id", booking.homestay_id)
     .neq("id", bookingId)
     .in("status", ["PENDING", "CONFIRMED"])
-    .lte("check_in_date", checkOut)
-    .gte("check_out_date", checkIn);
+    .lt("check_in_date", checkOut)
+    .gt("check_out_date", checkIn);
 
   if (overlapError) {
     redirect("/bookings?error=reschedule_failed");
@@ -256,8 +262,7 @@ export async function rescheduleBooking(formData: FormData) {
     ? booking.homestay[0]
     : booking.homestay;
   const basePrice = homestay?.price_per_night || 0;
-  const accommodationsCost = basePrice * days;
-  const totalAmount = accommodationsCost;
+  const { totalAmount } = calculateBookingPricing(basePrice, days);
 
   const { error } = await supabase
     .from("bookings")

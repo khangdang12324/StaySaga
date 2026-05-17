@@ -2,7 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Heart, MapPin, Star } from "lucide-react";
 import Link from "next/link";
+import { resolveToCanonicalSlug } from "@/lib/hotel-parser";
 import SafeImage from "@/components/ui/SafeImage";
+import { getLocationImage } from "@/lib/images/location-images";
 
 export default async function FavoritesPage() {
   const supabase = await createClient();
@@ -32,17 +34,22 @@ export default async function FavoritesPage() {
 
         {hasFavorites ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites.map((fav: any) => (
-              <Link
-                href={`/homestays/${fav.homestay?.slug}`}
-                key={fav.id}
-                className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
+            {favorites.map((fav: any) => {
+              const canonical = resolveToCanonicalSlug(fav.homestay?.slug || String(fav.homestay?.id));
+              const href = canonical ? `/homestays/${canonical}` : `/homestays?location=${encodeURIComponent(fav.homestay?.city || '')}`;
+              return (
+                <Link
+                  href={href}
+                  key={fav.id}
+                  className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all"
+                >
+                <div className="relative aspect-4/3 overflow-hidden">
                   <SafeImage
                     src={
                       fav.homestay?.homestay_images?.[0]?.url ||
-                      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500"
+                      getLocationImage(
+                        fav.homestay?.city || fav.homestay?.location,
+                      )
                     }
                     alt={fav.homestay?.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -69,7 +76,8 @@ export default async function FavoritesPage() {
                   </p>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">

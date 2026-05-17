@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { differenceInDays } from "date-fns";
@@ -16,10 +16,18 @@ interface BookingWidgetProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: "Chờ thanh toán",
+  PENDING: "Chờ xác nhận",
   CONFIRMED: "Đã xác nhận",
   COMPLETED: "Hoàn thành",
   CANCELLED: "Đã hủy",
+};
+
+const getValidDateParam = (value: string | null) =>
+  value && !Number.isNaN(Date.parse(value)) ? value : "";
+
+const getValidGuestsParam = (value: string | null) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(8, Math.max(1, parsed)) : 1;
 };
 
 export function BookingWidget({
@@ -32,34 +40,20 @@ export function BookingWidget({
   const checkInRef = useRef<HTMLInputElement>(null);
   const checkOutRef = useRef<HTMLInputElement>(null);
   const guestsRef = useRef<HTMLSelectElement>(null);
-  const [checkIn, setCheckIn] = useState<string>("");
-  const [checkOut, setCheckOut] = useState<string>("");
-  const [guests, setGuests] = useState<number>(1);
+  const [todayParam] = useState(() => new Date().toISOString().split("T")[0]);
+  const [checkIn, setCheckIn] = useState<string>(() =>
+    getValidDateParam(searchParams.get("checkIn")),
+  );
+  const [checkOut, setCheckOut] = useState<string>(() =>
+    getValidDateParam(searchParams.get("checkOut")),
+  );
+  const [guests, setGuests] = useState<number>(() =>
+    getValidGuestsParam(searchParams.get("guests")),
+  );
   const [error, setError] = useState<string | null>(null);
   const bookingLabel = bookingStatus
     ? STATUS_LABELS[bookingStatus.status] || "Đã đặt phòng"
     : null;
-
-  useEffect(() => {
-    const checkInParam = searchParams.get("checkIn");
-    const checkOutParam = searchParams.get("checkOut");
-    const guestsParam = searchParams.get("guests");
-
-    if (!checkIn && checkInParam && !Number.isNaN(Date.parse(checkInParam))) {
-      setCheckIn(checkInParam);
-    }
-    if (
-      !checkOut &&
-      checkOutParam &&
-      !Number.isNaN(Date.parse(checkOutParam))
-    ) {
-      setCheckOut(checkOutParam);
-    }
-    if (!Number.isNaN(Number(guestsParam)) && guestsParam && guests === 1) {
-      const parsedGuests = Math.min(8, Math.max(1, Number(guestsParam)));
-      setGuests(parsedGuests);
-    }
-  }, [searchParams, checkIn, checkOut, guests]);
 
   const openDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
     const input = ref.current;
@@ -81,7 +75,6 @@ export function BookingWidget({
     select.click();
   };
 
-  // Enterprise Business Logic: Dynamic Pricing Calculation
   const {
     totalDays,
     accommodationsCost,
@@ -126,11 +119,13 @@ export function BookingWidget({
     router.push(`/checkout/${propertyId}?${params.toString()}`);
   };
 
+  const formatVnd = (value: number) => `VND ${value.toLocaleString("vi-VN")}`;
+
   return (
     <div className="sticky top-28 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 shadow-xl z-10">
       {bookingStatus && (
         <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          <p className="font-semibold">Bạn đã đặt phòng ({bookingLabel}).</p>
+          <p className="font-semibold">Bạn đã tạo đơn giữ chỗ ({bookingLabel}).</p>
           {bookingStatus.checkIn && bookingStatus.checkOut && (
             <p className="mt-1 text-xs">
               {bookingStatus.checkIn} → {bookingStatus.checkOut}
@@ -140,14 +135,14 @@ export function BookingWidget({
             href="/bookings"
             className="mt-2 inline-flex text-xs font-semibold text-emerald-700 hover:text-emerald-600"
           >
-            Xem đơn đặt phòng
+            Xem đơn đã đặt
           </Link>
         </div>
       )}
 
       <div className="flex items-baseline gap-2 mb-6">
         <span className="text-2xl font-black text-rose-600">
-          {basePrice.toLocaleString("vi-VN")}đ
+          {formatVnd(basePrice)}
         </span>
         <span className="text-gray-500">/ đêm</span>
       </div>
@@ -169,7 +164,7 @@ export function BookingWidget({
                 setCheckIn(e.target.value);
                 setError(null);
               }}
-              min={new Date().toISOString().split("T")[0]}
+              min={todayParam}
               className="w-full bg-transparent border-none outline-none mt-1 text-sm font-medium cursor-pointer"
             />
           </div>
@@ -188,7 +183,7 @@ export function BookingWidget({
                 setCheckOut(e.target.value);
                 setError(null);
               }}
-              min={checkIn || new Date().toISOString().split("T")[0]}
+              min={checkIn || todayParam}
               className="w-full bg-transparent border-none outline-none mt-1 text-sm font-medium cursor-pointer"
             />
           </div>
@@ -221,10 +216,10 @@ export function BookingWidget({
         onClick={handleBooking}
         className="w-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-4 rounded-xl transition-all shadow-md hover:shadow-lg mb-4"
       >
-        Đặt phòng ngay
+        Đặt ngay
       </button>
       <p className="text-center text-gray-500 text-sm mb-6">
-        Bạn vẫn chưa bị trừ tiền
+        Không cần thanh toán trước
       </p>
 
       {/* Phân tích giá (Pricing Breakdown) - Ẩn nếu chưa chọn ngày */}
@@ -232,9 +227,9 @@ export function BookingWidget({
         <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-zinc-800 pb-6 animate-in fade-in slide-in-from-top-2">
           <div className="flex justify-between">
             <span className="underline">
-              {basePrice.toLocaleString("vi-VN")}đ x {totalDays} đêm
+              {formatVnd(basePrice)} x {totalDays} đêm
             </span>
-            <span>{accommodationsCost.toLocaleString("vi-VN")}đ</span>
+            <span>{formatVnd(accommodationsCost)}</span>
           </div>
         </div>
       )}
@@ -242,7 +237,7 @@ export function BookingWidget({
       <div className="flex justify-between font-black text-lg pt-6 text-gray-900 dark:text-white">
         <span>Tổng cộng</span>
         <span className="text-rose-600">
-          {totalAmount.toLocaleString("vi-VN")}đ
+          {formatVnd(totalAmount)}
         </span>
       </div>
     </div>

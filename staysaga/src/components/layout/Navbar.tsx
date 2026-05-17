@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
@@ -24,115 +25,93 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { logout } from "@/core/auth/actions";
 import SafeImage from "@/components/ui/SafeImage";
-import { getUserRole, type AppRole } from "@/lib/auth/roles";
+import { getUserRole, type AppRole, type SupabaseLike } from "@/lib/auth/roles";
+import { useRouter } from "next/navigation";
 
-// Vietnamese Cities Data
-const vietnameseCities = {
-  centrallyGoverned: [
-    { name: "Hà Nội", slug: "ha-noi", region: "Miền Bắc" },
-    { name: "Thành phố Hồ Chí Minh", slug: "ho-chi-minh", region: "Miền Nam" },
-    { name: "Hải Phòng", slug: "hai-phong", region: "Miền Bắc" },
-    { name: "Đà Nẵng", slug: "da-nang", region: "Miền Trung" },
-    { name: "Cần Thơ", slug: "can-tho", region: "Miền Nam" },
-    { name: "Huế", slug: "hue", region: "Miền Trung" },
-    { name: "Đồng Nai", slug: "dong-nai", region: "Miền Nam" },
-  ],
-  provincial: {
-    "An Giang": ["Long Xuyên", "Châu Đốc"],
-    "Bà Rịa - Vũng Tàu": ["Vũng Tàu", "Bà Rịa"],
-    "Bắc Giang": ["Bắc Giang"],
-    "Bắc Kạn": ["Bắc Kạn"],
-    "Bạc Liêu": ["Bạc Liêu"],
-    "Bắc Ninh": ["Bắc Ninh", "Từ Sơn"],
-    "Bến Tre": ["Bến Tre"],
-    "Bình Định": ["Quy Nhơn"],
-    "Bình Dương": ["Thủ Dầu Một", "Thuận An", "Dĩ An", "Tân Uyên"],
-    "Bình Phước": ["Đồng Xoài"],
-    "Bình Thuận": ["Phan Thiết"],
-    "Cà Mau": ["Cà Mau"],
-    "Cao Bằng": ["Cao Bằng"],
-    "Đắk Lắk": ["Buôn Ma Thuột"],
-    "Đắk Nông": ["Gia Nghĩa"],
-    "Điện Biên": ["Điện Biên Phủ"],
-    "Đồng Nai": ["Biên Hòa", "Long Khánh"],
-    "Đồng Tháp": ["Cao Lãnh", "Sa Đéc", "Hồng Ngự"],
-    "Gia Lai": ["Pleiku"],
-    "Hà Giang": ["Hà Giang"],
-    "Hà Nam": ["Phủ Lý"],
-    "Hà Tĩnh": ["Hà Tĩnh"],
-    "Hải Dương": ["Hải Dương"],
-    "Hậu Giang": ["Vị Thanh", "Ngã Bảy"],
-    "Hòa Bình": ["Hòa Bình"],
-    "Hưng Yên": ["Hưng Yên"],
-    "Khánh Hòa": ["Nha Trang", "Cam Ranh"],
-    "Kiên Giang": ["Rạch Giá", "Hà Tiên", "Phú Quốc"],
-    "Kon Tum": ["Kon Tum"],
-    "Lai Châu": ["Lai Châu"],
-    "Lâm Đồng": ["Đà Lạt", "Bảo Lộc"],
-    "Lạng Sơn": ["Lạng Sơn"],
-    "Lào Cai": ["Lào Cai"],
-    "Long An": ["Tân An"],
-    "Nam Định": ["Nam Định"],
-    "Nghệ An": ["Vinh"],
-    "Ninh Bình": ["Ninh Bình", "Tam Điệp"],
-    "Ninh Thuận": ["Phan Rang - Tháp Chàm"],
-    "Phú Thọ": ["Việt Trì"],
-    "Phú Yên": ["Tuy Hòa"],
-    "Quảng Bình": ["Đồng Hới"],
-    "Quảng Nam": ["Tam Kỳ", "Hội An"],
-    "Quảng Ngãi": ["Quảng Ngãi"],
-    "Quảng Ninh": ["Hạ Long", "Móng Cái", "Uông Bí", "Cẩm Phả"],
-    "Quảng Trị": ["Đông Hà"],
-    "Sóc Trăng": ["Sóc Trăng"],
-    "Sơn La": ["Sơn La"],
-    "Tây Ninh": ["Tây Ninh"],
-    "Thái Bình": ["Thái Bình"],
-    "Thái Nguyên": ["Thái Nguyên", "Sông Công"],
-    "Thanh Hóa": ["Thanh Hóa", "Sầm Sơn"],
-    "Thừa Thiên Huế": ["Hương Thủy", "Hương Trà"],
-    "Tiền Giang": ["Mỹ Tho", "Gò Công"],
-    "Trà Vinh": ["Trà Vinh"],
-    "Tuyên Quang": ["Tuyên Quang"],
-    "Vĩnh Long": ["Vĩnh Long"],
-    "Vĩnh Phúc": ["Vĩnh Yên", "Phúc Yên"],
-    "Yên Bái": ["Yên Bái"],
-  },
+type OAuthIdentity = {
+  provider?: string;
+  identity_data?: {
+    avatar_url?: string;
+    picture?: string;
+  };
 };
 
 export default function Navbar() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userRole, setUserRole] = useState<AppRole>("guest");
+  
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
-  const [citySearch, setCitySearch] = useState("");
-  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  
+  const [currency, setCurrency] = useState("VND");
+  const [lang, setLang] = useState("VN");
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const cityDropdownRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+  const currencyRef = useRef<HTMLDivElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
+    // Read from cookies
+    if (typeof document !== 'undefined') {
+       const cookies = document.cookie.split(';');
+       let foundCurrency = "VND";
+       let foundLang = "VN";
+       for (const cookie of cookies) {
+          const [key, value] = cookie.trim().split('=');
+          if (key === 'currency') foundCurrency = value;
+          if (key === 'lang') foundLang = value;
+       }
+       setCurrency(foundCurrency);
+       setLang(foundLang);
+
+       if (foundLang === "EN") {
+          if (!document.getElementById("google-translate-script")) {
+             const script = document.createElement("script");
+             script.id = "google-translate-script";
+             script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+             script.async = true;
+             document.body.appendChild(script);
+             const style = document.createElement("style");
+             style.innerHTML = "body { top: 0 !important; } .skiptranslate > iframe.skiptranslate { display: none !important; visibility: hidden !important; } #goog-gt-tt { display: none !important; }";
+             document.head.appendChild(style);
+
+             (window as any).googleTranslateElementInit = () => {
+               new (window as any).google.translate.TranslateElement(
+                 { pageLanguage: 'vi', includedLanguages: 'en', autoDisplay: false },
+                 'google_translate_element'
+               );
+               setTimeout(() => {
+                  const select = document.querySelector('select.goog-te-combo') as HTMLSelectElement;
+                  if (select) {
+                     select.value = 'en';
+                     select.dispatchEvent(new Event('change'));
+                  }
+               }, 500);
+             };
+          }
+       }
+    }
+
     const loadUserRole = async (userId?: string) => {
       if (!userId) {
         setUserRole("guest");
         return;
       }
-
-      const role = await getUserRole(supabase as any, userId);
+      const role = await getUserRole(supabase as SupabaseLike, userId);
       setUserRole(role);
     };
 
-    // Check auth session
     const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
       await loadUserRole(session?.user?.id);
     };
     checkSession();
 
-    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setUser(session?.user || null);
@@ -140,19 +119,15 @@ export default function Navbar() {
       },
     );
 
-    // Click outside to close dropdowns
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
-      if (
-        cityDropdownRef.current &&
-        !cityDropdownRef.current.contains(e.target as Node)
-      ) {
-        setCityDropdownOpen(false);
+      if (currencyRef.current && !currencyRef.current.contains(e.target as Node)) {
+        setCurrencyOpen(false);
+      }
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -161,226 +136,211 @@ export default function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
-  const userName =
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    user?.email?.split("@")[0] ||
-    "User";
-  const userAvatar = user?.user_metadata?.avatar_url || null;
+  const handleHotelsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`);
+            const data = await res.json();
+            const city = data.address.city || data.address.town || data.address.county || data.address.state || "Đà Lạt";
+            router.push(`/homestays?location=${encodeURIComponent(city)}`);
+          } catch (error) {
+            router.push("/homestays");
+          }
+        },
+        () => {
+          router.push("/homestays");
+        }
+      );
+    } else {
+      router.push("/homestays");
+    }
+  };
+
+  const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
+  const identities = (user?.identities || []) as OAuthIdentity[];
+  const googleIdentity = identities.find((identity) => identity.provider === "google");
+  const facebookIdentity = identities.find((identity) => identity.provider === "facebook");
+  const oauthAvatar = user?.user_metadata?.picture || user?.user_metadata?.avatar_url || googleIdentity?.identity_data?.picture || facebookIdentity?.identity_data?.avatar_url || facebookIdentity?.identity_data?.picture || null;
+  const userAvatar = typeof oauthAvatar === "string" && oauthAvatar.startsWith("http") ? oauthAvatar : null;
+
+  const t = (vi: string, en: string) => lang === "EN" ? en : vi;
 
   return (
     <>
+      <div id="google_translate_element" style={{ display: "none" }}></div>
       <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5 }}
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out",
-          "bg-white py-4 shadow-sm",
-        )}
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.5 }}
+          className={cn(
+            "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out",
+            "bg-gradient-to-r from-pink-600 to-rose-500 text-white py-4 shadow-lg",
+          )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl font-black tracking-tighter text-gray-900 transition-colors">
-                StaySaga<span className="text-rose-500">.</span>
-              </span>
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0 mr-8">
+                <span className="text-2xl font-black tracking-tighter text-white transition-colors">
+                  StaySaga<span className="text-rose-300">.</span>
+                </span>
             </Link>
 
-            {/* City Selector */}
-            <div className="hidden lg:flex items-center flex-1 justify-center">
-              <div className="relative" ref={cityDropdownRef}>
-                <button
-                  onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all border shadow-sm hover:shadow-md bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-6 mr-auto">
+                <Link
+                  href="/destinations"
+                  className={cn("font-medium transition-colors hover:text-rose-100 text-white")}
                 >
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">
-                    {selectedCity || "Chọn thành phố"}
-                  </span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${cityDropdownOpen ? "rotate-180" : ""}`}
-                  />
+                  {t("Điểm đến", "Destinations")}
+                </Link>
+                <button
+                  onClick={handleHotelsClick}
+                  className={cn("font-medium transition-colors hover:text-rose-100 text-white cursor-pointer")}
+                >
+                  StaySaga Hotels
                 </button>
+                <Link
+                  href="/blog"
+                  className={cn("font-medium transition-colors hover:text-rose-100 text-white")}
+                >
+                  {t("Trải nghiệm", "Experiences")}
+                </Link>
+            </div>
 
+            {/* Actions */}
+            <div className="hidden md:flex items-center gap-2 flex-none">
+              
+              {/* Currency Selector */}
+              <div className="relative" ref={currencyRef}>
+                <button
+                  onClick={() => setCurrencyOpen(!currencyOpen)}
+                  className="px-3 py-2 rounded-full font-bold transition-colors hover:bg-white/10 text-white flex items-center gap-1 notranslate translate-no"
+                >
+                  {currency}
+                </button>
                 <AnimatePresence>
-                  {cityDropdownOpen && (
+                  {currencyOpen && (
                     <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 mt-2 w-96 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-50 max-h-[600px] flex flex-col"
+                      className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
                     >
-                      {/* Search Input */}
-                      <div className="p-4 border-b border-gray-100 dark:border-zinc-800">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                          <input
-                            type="text"
-                            placeholder="Tìm kiếm thành phố..."
-                            value={citySearch}
-                            onChange={(e) => setCitySearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-zinc-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Cities List */}
-                      <div className="flex-1 overflow-y-auto p-2">
-                        {/* Centrally Governed Cities */}
-                        <div className="mb-4">
-                          <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Thành phố trực thuộc Trung ương
-                          </h3>
-                          {vietnameseCities.centrallyGoverned
-                            .filter((city) =>
-                              city.name
-                                .toLowerCase()
-                                .includes(citySearch.toLowerCase()),
-                            )
-                            .map((city) => (
-                              <button
-                                key={city.slug}
-                                onClick={() => {
-                                  setSelectedCity(city.name);
-                                  setCityDropdownOpen(false);
-                                  setCitySearch("");
-                                }}
-                                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                              >
-                                <MapPin className="w-4 h-4 text-rose-500" />
-                                <span>{city.name}</span>
-                                <span className="text-xs text-gray-400 ml-auto">
-                                  {city.region}
-                                </span>
-                              </button>
-                            ))}
-                        </div>
-
-                        {/* Provincial Cities */}
-                        <div>
-                          <h3 className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Thành phố trực thuộc tỉnh
-                          </h3>
-                          {Object.entries(vietnameseCities.provincial).map(
-                            ([province, cities]) => {
-                              const filteredCities = cities.filter(
-                                (city) =>
-                                  city
-                                    .toLowerCase()
-                                    .includes(citySearch.toLowerCase()) ||
-                                  province
-                                    .toLowerCase()
-                                    .includes(citySearch.toLowerCase()),
-                              );
-                              if (filteredCities.length === 0) return null;
-
-                              return (
-                                <div key={province} className="mb-2">
-                                  <div className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-zinc-800 rounded">
-                                    {province}
-                                  </div>
-                                  {filteredCities.map((city) => (
-                                    <button
-                                      key={`${province}-${city}`}
-                                      onClick={() => {
-                                        setSelectedCity(city);
-                                        setCityDropdownOpen(false);
-                                        setCitySearch("");
-                                      }}
-                                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                                    >
-                                      <MapPin className="w-4 h-4 text-rose-500" />
-                                      <span>{city}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              );
-                            },
-                          )}
-                        </div>
-                      </div>
+                      <button 
+                         onClick={() => { setCurrency("VND"); document.cookie = "currency=VND; path=/; max-age=31536000"; setCurrencyOpen(false); window.location.reload(); }}
+                         className={`notranslate translate-no w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currency === "VND" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
+                      >
+                         VND
+                      </button>
+                      <button 
+                         onClick={() => { setCurrency("USD"); document.cookie = "currency=USD; path=/; max-age=31536000"; setCurrencyOpen(false); window.location.reload(); }}
+                         className={`notranslate translate-no w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currency === "USD" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
+                      >
+                         USD
+                      </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-            </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link
-                href="/destinations"
-                className={cn(
-                  "font-medium transition-colors hover:text-rose-500 text-gray-700",
-                )}
-              >
-                Điểm đến
-              </Link>
-              <Link
-                href="/homestays"
-                className={cn(
-                  "font-medium transition-colors hover:text-rose-500 text-gray-700",
-                )}
-              >
-                Homestays
-              </Link>
-              <Link
-                href="/blog"
-                className={cn(
-                  "font-medium transition-colors hover:text-rose-500 text-gray-700",
-                )}
-              >
-                Trải nghiệm
-              </Link>
-            </div>
+              {/* Language Selector */}
+              <div className="relative" ref={langRef}>
+                <button
+                  onClick={() => setLangOpen(!langOpen)}
+                  className="p-2 rounded-full transition-colors hover:bg-white/10 text-white flex items-center justify-center"
+                >
+                  {lang === "VN" ? (
+                    <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700">
+                       <span className="text-yellow-400 text-[10px] leading-none">★</span>
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative">
+                       <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
+                       <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
+                       <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
+                       <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
+                    </div>
+                  )}
+                </button>
+                <AnimatePresence>
+                  {langOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
+                    >
+                      <button 
+                         onClick={() => { setLang("VN"); document.cookie = "lang=VN; path=/; max-age=31536000"; setLangOpen(false); window.location.reload(); }}
+                         className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${lang === "VN" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
+                      >
+                         <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700 shrink-0">
+                            <span className="text-yellow-400 text-[10px] leading-none">★</span>
+                         </div>
+                         Tiếng Việt
+                      </button>
+                      <button 
+                         onClick={() => { setLang("EN"); document.cookie = "lang=EN; path=/; max-age=31536000"; setLangOpen(false); window.location.reload(); }}
+                         className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${lang === "EN" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
+                      >
+                         <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative shrink-0">
+                            <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
+                            <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
+                            <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
+                            <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
+                         </div>
+                         English
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-            {/* Actions */}
-            <div className="hidden md:flex items-center gap-4">
-              {/* Host quick-link: guests -> login (next=/host), hosts -> /host */}
-              <Link
-                href={user ? "/host" : "/login?next=/host"}
-                className={cn(
-                  "px-4 py-2 rounded-full font-medium transition-all border",
-                  user ? "bg-white border-gray-200 text-gray-700 hover:bg-gray-50" : "bg-rose-600 text-white hover:bg-rose-700",
-                )}
-              >
-                <Home className="w-4 h-4 inline-block mr-2" />
-                <span className="hidden sm:inline">Trở thành host</span>
+              {/* Help Link */}
+              <Link href="/help" className="p-2 text-white hover:bg-white/10 rounded-full transition-colors mr-2">
+                 <HelpCircle className="w-5 h-5" />
               </Link>
-              <button
+
+              {/* Host quick-link: Booking-style list page */}
+              <Link
+                href="/host/list"
                 className={cn(
-                  "p-2 rounded-full transition-colors hover:bg-black/5",
-                  "text-gray-700",
+                  "rounded-full px-4 font-semibold transition-all",
+                  "bg-white text-rose-600 border border-white/30 flex items-center gap-2 py-1.5 shadow-sm hover:shadow-md hover:bg-rose-50",
                 )}
               >
-                <Globe className="w-5 h-5" />
-              </button>
+                <span className="hidden sm:inline text-sm">{t("Đăng chỗ nghỉ", "List your property")}</span>
+              </Link>
 
               {user ? (
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                     className={cn(
-                      "flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full font-medium transition-all shadow-sm hover:shadow-md border",
-                      "bg-white border-gray-200 text-gray-700 hover:bg-gray-50",
+                      "flex items-center gap-2 p-1 rounded-full font-medium transition-all shadow-sm hover:shadow-md border",
+                      "bg-white border-rose-200 text-gray-700 hover:bg-rose-50 ml-2",
                     )}
                   >
                     {userAvatar ? (
                       <SafeImage
                         src={userAvatar}
                         alt={userName}
-                        className="w-8 h-8 rounded-full object-cover"
+                        className="w-7 h-7 rounded-full object-cover border border-zinc-200"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-sm">
+                      <div className="w-7 h-7 rounded-full bg-[#febb02] text-rose-900 flex items-center justify-center font-bold text-xs">
                         {userName[0].toUpperCase()}
                       </div>
                     )}
-                    <Menu className="w-4 h-4" />
                   </button>
 
                   <AnimatePresence>
@@ -425,7 +385,7 @@ export default function Navbar() {
                             className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                           >
                             <User className="w-4 h-4 text-gray-400" />
-                            <span>Tài khoản của tôi</span>
+                            <span>{t("Tài khoản của tôi", "My Account")}</span>
                           </Link>
                           <Link
                             href="/bookings"
@@ -433,7 +393,7 @@ export default function Navbar() {
                             className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                           >
                             <CalendarCheck className="w-4 h-4 text-gray-400" />
-                            <span>Đặt phòng & Chuyến đi</span>
+                            <span>{t("Đặt phòng & Chuyến đi", "Bookings & Trips")}</span>
                           </Link>
                           <Link
                             href="/favorites"
@@ -441,7 +401,7 @@ export default function Navbar() {
                             className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                           >
                             <Heart className="w-4 h-4 text-gray-400" />
-                            <span>Đã lưu</span>
+                            <span>{t("Đã lưu", "Saved")}</span>
                           </Link>
                           <Link
                             href="/reviews"
@@ -449,7 +409,7 @@ export default function Navbar() {
                             className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                           >
                             <Star className="w-4 h-4 text-gray-400" />
-                            <span>Đánh giá của tôi</span>
+                            <span>{t("Đánh giá của tôi", "My Reviews")}</span>
                           </Link>
                         </div>
 
@@ -463,7 +423,7 @@ export default function Navbar() {
                               className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <Home className="w-4 h-4 text-gray-400" />
-                              <span>Quản lý chỗ ở (Host)</span>
+                              <span>{t("Quản lý chỗ ở (Host)", "Manage properties (Host)")}</span>
                             </Link>
                           )}
                           {userRole === "admin" && (
@@ -473,7 +433,7 @@ export default function Navbar() {
                               className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <BarChart className="w-4 h-4 text-gray-400" />
-                              <span>Quản trị website</span>
+                              <span>{t("Quản trị website", "Admin Dashboard")}</span>
                             </Link>
                           )}
                           <Link
@@ -482,7 +442,7 @@ export default function Navbar() {
                             className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                           >
                             <Settings className="w-4 h-4 text-gray-400" />
-                            <span>Cài đặt</span>
+                            <span>{t("Cài đặt", "Settings")}</span>
                           </Link>
                           <Link
                             href="/help"
@@ -490,7 +450,7 @@ export default function Navbar() {
                             className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                           >
                             <HelpCircle className="w-4 h-4 text-gray-400" />
-                            <span>Trợ giúp</span>
+                            <span>{t("Trợ giúp", "Help & Support")}</span>
                           </Link>
                         </div>
 
@@ -504,7 +464,7 @@ export default function Navbar() {
                               className="w-full flex items-center gap-3 px-5 py-3 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors font-medium"
                             >
                               <LogOut className="w-4 h-4" />
-                              <span>Đăng xuất</span>
+                              <span>{t("Đăng xuất", "Log out")}</span>
                             </button>
                           </form>
                         </div>
@@ -515,10 +475,10 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/login"
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full font-medium transition-all shadow-sm hover:shadow-md bg-rose-600 text-white hover:bg-rose-700"
+                  className="flex items-center gap-2 px-4 py-2 ml-2 rounded-full font-medium transition-all shadow-sm hover:shadow-md bg-white text-rose-600 hover:bg-rose-50 text-sm"
                 >
                   <User className="w-4 h-4" />
-                  <span>Đăng nhập</span>
+                  <span>{t("Đăng nhập", "Sign in")}</span>
                 </Link>
               )}
             </div>
@@ -527,7 +487,7 @@ export default function Navbar() {
             <div className="md:hidden flex items-center">
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className={cn("p-2 rounded-full text-gray-700")}
+                className={cn("p-2 rounded-full text-white")}
               >
                 <Menu className="w-6 h-6" />
               </button>
@@ -589,21 +549,30 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 py-3 text-lg font-medium"
               >
-                <Globe className="w-5 h-5 text-gray-400" /> Điểm đến
+                <Globe className="w-5 h-5 text-gray-400" /> {t("Điểm đến", "Destinations")}
               </Link>
+              <button
+                onClick={(e) => {
+                  setMobileMenuOpen(false);
+                  handleHotelsClick(e);
+                }}
+                className="flex items-center gap-3 py-3 text-lg font-medium text-left"
+              >
+                <MapPin className="w-5 h-5 text-gray-400" /> StaySaga Hotels {t("(Gần tôi)", "(Near me)")}
+              </button>
               <Link
-                href="/homestays"
+                href="/host/list"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 py-3 text-lg font-medium"
               >
-                <Home className="w-5 h-5 text-gray-400" /> Homestays
+                <Home className="w-5 h-5 text-gray-400" /> {t("Đăng chỗ nghỉ", "List your property")}
               </Link>
               <Link
                 href="/blog"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 py-3 text-lg font-medium"
               >
-                <Star className="w-5 h-5 text-gray-400" /> Trải nghiệm
+                <Star className="w-5 h-5 text-gray-400" /> {t("Trải nghiệm", "Experiences")}
               </Link>
 
               {user && (
@@ -614,29 +583,28 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 py-3 text-lg font-medium"
                   >
-                    <User className="w-5 h-5 text-gray-400" /> Tài khoản
+                    <User className="w-5 h-5 text-gray-400" /> {t("Tài khoản", "Account")}
                   </Link>
                   <Link
                     href="/bookings"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 py-3 text-lg font-medium"
                   >
-                    <CalendarCheck className="w-5 h-5 text-gray-400" /> Đặt
-                    phòng & Chuyến đi
+                    <CalendarCheck className="w-5 h-5 text-gray-400" /> {t("Đặt phòng & Chuyến đi", "Bookings & Trips")}
                   </Link>
                   <Link
                     href="/favorites"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 py-3 text-lg font-medium"
                   >
-                    <Heart className="w-5 h-5 text-gray-400" /> Đã lưu
+                    <Heart className="w-5 h-5 text-gray-400" /> {t("Đã lưu", "Saved")}
                   </Link>
                   <Link
                     href="/reviews"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 py-3 text-lg font-medium"
                   >
-                    <Star className="w-5 h-5 text-gray-400" /> Đánh giá
+                    <Star className="w-5 h-5 text-gray-400" /> {t("Đánh giá", "Reviews")}
                   </Link>
                   {(userRole === "host" || userRole === "admin") && (
                     <Link
@@ -644,7 +612,7 @@ export default function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-3 py-3 text-lg font-medium"
                     >
-                      <Home className="w-5 h-5 text-gray-400" /> Quản lý chỗ ở
+                      <Home className="w-5 h-5 text-gray-400" /> {t("Quản lý chỗ ở", "Manage properties")}
                     </Link>
                   )}
                   {userRole === "admin" && (
@@ -653,8 +621,7 @@ export default function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-3 py-3 text-lg font-medium"
                     >
-                      <BarChart className="w-5 h-5 text-gray-400" /> Quản trị
-                      website
+                      <BarChart className="w-5 h-5 text-gray-400" /> {t("Quản trị website", "Admin Dashboard")}
                     </Link>
                   )}
                 </>
@@ -669,7 +636,7 @@ export default function Navbar() {
                     className="w-full flex justify-center items-center gap-2 bg-gray-100 text-rose-600 dark:bg-zinc-800 py-4 rounded-xl font-medium"
                   >
                     <LogOut className="w-5 h-5" />
-                    Đăng xuất
+                    {t("Đăng xuất", "Log out")}
                   </button>
                 </form>
               ) : (
@@ -679,7 +646,7 @@ export default function Navbar() {
                   className="w-full flex justify-center items-center gap-2 bg-rose-600 text-white py-4 rounded-xl font-medium shadow-md"
                 >
                   <User className="w-5 h-5" />
-                  Đăng nhập / Đăng ký
+                  {t("Đăng nhập / Đăng ký", "Sign in / Register")}
                 </Link>
               )}
             </div>

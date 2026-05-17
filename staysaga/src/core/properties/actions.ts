@@ -1,6 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  getLocationImage,
+} from "@/lib/images/location-images";
+
+const getCityFallbackImage = (city: string, seed: number) => {
+  // Dùng chung hệ fallback theo vị trí (không phụ thuộc Supabase storage URL)
+  return getLocationImage(city, seed);
+};
 
 export type SearchParams = {
   location?: string;
@@ -164,66 +172,6 @@ const MOCK_AMENITIES = [
   "lake_view",
 ];
 
-const HOTEL_IMAGES = [
-  "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=2000",
-  "https://images.unsplash.com/photo-1501117716987-c8e1ecb210a7?q=80&w=2000",
-  "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=2000",
-  "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?q=80&w=2000",
-  "https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=2000",
-  "https://images.unsplash.com/photo-1502672260266-1c1e525044c7?q=80&w=2000",
-  "https://images.unsplash.com/photo-1560067174-89451c3b89f2?q=80&w=2000",
-  "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?q=80&w=2000",
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2000",
-  "https://images.unsplash.com/photo-1590490359683-658d3d23f972?q=80&w=2000",
-  "https://images.unsplash.com/photo-1554995207-c18c203602cb?q=80&w=2000",
-  "https://images.unsplash.com/photo-1560185127-6a8c1d1b1d70?q=80&w=2000",
-  "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=2000",
-  "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=2000",
-  "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2000",
-  "https://images.unsplash.com/photo-1502005097973-6a7082348e28?q=80&w=2000",
-  "https://images.unsplash.com/photo-1469796466635-455ede028aca?q=80&w=2000",
-  "https://images.unsplash.com/photo-1549187774-b4e9b0445b41?q=80&w=2000",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2000",
-  "https://images.unsplash.com/photo-1560448204-61dc36dc98c8?q=80&w=2000",
-];
-
-const CITY_IMAGE_POOL: Record<string, string[]> = {
-  "tp ho chi minh": HOTEL_IMAGES.slice(0, 5),
-  "ha noi": HOTEL_IMAGES.slice(5, 10),
-  "da lat": HOTEL_IMAGES.slice(10, 15),
-  "nha trang": HOTEL_IMAGES.slice(15, 20),
-  "da nang": HOTEL_IMAGES.slice(2, 7),
-  "phu quoc": HOTEL_IMAGES.slice(7, 12),
-  "hoi an": HOTEL_IMAGES.slice(12, 17),
-  sapa: HOTEL_IMAGES.slice(3, 8),
-  default: HOTEL_IMAGES.slice(0, 5),
-};
-
-const getCityKey = (city?: string) => {
-  if (!city) return "default";
-  const normalized = removeVietnameseTones(city);
-  if (normalized.includes("ho chi minh") || normalized.includes("hcm"))
-    return "tp ho chi minh";
-  if (normalized.includes("ha noi")) return "ha noi";
-  if (normalized.includes("da lat")) return "da lat";
-  if (normalized.includes("nha trang")) return "nha trang";
-  if (normalized.includes("da nang")) return "da nang";
-  if (normalized.includes("phu quoc")) return "phu quoc";
-  if (normalized.includes("hoi an")) return "hoi an";
-  if (normalized.includes("sapa")) return "sapa";
-  return "default";
-};
-
-const getCityImagePool = (city?: string) => {
-  const key = getCityKey(city);
-  return CITY_IMAGE_POOL[key] || CITY_IMAGE_POOL.default;
-};
-
-const getCityFallbackImage = (city?: string, index = 0) => {
-  const pool = getCityImagePool(city);
-  return pool[index % pool.length];
-};
-
 const buildMockProperties = () => {
   const items: any[] = [];
 
@@ -234,15 +182,21 @@ const buildMockProperties = () => {
       const tag = MOCK_TAGS[(i * 2 + cityIndex) % MOCK_TAGS.length];
       const slugIndex = String(i).padStart(2, "0");
       const rating = 4.5 + ((i + cityIndex) % 5) * 0.1;
-      const price = city.basePrice + ((i + cityIndex) % 12) * 150000;
+      // Deterministic pseudo-random price between 150k and 2,000k
+      const seed = getSeedFromString(`${city.slug}-${i}`);
+      const PRICE_MIN = 150000;
+      const PRICE_MAX = 2000000;
+      const price = PRICE_MIN + ((seed * 73939) % (PRICE_MAX - PRICE_MIN + 1));
       const maxGuests = 2 + ((i + cityIndex) % 6);
       const bedrooms = 1 + ((i + cityIndex) % 4);
       const beds = bedrooms + ((i + cityIndex) % 2);
       const bathrooms = 1 + ((i + cityIndex) % 3);
       const amenityStart = (i + cityIndex) % (MOCK_AMENITIES.length - 4);
       const amenities = MOCK_AMENITIES.slice(amenityStart, amenityStart + 4);
-      const seed = getSeedFromString(`${city.slug}-${i}`);
-      const image = getCityFallbackImage(city.name, seed);
+      const image = getLocationImage(city.name, seed + i);
+      const images = Array.from({ length: 4 }, (_, k) =>
+        getLocationImage(city.name, seed + i + k),
+      );
       const policies = getPolicyFlags(seed);
       const distance_km = getDistanceKm(seed);
 
@@ -254,6 +208,7 @@ const buildMockProperties = () => {
         price,
         rating: Number(rating.toFixed(1)),
         image,
+        images: images.map((url: string) => ({ url })),
         amenities,
         policies,
         distance_km,
@@ -273,6 +228,24 @@ const mockProperties = buildMockProperties();
 /**
  * Chuẩn hoá dữ liệu từ DB về dạng thống nhất mà UI hiểu được
  */
+
+// Force listings to appear as hotels in Đà Lạt (keep dynamic prices)
+const ensureHotelTitle = (title: string | undefined) => {
+  if (!title) return "Khách sạn";
+  return /khách sạn/i.test(title) ? title : `Khách sạn ${title}`;
+};
+
+const normalizeListingDisplay = (p: any) => {
+  const price = Number(p.price ?? p.price_per_night ?? 0) || 0;
+  return {
+    ...p,
+    location: p.location ?? p.city,
+    title: ensureHotelTitle(p.title),
+    price,
+  };
+};
+
+
 function normalizeHomestay(row: any) {
   const seedSource = String(row.id || row.slug || row.city || "");
   const seed = getSeedFromString(seedSource);
@@ -286,7 +259,7 @@ function normalizeHomestay(row: any) {
     location: row.city,
     price: Number(row.price_per_night),
     rating: row.avg_rating || 4.9,
-    image: row.homestay_images?.[0]?.url || fallbackImage,
+    image: row.homestay_images?.[0]?.url ?? fallbackImage,
     images: (row.homestay_images || []).map((img: any) => ({
       id: img.id,
       url: img.url,
@@ -342,16 +315,6 @@ export async function getProperties(params: SearchParams) {
     !Number.isNaN(Date.parse(checkOut)) &&
     new Date(checkOut) > new Date(checkIn),
   );
-  const hasFilters = Boolean(
-    location ||
-    guests ||
-    minPrice ||
-    maxPrice ||
-    minRating ||
-    hasDateRange ||
-    hasExtraFilters,
-  );
-
   const matchesTypeFilters = (title?: string) => {
     if (typeFilters.length === 0) return true;
     const normalizedTitle = removeVietnameseTones(title || "");
@@ -430,8 +393,8 @@ export async function getProperties(params: SearchParams) {
         .from("bookings")
         .select("homestay_id")
         .in("status", ["PENDING", "CONFIRMED"])
-        .lte("check_in_date", checkOut)
-        .gte("check_out_date", checkIn);
+        .lt("check_in_date", checkOut)
+        .gt("check_out_date", checkIn);
 
       if (!overlapError && overlapping && overlapping.length > 0) {
         const blockedIds = Array.from(
@@ -475,9 +438,10 @@ export async function getProperties(params: SearchParams) {
 
     if (error || !data || data.length === 0) {
       const filtered = applyMockFilters();
+      const enforced = filtered.map(normalizeListingDisplay);
       return {
-        properties: filtered.slice(offset, offset + limit),
-        total: filtered.length,
+        properties: enforced.slice(offset, offset + limit),
+        total: enforced.length,
         isMock: true,
       };
     }
@@ -493,16 +457,20 @@ export async function getProperties(params: SearchParams) {
         )
       : normalized;
 
+    const adjusted = filtered.map(normalizeListingDisplay);
+
     return {
-      properties: filtered,
-      total: hasExtraFilters ? filtered.length : count || 0,
+      properties: adjusted,
+      total: hasExtraFilters ? adjusted.length : count || 0,
       isMock: false,
     };
   } catch (err) {
     console.error("Lỗi fetch properties:", err);
+    const filtered = applyMockFilters();
+    const enforcedMock = filtered.map(normalizeListingDisplay);
     return {
-      properties: mockProperties,
-      total: mockProperties.length,
+      properties: enforcedMock.slice(offset, offset + limit),
+      total: enforcedMock.length,
       isMock: true,
     };
   }
@@ -524,8 +492,24 @@ export async function getPropertyBySlug(slug: string) {
 
   if (error || !data) {
     const mock = mockProperties.find((p) => p.slug === slug || p.id === slug);
-    return { data: mock || null, isMock: true };
+    if (mock) return { data: normalizeListingDisplay(mock), isMock: true };
+    
+    // Fallback to hotel-parser (dalat_listings.json)
+    const { getHotelBySlug } = await import("@/lib/hotel-parser");
+    const jsonHotel = getHotelBySlug(slug);
+    if (jsonHotel) {
+      return { 
+        data: {
+          ...jsonHotel,
+          price: Number(jsonHotel.price?.toString().replace(/\D/g, "") || 0),
+          image: jsonHotel.imagePublicPath,
+          location: jsonHotel.city,
+        }, 
+        isMock: true 
+      };
+    }
+    return { data: null, isMock: true };
   }
 
-  return { data: normalizeHomestay(data), isMock: false };
+  return { data: normalizeListingDisplay(normalizeHomestay(data)), isMock: false };
 }

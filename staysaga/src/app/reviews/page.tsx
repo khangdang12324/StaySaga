@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Star, MessageSquare } from "lucide-react";
 import Link from "next/link";
+import { resolveToCanonicalSlug } from "@/lib/hotel-parser";
 import ReviewForm from "@/components/features/reviews/ReviewForm";
 
 export default async function ReviewsPage() {
@@ -86,12 +87,17 @@ export default async function ReviewsPage() {
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <Link
-                      href={`/homestays/${review.homestay?.slug}`}
-                      className="font-bold text-gray-900 hover:text-rose-600 transition-colors"
-                    >
-                      {review.homestay?.name}
-                    </Link>
+                    {
+                      (() => {
+                        const canonical = resolveToCanonicalSlug(review.homestay?.slug || String(review.homestay?.id));
+                        const href = canonical ? `/homestays/${canonical}` : `/homestays?location=${encodeURIComponent(review.homestay?.city || '')}`;
+                        return (
+                          <Link href={href} className="font-bold text-gray-900 hover:text-rose-600 transition-colors">
+                            {review.homestay?.name}
+                          </Link>
+                        );
+                      })()
+                    }
                     <p className="text-sm text-gray-500">
                       {review.homestay?.city}
                     </p>

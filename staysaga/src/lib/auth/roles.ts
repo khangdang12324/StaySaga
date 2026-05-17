@@ -1,14 +1,7 @@
 export type AppRole = "guest" | "host" | "admin";
 
 export type SupabaseLike = {
-  from: (table: string) => {
-    select: (columns: string) => any;
-    eq: (column: string, value: string) => any;
-    maybeSingle: () => Promise<{
-      data: { role?: AppRole | null } | null;
-      error: any;
-    }>;
-  };
+  from: (table: string) => any;
 };
 
 export async function getUserRole(

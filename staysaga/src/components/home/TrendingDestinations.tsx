@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, X } from "lucide-react";
 import SafeImage from "@/components/ui/SafeImage";
+import { resolveToCanonicalSlug } from "@/lib/hotel-parser";
+import { getLocationImage } from "@/lib/images/location-images";
 
 type Stay = {
   id: string;
@@ -40,15 +42,22 @@ type TrendingDestinationsProps = {
   };
 };
 
-const formatPrice = (value: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value);
+const formatPrice = (value: number) => {
+  let currency = "VND";
+  if (typeof document !== "undefined") {
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+      const [k, v] = cookie.trim().split("=");
+      if (k === "currency") currency = v;
+    }
+  }
+  if (currency === "USD") {
+     return `USD ${(value / 27000).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `VND ${value.toLocaleString("vi-VN")}`;
+}
 
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1600";
+const FALLBACK_IMAGE = getLocationImage("TP. Hồ Chí Minh");
 
 export default function TrendingDestinations({
   destinations,
@@ -73,7 +82,7 @@ export default function TrendingDestinations({
             <p className="text-xs uppercase tracking-[0.25em] text-rose-500 font-semibold">
               {copy.kicker}
             </p>
-            <h2 className="mt-3 text-3xl md:text-4xl font-semibold text-gray-900 font-(--font-display)">
+            <h2 className="mt-3 text-3xl md:text-4xl font-semibold text-gray-900">
               {copy.title}
             </h2>
             <p className="mt-2 text-gray-600 max-w-2xl">{copy.description}</p>
@@ -144,9 +153,7 @@ export default function TrendingDestinations({
                 <p className="text-xs uppercase tracking-[0.2em] text-white/80">
                   {copy.modalKicker}
                 </p>
-                <h3 className="mt-2 text-3xl font-semibold font-(--font-display)">
-                  {active.name}
-                </h3>
+                <h3 className="mt-2 text-3xl font-semibold">{active.name}</h3>
                 <p className="mt-2 text-sm text-white/80">
                   {copy.modalDescription}
                 </p>
@@ -178,8 +185,9 @@ export default function TrendingDestinations({
 
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {active.stays.map((stay) => {
-                  const stayHref = stay.slug
-                    ? `/homestays/${stay.slug}`
+                  const canonical = resolveToCanonicalSlug(stay.slug || stay.id);
+                  const stayHref = canonical
+                    ? `/homestays/${canonical}`
                     : `/homestays?location=${encodeURIComponent(active.name)}`;
 
                   return (

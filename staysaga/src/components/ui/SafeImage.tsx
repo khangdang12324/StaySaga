@@ -1,34 +1,63 @@
 "use client";
-import React, { useState } from "react";
 
-interface Props extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> {
+import { useState, type SyntheticEvent } from "react";
+import Image from "next/image";
+
+const FALLBACK_IMAGE = "/images/fallback-hotel.jpg";
+
+type SafeImageProps = Omit<
+  React.ComponentPropsWithoutRef<typeof Image>,
+  "src" | "alt" | "fill" | "loading"
+> & {
   src?: string | null;
+  alt?: string;
   fallback?: string;
-}
+  fill?: boolean;
+  loading?: "lazy" | "eager";
+};
 
 export default function SafeImage({
   src,
-  fallback = "/fallback.svg",
+  fallback = FALLBACK_IMAGE,
   alt = "",
   className = "",
+  onError,
   ...rest
-}: Props) {
-  const [broken, setBroken] = useState(false);
-  const srcSafe =
-    src && typeof src === "string" && src.length > 0 ? src : fallback;
+}: SafeImageProps) {
+  const resolvedSrc = src || fallback;
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const currentSrc = failedSrc === resolvedSrc ? fallback : resolvedSrc;
+  const useFill = Boolean(rest.fill);
+  const hasDimensions =
+    typeof rest.width === "number" && typeof rest.height === "number";
 
-  if (broken) {
-    return <img src={fallback} alt={alt} className={className} {...rest} />;
+  const handleError = (event: SyntheticEvent<HTMLImageElement, Event>) => {
+    if (currentSrc !== fallback) {
+      console.error("[SafeImage] image failed, falling back:", currentSrc);
+      setFailedSrc(resolvedSrc);
+    }
+    onError?.(event);
+  };
+
+  if (!useFill && !hasDimensions) {
+    return (
+      <img
+        src={currentSrc}
+        alt={alt}
+        className={className}
+        onError={handleError}
+      />
+    );
   }
 
   return (
-    // use regular img so it's simple; next/image causes layout shifts in many places
-    // keep attributes pass-through
-    <img
-      src={srcSafe}
+    <Image
+      src={currentSrc}
       alt={alt}
+      unoptimized
+      loading="lazy"
       className={className}
-      onError={() => setBroken(true)}
+      onError={handleError}
       {...rest}
     />
   );

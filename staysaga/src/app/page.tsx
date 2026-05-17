@@ -12,7 +12,7 @@ const DESTINATION_CITIES = [
 ];
 
 const FALLBACK_DESTINATION_IMAGE =
-  "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=2000";
+  "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=2000&auto=format&fit=crop";
 
 const TRENDING_COPY = {
   kicker: "Điểm đến nổi bật",
@@ -32,7 +32,11 @@ const TRENDING_COPY = {
 };
 
 export default async function Home() {
-  const siteSettings = await getSiteSettings(["hero_title", "hero_subtitle"]);
+  const siteSettings = await getSiteSettings([
+    "hero_title",
+    "hero_subtitle",
+    "hero_image",
+  ]);
 
   const destinations = await Promise.all(
     DESTINATION_CITIES.map(async (city, index) => {
@@ -60,6 +64,7 @@ export default async function Home() {
       <HeroSection
         title={siteSettings.hero_title}
         subtitle={siteSettings.hero_subtitle}
+        heroImage={siteSettings.hero_image || undefined}
       />
       <TrendingDestinations destinations={destinations} copy={TRENDING_COPY} />
 

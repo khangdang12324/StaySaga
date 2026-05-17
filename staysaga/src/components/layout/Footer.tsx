@@ -5,28 +5,28 @@ export default function Footer() {
     <footer className="w-full bg-white border-t border-gray-100 text-gray-700">
       <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="space-y-2">
-          <h3 className="font-semibold text-lg">StaySaga</h3>
+          <h3 className="font-semibold text-lg">StaySaga Hotels</h3>
           <p className="text-sm">
-            © {new Date().getFullYear()} StaySaga. All rights reserved.
+            © {new Date().getFullYear()} StaySaga Travel. All rights reserved.
           </p>
         </div>
         <div className="flex gap-6">
           <div className="space-y-1">
-            <h4 className="font-medium">Company</h4>
+            <h4 className="font-medium">StaySaga</h4>
             <a href="/about" className="text-sm hover:text-rose-600">
-              About
+              Về chúng tôi
             </a>
             <a href="/careers" className="text-sm hover:text-rose-600">
-              Careers
+              Tuyển dụng
             </a>
           </div>
           <div className="space-y-1">
-            <h4 className="font-medium">Support</h4>
+            <h4 className="font-medium">Hỗ trợ</h4>
             <a href="/help" className="text-sm hover:text-rose-600">
-              Help Center
+              Trung tâm trợ giúp
             </a>
             <a href="/contact" className="text-sm hover:text-rose-600">
-              Contact
+              Liên hệ
             </a>
           </div>
         </div>

@@ -122,7 +122,9 @@ async function uploadImage(
     redirectToHostError("upload_failed");
   }
 
-  const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(storagePath);
+  const { data } = supabase.storage
+    .from(IMAGE_BUCKET)
+    .getPublicUrl(storagePath);
 
   const { error: imageError } = await supabase.from("homestay_images").insert({
     homestay_id: homestayId,
@@ -335,4 +337,21 @@ export async function deleteHostHomestay(formData: FormData) {
   revalidatePath("/host");
   revalidatePath("/homestays");
   redirectToHost("deleted");
+}
+
+export async function promoteToHost(formData: FormData) {
+  const { supabase, user } = await getCurrentUser();
+
+  // Mark the profile role as host
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({ id: user.id, role: "host" }, { onConflict: "id" });
+
+  if (error) {
+    redirectToHostError("promote_failed");
+  }
+
+  revalidatePath("/host");
+  revalidatePath("/homestays");
+  redirect("/host?status=promoted");
 }

@@ -4,9 +4,9 @@ import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
 
 export const metadata: Metadata = {
-  title: "StaySaga - Nền tảng đặt phòng Homestay cao cấp",
+  title: "StaySaga Hotels | StaySaga Travel",
   description:
-    "Trải nghiệm lưu trú tuyệt vời với hàng ngàn homestay sang trọng, tiện nghi và hiện đại.",
+    "Khám phá khách sạn và homestay thật với thương hiệu StaySaga, giao diện sang trọng và trải nghiệm đặt chỗ hiện đại.",
 };
 
 export default function RootLayout({

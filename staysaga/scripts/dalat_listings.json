@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "title": "TTR Studio Apart' Hotel Dalat",
+    "room_name": "Studio Gia Đình",
+    "price": 585353,
+    "price_currency": "VND",
+    "image_src": "./Booking.com_ Khách sạn tại Đà Lạt. Hãy đặt khách sạn ngay bây giờ!_files/810886880.webp",
+    "image_local_path": "C:\\Users\\Admin\\Downloads\\Booking.com_ Khách sạn tại Đà Lạt. Hãy đặt khách sạn ngay bây giờ!_files\\810886880.webp",
+    "rating": null,
+    "reviews_count": 77,
+    "link": "https://www.booking.com/hotel/vn/apart.vi.html?label=gen173nr-10CAEoggI46AdIM1gEaPQBiAEBmAEzuAEXyAEM2AED6AEB-AEBiAIBqAIBuALtjJzQBsACAdICJDEyYTkzYzg0LWM4NDEtNDgzZS1iYjlmLTZmYWIyOWE1YzFmYdgCAeACAQ&aid=304142&ucfs=1&arphpl=1&checkin=2026-05-16&checkout=2026-05-17&dest_id=-3712045&dest_type=city&group_adults=2&req_adults=2&no_rooms=1&group_children=0&req_children=0&hpos=1&hapos=1&sr_order=popularity&srpvid=d4e0528456400041&srepoch=1778845454&all_sr_blocks=1566909003_0_2_0_0&highlighted_blocks=1566909003_0_2_0_0&matching_block_id=1566909003_0_2_0_0&sr_pri_blocks=1566909003_0_2_0_0__58535300&from=searchresults"
+  },
+  {
+    "id": 2,
+    "title": "TTR Skypool Boutique Hotel",
+    "room_name": "Phòng Có Giường Cỡ Queen",
+    "price": 722499,
+    "price_currency": "VND",
+    "image_src": "./Booking.com_ Khách sạn tại Đà Lạt. Hãy đặt khách sạn ngay bây giờ!_files/845558402.webp",
+    "image_local_path": "C:\\Users\\Admin\\Downloads\\Booking.com_ Khách sạn tại Đà Lạt. Hãy đặt khách sạn ngay bây giờ!_files\\845558402.webp",
+    "rating": null,
+    "reviews_count": 66,
+    "link": "https://www.booking.com/hotel/vn/ttr-thanh-pho-da-lat.vi.html?label=gen173nr-10CAEoggI46AdIM1gEaPQBiAEBmAEzuAEXyAEM2AED6AEB-AEBiAIBqAIBuALtjJzQBsACAdICJDEyYTkzYzg0LWM4NDEtNDgzZS1iYjlmLTZmYWIyOWE1YzFmYdgCAeACAQ&aid=304142&ucfs=1&arphpl=1&checkin=2026-05-16&checkout=2026-05-17&dest_id=-3712045&dest_type=city&group_adults=2&req_adults=2&no_rooms=1&group_children=0&req_children=0&hpos=2&hapos=2&sr_order=popularity&srpvid=d4e0528456400041&srepoch=1778845454&all_sr_blocks=1605997201_431541898_2_0_0&highlighted_blocks=1605997201_431541898_2_0_0&matching_block_id=1605997201_431541898_2_0_0&sr_pri_blocks=1605997201_431541898_2_0_0__26010000&from=searchresults"
+  }
+]

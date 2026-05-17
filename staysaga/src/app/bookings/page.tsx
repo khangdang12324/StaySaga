@@ -1,16 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { CalendarCheck, MapPin } from "lucide-react";
+import { ChevronRight, HelpCircle } from "lucide-react";
 import Link from "next/link";
-import { cancelBooking, rescheduleBooking } from "@/core/bookings/actions";
 import SafeImage from "@/components/ui/SafeImage";
+import { getLocationImage } from "@/lib/images/location-images";
+import { format } from "date-fns";
 
-type Props = {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-};
+export default async function BookingsPage(props: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const tab = searchParams.tab || "upcoming";
 
-export default async function BookingsPage({ searchParams }: Props) {
   const supabase = await createClient();
   const {
     data: { session },
@@ -18,33 +20,12 @@ export default async function BookingsPage({ searchParams }: Props) {
 
   if (!session) redirect("/login");
 
-  const resolvedParams = await searchParams;
-  const status =
-    typeof resolvedParams.status === "string"
-      ? resolvedParams.status
-      : undefined;
-  const error =
-    typeof resolvedParams.error === "string" ? resolvedParams.error : undefined;
-  const statusMessage =
-    status === "cancelled"
-      ? "Da huy dat phong."
-      : status === "rescheduled"
-        ? "Da cap nhat ngay dat phong."
-        : undefined;
-  const errorMessage =
-    error === "conflict"
-      ? "Ngay da co nguoi dat. Vui long chon ngay khac."
-      : error === "date_invalid"
-        ? "Ngay dat phong khong hop le."
-        : error === "not_allowed"
-          ? "Khong the cap nhat don dat phong nay."
-          : error
-            ? "Khong the xu ly yeu cau. Vui long thu lai."
-            : undefined;
-  const today = new Date().toISOString().split("T")[0];
-
   const cookieStore = await cookies();
   const mockCookie = cookieStore.get("mock_bookings");
+  const lang = cookieStore.get("lang")?.value || "VN";
+  const currency = cookieStore.get("currency")?.value || "VND";
+  const t = (vi: string, en: string) => lang === "EN" ? en : vi;
+
   let mockBookings: any[] = [];
 
   if (mockCookie?.value) {
@@ -63,183 +44,142 @@ export default async function BookingsPage({ searchParams }: Props) {
     .order("created_at", { ascending: false });
 
   const allBookings = [...(bookings || []), ...mockBookings];
-  const hasBookings = allBookings.length > 0;
+  
+  const today = new Date().toISOString().split("T")[0];
+  
+  const filteredBookings = allBookings.filter(booking => {
+     const isCancelled = booking.status === "CANCELLED";
+     const checkOutDate = booking.check_out_date?.slice(0, 10) || "";
+     const isPast = checkOutDate < today;
+     
+     if (tab === "cancelled") return isCancelled;
+     if (tab === "past") return !isCancelled && isPast;
+     return !isCancelled && !isPast; // upcoming
+  });
+
+  const hasBookings = filteredBookings.length > 0;
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="pt-28 pb-20 max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
-          Đặt phòng & Chuyến đi
-        </h1>
-        <p className="text-gray-500 mb-8">
-          Quản lý tất cả lịch trình du lịch của bạn tại đây.
-        </p>
+    <div className="min-h-screen bg-[#f5f5f5] text-[#1a1a1a] pb-20">
+      {/* Rose Header */}
+      <header className="bg-rose-600 pt-3 pb-3 shadow-sm">
+         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
+            <Link href="/" className="text-white text-2xl font-bold tracking-tight">StaySaga</Link>
+            <div className="flex items-center gap-2 text-white text-sm font-bold">
+               <span className="hidden sm:inline hover:bg-rose-700 p-2 px-3 rounded cursor-pointer transition-colors">{currency}</span>
+               <div className="hover:bg-rose-700 p-2 rounded cursor-pointer transition-colors flex items-center justify-center">
+                  {lang === "VN" ? (
+                    <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700">
+                       <span className="text-yellow-400 text-xs leading-none">★</span>
+                    </div>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative">
+                       <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
+                       <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
+                       <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
+                       <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
+                    </div>
+                  )}
+               </div>
+               <div className="hover:bg-rose-700 p-2 rounded cursor-pointer transition-colors">
+                  <HelpCircle className="w-5 h-5" />
+               </div>
+               <div className="hidden lg:inline hover:bg-rose-700 p-2 px-3 rounded cursor-pointer transition-colors">
+                  {t("Đăng chỗ nghỉ của Quý vị", "List your property")}
+               </div>
+               <div className="flex items-center gap-2 hover:bg-rose-700 p-2 rounded cursor-pointer transition-colors ml-2">
+                  <div className="h-8 w-8 rounded-full bg-[#febb02] flex items-center justify-center text-rose-900 font-bold">
+                    {session?.user?.user_metadata?.full_name?.[0]?.toUpperCase() || "P"}
+                  </div>
+                  <div className="hidden md:flex flex-col">
+                     <span>{session?.user?.user_metadata?.full_name || "Phúc Khang Đặng Nguyễn"}</span>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </header>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-gray-200">
-          <button className="px-5 py-3 text-sm font-bold text-rose-600 border-b-2 border-rose-600">
-            Sắp tới
-          </button>
-          <button className="px-5 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
-            Đã hoàn thành
-          </button>
-          <button className="px-5 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
-            Đã hủy
-          </button>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+           <h1 className="text-2xl font-bold">
+             {t("Đặt chỗ & Chuyến đi", "Bookings & Trips")}
+           </h1>
+           <a href="#" className="text-rose-600 text-[13px] font-bold hover:underline">{t("Bạn không tìm thấy đặt phòng?", "Can't find your booking?")}</a>
         </div>
 
-        {errorMessage && (
-          <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
-            {errorMessage}
-          </div>
-        )}
-        {statusMessage && (
-          <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
-            {statusMessage}
-          </div>
-        )}
+        <div className="flex items-center gap-4 mb-6 border-b border-zinc-200 pb-2">
+           <Link 
+             href="/bookings?tab=upcoming" 
+             className={`px-4 py-1.5 rounded-full text-sm font-medium ${tab === 'upcoming' ? 'border border-rose-600 text-rose-600' : 'text-zinc-600 hover:bg-zinc-100'} transition-colors`}
+           >
+             {t("Sắp tới", "Upcoming")}
+           </Link>
+           <Link 
+             href="/bookings?tab=past" 
+             className={`px-4 py-1.5 rounded-full text-sm font-medium ${tab === 'past' ? 'border border-rose-600 text-rose-600' : 'text-zinc-600 hover:bg-zinc-100'} transition-colors`}
+           >
+             {t("Đã qua", "Past")}
+           </Link>
+           <Link 
+             href="/bookings?tab=cancelled" 
+             className={`px-4 py-1.5 rounded-full text-sm font-medium ${tab === 'cancelled' ? 'border border-rose-600 text-rose-600' : 'text-zinc-600 hover:bg-zinc-100'} transition-colors`}
+           >
+             {t("Đã hủy", "Cancelled")}
+           </Link>
+        </div>
 
         {hasBookings ? (
-          <div className="space-y-4">
-            {allBookings.map((booking: any) => {
-              const isMock = Boolean(booking.isMock);
-              const canEdit =
-                !isMock &&
-                (booking.status === "PENDING" ||
-                  booking.status === "CONFIRMED");
-              const defaultCheckIn = booking.check_in_date?.slice(0, 10) || "";
-              const defaultCheckOut =
-                booking.check_out_date?.slice(0, 10) || "";
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredBookings.map((booking: any) => {
+              const city = booking.homestay?.city || booking.homestay?.location || "Đà Lạt";
+              const checkInDate = booking.check_in_date ? new Date(booking.check_in_date) : new Date();
+              const checkOutDate = booking.check_out_date ? new Date(booking.check_out_date) : new Date(checkInDate.getTime() + 86400000);
+              const formattedDates = `${format(checkInDate, "d")} ${t("tháng", "th")} ${format(checkInDate, "M, yyyy")} – ${format(checkOutDate, "d")} ${t("tháng", "th")} ${format(checkOutDate, "M, yyyy")}`;
+              const imgUrl = booking.homestay?.homestay_images?.[0]?.url || getLocationImage(city);
 
               return (
-                <div
+                <Link
+                  href={`/bookings/trip?bookingId=${booking.id}`}
                   key={booking.id}
-                  className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white rounded overflow-hidden shadow-sm hover:shadow-md border border-zinc-200 transition-all flex flex-col cursor-pointer"
                 >
-                  <div className="flex flex-col md:flex-row">
-                    <div className="md:w-48 h-32 md:h-auto">
-                      <SafeImage
-                        src={
-                          booking.homestay?.homestay_images?.[0]?.url ||
-                          "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500"
-                        }
-                        alt={booking.homestay?.name || "Homestay"}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 p-5">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-bold text-lg text-gray-900">
-                            {booking.homestay?.name || "Homestay"}
-                          </h3>
-                          <p className="text-gray-500 text-sm flex items-center gap-1 mt-1">
-                            <MapPin className="w-3 h-3" />{" "}
-                            {booking.homestay?.city || "Việt Nam"}
-                          </p>
-                        </div>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
-                            booking.status === "CONFIRMED"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : booking.status === "PENDING"
-                                ? "bg-amber-100 text-amber-700"
-                                : booking.status === "CANCELLED"
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {booking.status === "CONFIRMED"
-                            ? "Đã xác nhận"
-                            : booking.status === "PENDING"
-                              ? "Chờ thanh toán"
-                              : booking.status === "CANCELLED"
-                                ? "Đã hủy"
-                                : "Hoàn thành"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-6 mt-4 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <CalendarCheck className="w-4 h-4" />{" "}
-                          {booking.check_in_date} → {booking.check_out_date}
-                        </span>
-                        <span className="font-bold text-gray-900">
-                          {Number(booking.total_price).toLocaleString("vi-VN")}đ
-                        </span>
-                      </div>
-
-                      {canEdit && (
-                        <div className="mt-5 pt-4 border-t border-gray-100 space-y-3">
-                          <form
-                            action={rescheduleBooking}
-                            className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2"
-                          >
-                            <input
-                              type="hidden"
-                              name="bookingId"
-                              value={booking.id}
-                            />
-                            <input
-                              type="date"
-                              name="checkIn"
-                              defaultValue={defaultCheckIn}
-                              min={today}
-                              required
-                              aria-label="Ngay nhan phong"
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none"
-                            />
-                            <input
-                              type="date"
-                              name="checkOut"
-                              defaultValue={defaultCheckOut}
-                              min={today}
-                              required
-                              aria-label="Ngay tra phong"
-                              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-rose-500 focus:ring-2 focus:ring-rose-100 outline-none"
-                            />
-                            <button
-                              type="submit"
-                              className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-rose-700 shadow-sm"
-                            >
-                              Doi ngay
-                            </button>
-                          </form>
-                          <form action={cancelBooking}>
-                            <input
-                              type="hidden"
-                              name="bookingId"
-                              value={booking.id}
-                            />
-                            <button
-                              type="submit"
-                              className="text-sm font-semibold text-rose-600 hover:text-rose-700"
-                            >
-                              Huy dat phong
-                            </button>
-                          </form>
-                        </div>
-                      )}
-                    </div>
+                  <div className="h-40 w-full relative">
+                     <SafeImage
+                        src={imgUrl}
+                        alt={city}
+                        fill
+                        className="object-cover"
+                     />
                   </div>
-                </div>
+                  <div className="p-4 flex items-center justify-between">
+                     <div>
+                        <h3 className="font-bold text-[15px]">{city}</h3>
+                        <p className="text-[13px] text-zinc-600 mt-0.5">{formattedDates}</p>
+                        <p className="text-[13px] text-zinc-600 mt-0.5">1 {t("đơn đặt", "booking")}</p>
+                     </div>
+                  </div>
+                </Link>
               );
             })}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
-            <CalendarCheck className="w-16 h-16 text-rose-100 mx-auto mb-4" />
+          <div className="text-center py-20 bg-white rounded border border-zinc-200 shadow-sm">
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Chưa có chuyến đi nào
+              {tab === 'upcoming' ? t('Chưa có chuyến đi nào sắp tới', 'No upcoming trips') : tab === 'past' ? t('Chưa có chuyến đi nào đã qua', 'No past trips') : t('Không có chuyến đi nào đã hủy', 'No cancelled trips')}
             </h2>
-            <p className="text-gray-500 mb-6">
-              Bắt đầu khám phá và đặt chỗ ở cho chuyến đi tiếp theo!
-            </p>
-            <Link
-              href="/homestays"
-              className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-md inline-block"
-            >
-              Khám phá Homestays
-            </Link>
+            {tab === 'upcoming' && (
+              <>
+                <p className="text-[13px] text-zinc-600 mb-6">
+                  {t("Bắt đầu khám phá và đặt chỗ ở cho chuyến đi tiếp theo!", "Start exploring and book an accommodation for your next trip!")}
+                </p>
+                <Link
+                  href="/homestays"
+                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-6 py-2 rounded text-sm transition-all inline-block"
+                >
+                  {t("Khám phá chỗ nghỉ", "Explore accommodations")}
+                </Link>
+              </>
+            )}
           </div>
         )}
       </div>

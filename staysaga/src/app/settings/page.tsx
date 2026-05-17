@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, Shield, Globe, Trash2, Loader2 } from "lucide-react";
@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{
@@ -43,7 +43,7 @@ export default function SettingsPage() {
     };
 
     init();
-  }, []);
+  }, [router, supabase]);
 
   const handleSave = async () => {
     setSaving(true);

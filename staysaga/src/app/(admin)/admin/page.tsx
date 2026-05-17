@@ -11,7 +11,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserRole } from "@/lib/auth/roles";
-import { getSiteSettings, updateSiteSettings } from "@/core/site/actions";
+import {
+  getSiteSettings,
+  updateSiteSettings,
+  removeHeroImage,
+} from "@/core/site/actions";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -208,10 +213,10 @@ export default async function AdminPage() {
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-rose-50 file:text-rose-700"
                 />
                 {settings.hero_image && (
-                  <img
+                  <SafeImage
                     src={settings.hero_image}
                     alt="Hero preview"
-                    className="w-36 h-20 rounded-lg object-cover border border-gray-100"
+                    className="w-36 h-20 rounded-lg border border-gray-100"
                   />
                 )}
               </div>
@@ -228,6 +233,49 @@ export default async function AdminPage() {
               </button>
             </div>
           </form>
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <h3 className="font-bold mb-3">Ảnh hero</h3>
+          <div className="flex items-center gap-4">
+            {settings.hero_image ? (
+              <>
+                <SafeImage
+                  src={settings.hero_image}
+                  alt="Hero preview"
+                  className="w-64 h-36 rounded-lg border border-gray-100"
+                />
+                <form action={removeHeroImage}>
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-red-700"
+                  >
+                    Xóa ảnh hero
+                  </button>
+                </form>
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">Chưa có ảnh hero.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <h3 className="font-bold mb-3">Danh sách Điểm đến nổi bật</h3>
+          <form action={updateSiteSettings} className="flex gap-3 items-center">
+            <input
+              name="featured_destinations"
+              defaultValue={settings.featured_destinations || ""}
+              placeholder="vd: ha-noi,da-lat,phu-quoc"
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100"
+            />
+            <button className="rounded-xl bg-rose-600 px-5 py-3 text-sm font-bold text-white shadow-sm hover:bg-rose-700">
+              Lưu điểm đến
+            </button>
+          </form>
+          <p className="mt-2 text-sm text-gray-500">
+            Nhập danh sách slug điểm đến, cách nhau bằng dấu phẩy.
+          </p>
         </section>
 
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">

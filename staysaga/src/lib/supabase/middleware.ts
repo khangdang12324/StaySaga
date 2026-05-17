@@ -39,7 +39,11 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/register");
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-  const isHostRoute = request.nextUrl.pathname.startsWith("/host");
+  const isPublicHostRoute =
+    request.nextUrl.pathname.startsWith("/host/list") ||
+    request.nextUrl.pathname.startsWith("/host/onboard");
+  const isHostRoute =
+    request.nextUrl.pathname.startsWith("/host") && !isPublicHostRoute;
 
   const protectedRoutes = [
     "/profile",
@@ -49,11 +53,15 @@ export async function updateSession(request: NextRequest) {
     "/bookings",
     "/host",
   ];
-  const isProtected = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
-  );
+  const isProtected =
+    protectedRoutes.some((route) =>
+      request.nextUrl.pathname.startsWith(route),
+    ) && !isPublicHostRoute;
 
-  if (!user && isProtected) {
+  const shouldProtectHostPage =
+    request.nextUrl.pathname.startsWith("/host") && !isPublicHostRoute;
+
+  if (!user && (isProtected || shouldProtectHostPage)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

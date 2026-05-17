@@ -10,6 +10,7 @@ export async function login(formData: FormData) {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const next = (formData.get("next") as string) || "/";
 
   if (!email || !password) {
     return { error: "Vui lòng nhập đầy đủ email và mật khẩu" };
@@ -25,7 +26,7 @@ export async function login(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect(next);
 }
 
 export async function signup(formData: FormData) {
@@ -34,6 +35,7 @@ export async function signup(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const fullName = formData.get("fullName") as string;
+  const next = (formData.get("next") as string) || "/";
 
   if (!email || !password || !fullName) {
     return { error: "Vui lòng nhập đầy đủ thông tin" };
@@ -54,7 +56,7 @@ export async function signup(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect(next);
 }
 
 export async function logout() {

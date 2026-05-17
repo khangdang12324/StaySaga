@@ -40,11 +40,23 @@ export async function updateSiteSettings(formData: FormData) {
     redirect("/");
   }
 
+  const { data: currentHeroRow } = await supabase
+    .from("site_settings")
+    .select("key,value")
+    .in("key", ["hero_image", "hero_image_path"]);
+
+  const currentHeroImagePath =
+    currentHeroRow?.find((row) => row.key === "hero_image_path")?.value || "";
+
   const payload: { key: string; value: string }[] = [
     { key: "site_name", value: parseValue(formData.get("site_name")) },
     { key: "hero_title", value: parseValue(formData.get("hero_title")) },
     { key: "hero_subtitle", value: parseValue(formData.get("hero_subtitle")) },
     { key: "accent_color", value: parseValue(formData.get("accent_color")) },
+    {
+      key: "featured_destinations",
+      value: parseValue(formData.get("featured_destinations")),
+    },
   ].filter((item) => item.value.length > 0);
 
   // Handle hero image upload (optional)
@@ -63,8 +75,17 @@ export async function updateSiteSettings(formData: FormData) {
       });
 
     if (!uploadError) {
-      const { data } = supabase.storage.from("site-assets").getPublicUrl(storagePath);
+      const { data } = supabase.storage
+        .from("site-assets")
+        .getPublicUrl(storagePath);
       payload.push({ key: "hero_image", value: data.publicUrl });
+      payload.push({ key: "hero_image_path", value: storagePath });
+
+      if (currentHeroImagePath && currentHeroImagePath !== storagePath) {
+        await supabase.storage
+          .from("site-assets")
+          .remove([currentHeroImagePath]);
+      }
     }
   }
 
@@ -92,4 +113,49 @@ export async function assertHostAccess(userId: string) {
     redirect("/");
   }
   return { supabase, role };
+}
+
+export async function removeHeroImage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const role = await getUserRole(supabase, user.id);
+  if (role !== "admin") {
+    redirect("/");
+  }
+
+  const { data: heroRows } = await supabase
+    .from("site_settings")
+    .select("key,value")
+    .in("key", ["hero_image_path"]);
+
+  const heroImagePath = heroRows?.find(
+    (row) => row.key === "hero_image_path",
+  )?.value;
+
+  if (heroImagePath) {
+    await supabase.storage.from("site-assets").remove([heroImagePath]);
+  }
+
+  const { error } = await supabase.from("site_settings").upsert(
+    [
+      { key: "hero_image", value: "" },
+      { key: "hero_image_path", value: "" },
+    ],
+    { onConflict: "key" },
+  );
+
+  if (error) {
+    redirect("/admin?error=delete_failed");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  redirect("/admin?status=hero_deleted");
 }

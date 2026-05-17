@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -29,8 +29,10 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { resolveToCanonicalSlug } from "@/lib/hotel-parser";
 import FavoriteButton from "@/components/features/favorites/FavoriteButton";
 import SafeImage from "@/components/ui/SafeImage";
+import { getLocationImage } from "@/lib/images/location-images";
 
 const LEVELS = [
   { name: "Explorer", min: 0, color: "from-gray-400 to-gray-600", icon: "🌱" },
@@ -91,7 +93,7 @@ export default function ProfilePage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     let isMounted = true;
@@ -179,7 +181,7 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router, supabase]);
 
   if (loading || !user)
     return (
@@ -343,6 +345,7 @@ export default function ProfilePage() {
         {activeTab === "security" && <SecurityTab user={user} />}
         {activeTab === "settings" && (
           <SettingsTab
+            key={`${profile.fullName}:${profile.phone}:${profile.locale}`}
             user={user}
             profile={profile}
             onProfileSaved={(updatedUser, nextProfile) => {
@@ -568,7 +571,9 @@ function TripsTab({
 
         const image =
           booking.homestay?.homestay_images?.[0]?.url ||
-          "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500";
+          getLocationImage(
+            booking.homestay?.city || booking.homestay?.location,
+          );
 
         const checkIn = booking.check_in_date
           ? new Date(booking.check_in_date).toLocaleDateString("vi-VN")
@@ -579,19 +584,20 @@ function TripsTab({
 
         return (
           <Link
-            key={booking.id}
-            href={
-              booking.homestay?.slug
-                ? `/homestays/${booking.homestay.slug}`
-                : "/homestays"
-            }
+              key={booking.id}
+              href={
+                (() => {
+                  const canonical = resolveToCanonicalSlug(booking.homestay?.slug || String(booking.homestay?.id));
+                  return canonical ? `/homestays/${canonical}` : "/homestays";
+                })()
+              }
             className="group flex flex-col md:flex-row bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all"
           >
             <div className="md:w-40 h-28 md:h-auto">
-              <img
+              <SafeImage
                 src={image}
                 alt={booking.homestay?.name || "Homestay"}
-                className="w-full h-full object-cover"
+                className="w-full h-full"
               />
             </div>
             <div className="flex-1 p-5">
@@ -675,21 +681,24 @@ function SavedTab({
         const homestay = fav.homestay;
         const image =
           homestay?.homestay_images?.[0]?.url ||
-          "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500";
+          getLocationImage(homestay?.city || homestay?.location);
         const price = Number(homestay?.price_per_night || 0);
         const propertyId = fav.property_id || homestay?.id;
 
         return (
           <Link
             key={fav.id}
-            href={homestay?.slug ? `/homestays/${homestay.slug}` : "/homestays"}
+            href={(() => {
+              const canonical = resolveToCanonicalSlug(homestay?.slug || String(homestay?.id));
+              return canonical ? `/homestays/${canonical}` : "/homestays";
+            })()}
             className="group bg-white/5 border border-white/10 rounded-3xl overflow-hidden hover:border-white/20 transition-all"
           >
             <div className="relative aspect-[4/3] overflow-hidden">
-              <img
+              <SafeImage
                 src={image}
                 alt={homestay?.name || "Homestay"}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                className="w-full h-full transition-transform duration-700 group-hover:scale-110"
               />
               {propertyId && (
                 <FavoriteButton
@@ -847,7 +856,7 @@ function SettingsTab({
     nextProfile: Partial<ProfileState>,
   ) => void;
 }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [form, setForm] = useState({
     fullName: profile.fullName,
     phone: profile.phone,
@@ -858,14 +867,6 @@ function SettingsTab({
     type: "success" | "error";
     text: string;
   } | null>(null);
-
-  useEffect(() => {
-    setForm({
-      fullName: profile.fullName,
-      phone: profile.phone,
-      locale: profile.locale,
-    });
-  }, [profile.fullName, profile.phone, profile.locale]);
 
   const handleSave = async () => {
     setSaving(true);

@@ -21,6 +21,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserRole } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 import SafeImage from "@/components/ui/SafeImage";
+import { getLocationImage } from "@/lib/images/location-images";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -46,10 +47,7 @@ const errorMessages: Record<string, string> = {
 };
 
 function getImage(listing: HostListing) {
-  return (
-    listing.homestay_images?.[0]?.url ||
-    "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1200"
-  );
+  return listing.homestay_images?.[0]?.url || getLocationImage(listing.city);
 }
 
 function Field({

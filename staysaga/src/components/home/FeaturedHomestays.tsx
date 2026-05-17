@@ -1,52 +1,55 @@
-"use client";
-
 import { motion } from "framer-motion";
-import { Heart, Star, MapPin } from "lucide-react";
+import { Heart, Star, MapPin, Home } from "lucide-react";
+import Link from "next/link";
+import { resolveToCanonicalSlug } from "@/lib/hotel-parser";
+import SafeImage from "@/components/ui/SafeImage";
+import { getProperties } from "@/core/properties/actions";
+import { createClient } from "@/lib/supabase/server";
+import { getUserRole } from "@/lib/auth/roles";
+import { getLocationImage } from "@/lib/images/location-images";
 
-const properties = [
-  {
-    id: 1,
-    title: "Biệt thự biển ngắm hoàng hôn",
-    location: "Nha Trang, Việt Nam",
-    price: "2.500.000",
-    rating: 4.9,
-    reviews: 128,
-    image:
-      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=2000&auto=format&fit=crop",
-  },
-  {
-    id: 2,
-    title: "Cabin gỗ giữa đồi thông",
-    location: "Đà Lạt, Lâm Đồng",
-    price: "1.200.000",
-    rating: 4.8,
-    reviews: 95,
-    image:
-      "https://images.unsplash.com/photo-1501117716987-c8e1ecb210a7?q=80&w=2000&auto=format&fit=crop",
-  },
-  {
-    id: 3,
-    title: "Penthouse trung tâm thành phố",
-    location: "Quận 1, TP. HCM",
-    price: "3.800.000",
-    rating: 5.0,
-    reviews: 42,
-    image:
-      "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=2000&auto=format&fit=crop",
-  },
-  {
-    id: 4,
-    title: "Eco Retreat Resort",
-    location: "Sapa, Lào Cai",
-    price: "1.800.000",
-    rating: 4.7,
-    reviews: 210,
-    image:
-      "https://images.unsplash.com/photo-1560067174-89451c3b89f2?q=80&w=2000&auto=format&fit=crop",
-  },
-];
+type FeaturedProperty = {
+  id: string;
+  slug?: string | null;
+  title?: string | null;
+  name?: string | null;
+  location?: string | null;
+  image?: string | null;
+  rating?: number | null;
+  price?: number | null;
+};
 
-export default function FeaturedHomestays() {
+/** Không dùng ảnh Unsplash ngẫu nhiên để tránh “lạc nơi”.
+ *  Featured sẽ lấy ảnh theo location đã verify.
+ */
+
+export default async function FeaturedHomestays() {
+  const { properties } = await getProperties({ page: 1 });
+
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  let hostHref = "/login?next=/host";
+  if (session?.user) {
+    const role = await getUserRole(supabase, session.user.id);
+    hostHref =
+      role === "host" || role === "admin" ? "/host" : "/login?next=/host";
+  }
+
+  const list = await Promise.all(
+    ((properties || []).slice(0, 4) as FeaturedProperty[]).map(
+      async (property, index) => ({
+        ...property,
+        image: getLocationImage(
+          property.location || property.title || property.name,
+          index,
+        ),
+      }),
+    ),
+  );
+
   return (
     <section className="py-20 bg-white dark:bg-zinc-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,60 +68,83 @@ export default function FeaturedHomestays() {
               trải nghiệm tuyệt vời cho kỳ nghỉ của bạn.
             </p>
           </motion.div>
-          <motion.button
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="hidden md:block px-6 py-3 border-2 border-gray-200 dark:border-zinc-800 rounded-full font-medium hover:border-rose-600 hover:text-rose-600 transition-colors"
+          <motion.a
+            href={hostHref}
+            className="hidden md:inline-flex items-center gap-2 rounded-full px-5 font-medium transition hover:bg-gray-100 bg-gray-50/60 border border-gray-200 text-gray-700 py-2"
           >
-            Xem tất cả
-          </motion.button>
+            <Home className="w-4 h-4 mr-1" />
+            Đăng chỗ nghỉ
+          </motion.a>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {properties.map((property, index) => (
-            <motion.div
-              key={property.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group cursor-pointer"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl mb-4">
-                <img
-                  src={property.image}
-                  alt={property.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <button className="absolute top-4 right-4 p-2 bg-white/70 backdrop-blur-md rounded-full text-gray-600 hover:text-rose-600 transition-colors">
-                  <Heart className="w-5 h-5" />
-                </button>
-              </div>
+          {list.map((property, index) => {
+            const canonical = resolveToCanonicalSlug(property.slug || property.id);
+            const href = canonical
+              ? `/homestays/${canonical}`
+              : `/homestays?location=${encodeURIComponent(
+                  property.location || property.title || "",
+                )}`;
 
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-1 group-hover:text-rose-600 transition-colors">
-                  {property.title}
-                </h3>
-                <div className="flex items-center gap-1 text-sm font-medium">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span>{property.rating}</span>
+            return (
+              <motion.div
+                key={property.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="group"
+              >
+                <Link href={href} className="block cursor-pointer">
+                  <div className="relative aspect-4/3 overflow-hidden rounded-2xl mb-4">
+                    <SafeImage
+                      src={property.image}
+                      alt={property.title || property.name || "Ảnh chỗ ở"}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <button className="absolute top-4 right-4 p-2 bg-white/70 backdrop-blur-md rounded-full text-gray-600 hover:text-rose-600 transition-colors z-10">
+                      <Heart className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-1 group-hover:text-rose-600 transition-colors">
+                      {property.title || property.name}
+                    </h3>
+                    <div className="flex items-center gap-1 text-sm font-medium">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <span>{property.rating}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm mb-3">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    <span className="truncate">{property.location}</span>
+                  </div>
+
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">
+                      {Number(property.price).toLocaleString()}đ
+                    </span>
+                    <span className="text-gray-500 text-sm">/đêm</span>
+                  </div>
+                </Link>
+
+                <div className="mt-3 flex items-center justify-between">
+                  <a
+                    href={hostHref}
+                    className="text-sm font-medium text-rose-600 hover:underline"
+                  >
+                    Quản lý chỗ ở
+                  </a>
+                  <Link href={href} className="text-sm text-gray-600 hover:text-rose-600">
+                    Xem chi tiết →
+                  </Link>
                 </div>
-              </div>
-
-              <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm mb-3">
-                <MapPin className="w-4 h-4 mr-1" />
-                <span className="truncate">{property.location}</span>
-              </div>
-
-              <div className="flex items-baseline gap-1">
-                <span className="text-lg font-bold text-gray-900 dark:text-white">
-                  {property.price}đ
-                </span>
-                <span className="text-gray-500 text-sm">/đêm</span>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

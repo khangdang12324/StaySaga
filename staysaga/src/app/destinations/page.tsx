@@ -1,48 +1,97 @@
 import Link from "next/link";
 import SafeImage from "@/components/ui/SafeImage";
+import { getLocationImage } from "@/lib/images/location-images";
 
 const destinations = [
   {
     id: "1",
     name: "Nha Trang",
     count: 124,
-    image:
-      "https://images.unsplash.com/photo-1560067174-89451c3b89f2?q=80&w=1000",
+    image: getLocationImage("Nha Trang"),
   },
   {
     id: "2",
     name: "Đà Lạt",
     count: 356,
-    image:
-      "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=1000",
+    image: getLocationImage("Đà Lạt"),
   },
   {
     id: "3",
     name: "TP. Hồ Chí Minh",
     count: 890,
-    image:
-      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1000",
+    image: getLocationImage("TP. Hồ Chí Minh"),
   },
   {
     id: "4",
     name: "Hội An",
     count: 210,
-    image:
-      "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?q=80&w=1000",
+    image: getLocationImage("Hội An"),
   },
   {
     id: "5",
     name: "Sapa",
     count: 145,
-    image:
-      "https://images.unsplash.com/photo-1501117716987-c8e1ecb210a7?q=80&w=1000",
+    image: getLocationImage("Sapa"),
   },
   {
     id: "6",
     name: "Phú Quốc",
     count: 432,
-    image:
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1000",
+    image: getLocationImage("Phú Quốc"),
+  },
+  {
+    id: "7",
+    name: "Huế",
+    count: 168,
+    image: getLocationImage("Huế"),
+  },
+  {
+    id: "8",
+    name: "Cần Thơ",
+    count: 152,
+    image: getLocationImage("Cần Thơ"),
+  },
+  {
+    id: "9",
+    name: "Hạ Long",
+    count: 238,
+    image: getLocationImage("Hạ Long"),
+  },
+  {
+    id: "10",
+    name: "Ninh Bình",
+    count: 118,
+    image: getLocationImage("Ninh Bình"),
+  },
+  {
+    id: "11",
+    name: "Vũng Tàu",
+    count: 205,
+    image: getLocationImage("Vũng Tàu"),
+  },
+  {
+    id: "12",
+    name: "Quy Nhơn",
+    count: 96,
+    image: getLocationImage("Quy Nhơn"),
+  },
+  {
+    id: "13",
+    name: "Mũi Né",
+    count: 84,
+    image: getLocationImage("Mũi Né"),
+  },
+  {
+    id: "14",
+    name: "Hà Giang",
+    count: 73,
+    image: getLocationImage("Hà Giang"),
+  },
+  {
+    id: "15",
+    name: "Cao Bằng",
+    count: 61,
+    image: getLocationImage("Cao Bằng"),
   },
 ];
 

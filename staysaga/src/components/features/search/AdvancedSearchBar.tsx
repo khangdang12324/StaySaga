@@ -12,38 +12,64 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { getLocationImage } from "@/lib/images/location-images";
 
 /* ===== DATA ===== */
 const DESTINATIONS = [
   {
     name: "TP. Hồ Chí Minh",
     count: 2845,
-    image:
-      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=200&h=200&fit=crop",
+    image: getLocationImage("TP. Hồ Chí Minh"),
   },
   {
     name: "Hà Nội",
     count: 1920,
-    image:
-      "https://images.unsplash.com/photo-1501117716987-c8e1ecb210a7?q=80&w=200&h=200&fit=crop",
+    image: getLocationImage("Hà Nội"),
   },
   {
     name: "Đà Lạt",
     count: 1356,
-    image:
-      "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=200&h=200&fit=crop",
+    image: getLocationImage("Đà Lạt"),
   },
   {
     name: "Nha Trang",
     count: 1124,
-    image:
-      "https://images.unsplash.com/photo-1560067174-89451c3b89f2?q=80&w=200&h=200&fit=crop",
+    image: getLocationImage("Nha Trang"),
   },
   {
     name: "Đà Nẵng",
     count: 1580,
-    image:
-      "https://images.unsplash.com/photo-1444201983204-c43cbd584d93?q=80&w=200&h=200&fit=crop",
+    image: getLocationImage("Đà Nẵng"),
+  },
+  {
+    name: "Huế",
+    count: 860,
+    image: getLocationImage("Huế"),
+  },
+  {
+    name: "Cần Thơ",
+    count: 740,
+    image: getLocationImage("Cần Thơ"),
+  },
+  {
+    name: "Hạ Long",
+    count: 980,
+    image: getLocationImage("Hạ Long"),
+  },
+  {
+    name: "Ninh Bình",
+    count: 690,
+    image: getLocationImage("Ninh Bình"),
+  },
+  {
+    name: "Vũng Tàu",
+    count: 920,
+    image: getLocationImage("Vũng Tàu"),
+  },
+  {
+    name: "Quy Nhơn",
+    count: 540,
+    image: getLocationImage("Quy Nhơn"),
   },
 ];
 
@@ -62,6 +88,14 @@ const MONTHS_VN = [
   "Tháng 12",
 ];
 const DAYS_VN = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+
+const normalizeText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .trim();
 
 /* ===== CALENDAR HELPERS ===== */
 function getDaysInMonth(year: number, month: number) {
@@ -109,7 +143,6 @@ function isPast(date: Date) {
 /* ===== COMPONENT ===== */
 export function AdvancedSearchBar() {
   const router = useRouter();
-  const [location, setLocation] = useState("");
   const [locationInput, setLocationInput] = useState("");
 
   // Calendar state
@@ -149,11 +182,15 @@ export function AdvancedSearchBar() {
   }, []);
 
   // Filter destinations
-  const filteredDestinations = locationInput.trim()
+  const normalizedLocationInput = normalizeText(locationInput);
+  const filteredDestinations = normalizedLocationInput
     ? DESTINATIONS.filter((d) =>
-        d.name.toLowerCase().includes(locationInput.toLowerCase()),
+        normalizeText(d.name).includes(normalizedLocationInput),
       )
     : DESTINATIONS;
+  const shouldShowLocationPanel =
+    activePanel === "location" &&
+    (!normalizedLocationInput || filteredDestinations.length > 0);
 
   // Calendar month2
   const month2 = useMemo(() => {
@@ -167,7 +204,6 @@ export function AdvancedSearchBar() {
   }, [calendarBaseMonth]);
 
   const handleSelectCity = (name: string) => {
-    setLocation(name);
     setLocationInput(name);
     setFormError(null);
     setActivePanel("calendar"); // auto-open calendar
@@ -279,7 +315,6 @@ export function AdvancedSearchBar() {
                   value={locationInput}
                   onChange={(e) => {
                     setLocationInput(e.target.value);
-                    setLocation(e.target.value);
                     if (e.target.value.trim()) setFormError(null);
                     setActivePanel("location");
                   }}
@@ -346,7 +381,7 @@ export function AdvancedSearchBar() {
       {/* ===== PANELS ===== */}
 
       {/* LOCATION PANEL — Booking-style list */}
-      {activePanel === "location" && (
+      {shouldShowLocationPanel && (
         <div
           className="absolute top-full md:top-full left-0 right-0 mt-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-50"
           style={{ animation: "fadeSlideIn 200ms ease-out" }}
@@ -359,7 +394,10 @@ export function AdvancedSearchBar() {
             </h3>
 
             {filteredDestinations.length > 0 ? (
-              <div className="max-h-[360px] overflow-y-auto divide-y divide-gray-100 dark:divide-zinc-800">
+              <div
+                className="overflow-y-auto divide-y divide-gray-100 dark:divide-zinc-800"
+                style={{ maxHeight: 360 }}
+              >
                 {filteredDestinations.map((dest) => (
                   <button
                     key={dest.name}
@@ -476,8 +514,8 @@ export function AdvancedSearchBar() {
       {/* GUEST PANEL */}
       {activePanel === "guests" && (
         <div
-          className="absolute top-full right-0 mt-3 w-full md:w-[340px] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 p-4 md:p-5 z-50"
-          style={{ animation: "fadeSlideIn 200ms ease-out" }}
+          className="absolute top-full right-0 mt-3 w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 p-4 md:p-5 z-50"
+          style={{ animation: "fadeSlideIn 200ms ease-out", width: 340 }}
         >
           <GuestRow
             label="Người lớn"

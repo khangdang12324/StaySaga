@@ -1,19 +1,20 @@
 import { Calendar, MapPin, Search, Users } from "lucide-react";
+import SafeImage from "@/components/ui/SafeImage";
 
 export default function HeroSearch() {
   return (
     <section className="relative isolate overflow-hidden">
       {/* Background image + overlay */}
       <div className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070"
+        <SafeImage
+          src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1600&auto=format&fit=crop"
           alt="Homestay view"
-          className="h-full w-full object-cover"
+          className="h-full w-full"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/45 to-black/80" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/45 to-black/80" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[620px] max-w-6xl flex-col justify-end gap-6 px-4 pb-8 pt-24 sm:min-h-[680px] sm:justify-center sm:pb-12 md:px-8">
+      <div className="relative z-10 mx-auto flex min-h-155 max-w-6xl flex-col justify-end gap-6 px-4 pb-8 pt-24 sm:min-h-170 sm:justify-center sm:pb-12 md:px-8">
         {/* Title */}
         <div className="max-w-xl text-left text-white">
           <p className="font-['Manrope'] text-[11px] uppercase tracking-[0.3em] text-white/70">

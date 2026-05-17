@@ -1,0 +1,38 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1200" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF1F4"/>
+      <stop offset="0.55" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FCE7EF"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="240" y1="160" x2="900" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FB7185"/>
+      <stop offset="1" stop-color="#E11D48"/>
+    </linearGradient>
+    <filter id="shadow" x="160" y="110" width="880" height="620" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="18"/>
+      <feGaussianBlur stdDeviation="28"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.88 0 0 0 0 0.19 0 0 0 0 0.35 0 0 0 0.14 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="800" rx="40" fill="url(#g1)"/>
+  <circle cx="946" cy="152" r="138" fill="#FBCFE8" fill-opacity="0.65"/>
+  <circle cx="260" cy="166" r="102" fill="#FFE4E6" fill-opacity="0.9"/>
+  <g filter="url(#shadow)">
+    <path d="M230 590C230 548.065 263.065 514 305 514H895C936.935 514 970 548.065 970 590V620C970 661.935 936.935 696 895 696H305C263.065 696 230 661.935 230 620V590Z" fill="#FFFFFF"/>
+    <path d="M300 545H900C927.614 545 950 567.386 950 595V606C950 633.614 927.614 656 900 656H300C272.386 656 250 633.614 250 606V595C250 567.386 272.386 545 300 545Z" fill="#FFF1F4"/>
+    <path d="M340 578H560C575.464 578 588 590.536 588 606C588 621.464 575.464 634 560 634H340C324.536 634 312 621.464 312 606C312 590.536 324.536 578 340 578Z" fill="#F9A8D4" fill-opacity="0.45"/>
+    <path d="M650 578H880C895.464 578 908 590.536 908 606C908 621.464 895.464 634 880 634H650C634.536 634 622 621.464 622 606C622 590.536 634.536 578 650 578Z" fill="#FBCFE8" fill-opacity="0.7"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M372 200L515 320H468V470H278V320H231L372 200Z" fill="url(#g2)"/>
+    <path d="M515 320L652 200L789 320H742V470H515V320Z" fill="#FB7185"/>
+    <path d="M789 320L925 242L1002 320H962V470H789V320Z" fill="#F472B6"/>
+  </g>
+  <circle cx="512" cy="258" r="28" fill="#FFFFFF" fill-opacity="0.88"/>
+  <circle cx="903" cy="278" r="18" fill="#FFFFFF" fill-opacity="0.8"/>
+</svg>
