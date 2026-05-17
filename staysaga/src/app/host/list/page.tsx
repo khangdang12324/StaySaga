@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getUserRole } from "@/lib/auth/roles";
+import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/roles";
 import { getHostDashboardData } from "@/core/host/actions";
 import { ArrowRight, Check, Shield, CreditCard, Globe } from "lucide-react";
 
@@ -15,15 +15,18 @@ export default async function ListYourPropertyPage() {
   let listings: Awaited<ReturnType<typeof getHostDashboardData>>["listings"] =
     [];
   if (session?.user) {
-    const role = await getUserRole(supabase as any, session.user.id);
-    hostHref = role === "host" || role === "admin" ? "/host" : "/host/onboard";
+    const role = await getUserRole(supabase as SupabaseLike, session.user.id);
+    const hasPartnerAccess = canAccessPartner(role);
+    hostHref = hasPartnerAccess ? "/host" : "/host/onboard";
     userName =
       session.user.user_metadata?.full_name ||
       session.user.user_metadata?.name ||
       session.user.email?.split("@")[0] ||
       "bạn";
-    const hostData = await getHostDashboardData();
-    listings = hostData.listings.slice(0, 2);
+    if (hasPartnerAccess) {
+      const hostData = await getHostDashboardData();
+      listings = hostData.listings.slice(0, 2);
+    }
   }
 
   return (

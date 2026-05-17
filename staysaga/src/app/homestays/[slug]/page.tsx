@@ -56,7 +56,7 @@ export default async function HotelDetailPage({ params }: Props) {
   const cookieStore = await cookies();
   const currency = cookieStore.get("currency")?.value || "VND";
 
-  const formatPrice = (priceStr) => {
+  const formatPrice = (priceStr: string) => {
     const rawNum = parseInt(priceStr.replace(/\./g, ""));
     if (isNaN(rawNum)) return priceStr;
     if (currency === "USD") {
@@ -65,7 +65,7 @@ export default async function HotelDetailPage({ params }: Props) {
     return `VND ${rawNum.toLocaleString("vi-VN")}`;
   };
 
-  const formatRelatedPrice = (priceFormatted) => {
+  const formatRelatedPrice = (priceFormatted: string) => {
     if (currency === "USD") {
       const numStr = priceFormatted.replace(/[^\d]/g, "");
       const num = parseInt(numStr);

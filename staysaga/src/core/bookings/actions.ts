@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { differenceInDays } from "date-fns";
+import { getProfileStatus, type SupabaseLike } from "@/lib/auth/roles";
 import { getPropertyBySlug } from "../properties/actions"; // We will use this to re-verify price
 import { calculateBookingPricing } from "./pricing";
 
@@ -30,6 +31,13 @@ export async function createBooking(formData: FormData) {
   if (!session?.user) {
     // Lưu lại URL đang đứng để redirect về sau khi đăng nhập (nâng cao)
     redirect("/login");
+  }
+
+  if (
+    (await getProfileStatus(supabase as unknown as SupabaseLike, session.user.id)) ===
+    "BLOCKED"
+  ) {
+    redirect("/");
   }
 
   const propertyId = formData.get("propertyId") as string;
@@ -157,6 +165,13 @@ export async function cancelBooking(formData: FormData) {
     redirect("/login");
   }
 
+  if (
+    (await getProfileStatus(supabase as unknown as SupabaseLike, session.user.id)) ===
+    "BLOCKED"
+  ) {
+    redirect("/");
+  }
+
   const bookingId = formData.get("bookingId") as string;
   if (!bookingId) {
     redirect("/bookings?error=cancel_failed");
@@ -197,6 +212,13 @@ export async function rescheduleBooking(formData: FormData) {
 
   if (!session?.user) {
     redirect("/login");
+  }
+
+  if (
+    (await getProfileStatus(supabase as unknown as SupabaseLike, session.user.id)) ===
+    "BLOCKED"
+  ) {
+    redirect("/");
   }
 
   const bookingId = formData.get("bookingId") as string;

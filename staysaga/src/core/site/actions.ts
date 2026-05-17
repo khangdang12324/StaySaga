@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { canAccessHost, getUserRole } from "@/lib/auth/roles";
+import {
+  canAccessAdmin,
+  canAccessHost,
+  getUserRole,
+  type SupabaseLike,
+} from "@/lib/auth/roles";
 
 function parseValue(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
@@ -35,8 +40,8 @@ export async function updateSiteSettings(formData: FormData) {
     redirect("/login");
   }
 
-  const role = await getUserRole(supabase, user.id);
-  if (role !== "admin") {
+  const role = await getUserRole(supabase as unknown as SupabaseLike, user.id);
+  if (!canAccessAdmin(role)) {
     redirect("/");
   }
 
@@ -108,7 +113,7 @@ export async function updateSiteSettings(formData: FormData) {
 
 export async function assertHostAccess(userId: string) {
   const supabase = await createClient();
-  const role = await getUserRole(supabase, userId);
+  const role = await getUserRole(supabase as unknown as SupabaseLike, userId);
   if (!canAccessHost(role)) {
     redirect("/");
   }
@@ -125,8 +130,8 @@ export async function removeHeroImage() {
     redirect("/login");
   }
 
-  const role = await getUserRole(supabase, user.id);
-  if (role !== "admin") {
+  const role = await getUserRole(supabase as unknown as SupabaseLike, user.id);
+  if (!canAccessAdmin(role)) {
     redirect("/");
   }
 

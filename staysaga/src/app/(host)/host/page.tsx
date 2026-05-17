@@ -18,10 +18,11 @@ import {
   updateHostHomestay,
 } from "@/core/host/actions";
 import { createClient } from "@/lib/supabase/server";
-import { getUserRole } from "@/lib/auth/roles";
+import { canAccessPartner, getUserRole } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
 import SafeImage from "@/components/ui/SafeImage";
 import { getLocationImage } from "@/lib/images/location-images";
+import StepperHomestayForm from "./_components/StepperHomestayForm";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -50,176 +51,6 @@ function getImage(listing: HostListing) {
   return listing.homestay_images?.[0]?.url || getLocationImage(listing.city);
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-const inputClass =
-  "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-rose-500 focus:ring-2 focus:ring-rose-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus:ring-rose-950";
-
-function HomestayForm({
-  listing,
-  mode,
-}: {
-  listing?: HostListing;
-  mode: "create" | "edit";
-}) {
-  const action = mode === "create" ? createHostHomestay : updateHostHomestay;
-
-  return (
-    <form action={action} encType="multipart/form-data" className="space-y-4">
-      {listing && <input type="hidden" name="id" value={listing.id} />}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Field label="Ten cho o">
-          <input
-            name="name"
-            required
-            defaultValue={listing?.name}
-            placeholder="Villa gan bien Da Nang"
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Thanh pho">
-          <input
-            name="city"
-            required
-            defaultValue={listing?.city}
-            placeholder="Da Nang"
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Dia chi">
-          <input
-            name="address"
-            defaultValue={listing?.address || ""}
-            placeholder="Son Tra, Da Nang"
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Quoc gia">
-          <input
-            name="country"
-            defaultValue={listing?.country || "Vietnam"}
-            className={inputClass}
-          />
-        </Field>
-      </div>
-
-      <Field label="Mo ta">
-        <textarea
-          name="description"
-          defaultValue={listing?.description || ""}
-          rows={mode === "create" ? 4 : 3}
-          placeholder="Mo ta tien nghi, phong cach va diem noi bat cua cho o."
-          className={inputClass}
-        />
-      </Field>
-
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <Field label="Gia / dem">
-          <input
-            name="price_per_night"
-            type="number"
-            min="1"
-            step="1000"
-            required
-            defaultValue={listing?.price_per_night}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Khach">
-          <input
-            name="max_guests"
-            type="number"
-            min="1"
-            defaultValue={listing?.max_guests || 2}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Phong ngu">
-          <input
-            name="bedrooms"
-            type="number"
-            min="0"
-            defaultValue={listing?.bedrooms || 1}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Giuong">
-          <input
-            name="beds"
-            type="number"
-            min="0"
-            defaultValue={listing?.beds || 1}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Phong tam">
-          <input
-            name="bathrooms"
-            type="number"
-            min="0"
-            defaultValue={listing?.bathrooms || 1}
-            className={inputClass}
-          />
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto] md:items-end">
-        <Field label="Anh homestay">
-          <input
-            name="image"
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            className="block w-full rounded-lg border border-dashed border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-rose-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-rose-700 hover:file:bg-rose-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-          />
-        </Field>
-        {mode === "edit" && (
-          <label className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium dark:border-zinc-700">
-            <input
-              name="is_active"
-              type="checkbox"
-              defaultChecked={listing?.is_active}
-              className="h-4 w-4 rounded border-zinc-300 text-rose-600"
-            />
-            Dang hien thi
-          </label>
-        )}
-      </div>
-
-      <button
-        type="submit"
-        className="inline-flex items-center gap-2 rounded-lg bg-zinc-950 px-4 py-2 text-sm font-bold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
-      >
-        {mode === "create" ? (
-          <>
-            <Plus className="h-4 w-4" />
-            Them homestay
-          </>
-        ) : (
-          <>
-            <Pencil className="h-4 w-4" />
-            Luu thay doi
-          </>
-        )}
-      </button>
-    </form>
-  );
-}
-
 export default async function HostDashboardPage({ searchParams }: Props) {
   const supabase = await createClient();
   const {
@@ -231,7 +62,7 @@ export default async function HostDashboardPage({ searchParams }: Props) {
   }
 
   const role = await getUserRole(supabase, session.user.id);
-  if (role !== "host" && role !== "admin") {
+  if (!canAccessPartner(role)) {
     redirect("/");
   }
 
@@ -309,7 +140,7 @@ export default async function HostDashboardPage({ searchParams }: Props) {
               <h2 className="text-lg font-bold">Them homestay moi</h2>
             </div>
           </div>
-          <HomestayForm mode="create" />
+          <StepperHomestayForm mode="create" action={createHostHomestay} />
         </section>
 
         <section>
@@ -363,8 +194,7 @@ export default async function HostDashboardPage({ searchParams }: Props) {
                           </span>
                         </div>
                       </div>
-
-                      <HomestayForm listing={listing} mode="edit" />
+                      <StepperHomestayForm listing={listing} mode="edit" action={updateHostHomestay} />
 
                       <form action={deleteHostHomestay} className="mt-4">
                         <input type="hidden" name="id" value={listing.id} />

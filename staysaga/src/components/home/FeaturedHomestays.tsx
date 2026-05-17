@@ -5,7 +5,7 @@ import { resolveToCanonicalSlug } from "@/lib/hotel-parser";
 import SafeImage from "@/components/ui/SafeImage";
 import { getProperties } from "@/core/properties/actions";
 import { createClient } from "@/lib/supabase/server";
-import { getUserRole } from "@/lib/auth/roles";
+import { canAccessPartner, getUserRole } from "@/lib/auth/roles";
 import { getLocationImage } from "@/lib/images/location-images";
 
 type FeaturedProperty = {
@@ -34,8 +34,7 @@ export default async function FeaturedHomestays() {
   let hostHref = "/login?next=/host";
   if (session?.user) {
     const role = await getUserRole(supabase, session.user.id);
-    hostHref =
-      role === "host" || role === "admin" ? "/host" : "/login?next=/host";
+    hostHref = canAccessPartner(role) ? "/host" : "/login?next=/host";
   }
 
   const list = await Promise.all(

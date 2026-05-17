@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
+import {
+  canAccessPartner,
+  getProfileStatus,
+  getUserRole,
+  type SupabaseLike,
+} from "@/lib/auth/roles";
 
 const IMAGE_BUCKET = "homestay-images";
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -22,6 +28,7 @@ export type HostListing = {
   bathrooms: number;
   avg_rating: number;
   is_active: boolean;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
   created_at: string;
   homestay_images?: {
     id: string;
@@ -81,6 +88,7 @@ async function getCurrentUser() {
   await supabase.from("profiles").upsert(
     {
       id: user.id,
+      email: user.email || null,
       full_name:
         user.user_metadata?.full_name || user.user_metadata?.name || null,
       avatar_url: user.user_metadata?.avatar_url || null,
@@ -89,6 +97,23 @@ async function getCurrentUser() {
   );
 
   return { supabase, user };
+}
+
+async function getCurrentPartner() {
+  const { supabase, user } = await getCurrentUser();
+  const authSupabase = supabase as unknown as SupabaseLike;
+  const role = await getUserRole(authSupabase, user.id);
+  const status = await getProfileStatus(authSupabase, user.id);
+
+  if (status === "BLOCKED") {
+    redirect("/");
+  }
+
+  if (!canAccessPartner(role)) {
+    redirect("/host/onboard");
+  }
+
+  return { supabase, user, role };
 }
 
 async function uploadImage(
@@ -142,12 +167,12 @@ async function uploadImage(
 }
 
 export async function getHostDashboardData(): Promise<HostDashboardData> {
-  const { supabase, user } = await getCurrentUser();
+  const { supabase, user } = await getCurrentPartner();
 
   const { data: listings } = await supabase
     .from("homestays")
     .select(
-      "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, created_at, homestay_images(id, url, storage_path)",
+      "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, created_at, homestay_images(id, url, storage_path)",
     )
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
@@ -194,7 +219,7 @@ export async function getHostDashboardData(): Promise<HostDashboardData> {
 }
 
 export async function createHostHomestay(formData: FormData) {
-  const { supabase, user } = await getCurrentUser();
+  const { supabase, user } = await getCurrentPartner();
   const name = getString(formData, "name");
   const city = getString(formData, "city");
   const price = getNumber(formData, "price_per_night");
@@ -219,6 +244,7 @@ export async function createHostHomestay(formData: FormData) {
       beds: Math.max(0, getNumber(formData, "beds", 1)),
       bathrooms: Math.max(0, getNumber(formData, "bathrooms", 1)),
       is_active: true,
+      status: "PENDING",
     })
     .select("id")
     .single();
@@ -241,7 +267,7 @@ export async function createHostHomestay(formData: FormData) {
 }
 
 export async function updateHostHomestay(formData: FormData) {
-  const { supabase, user } = await getCurrentUser();
+  const { supabase, user } = await getCurrentPartner();
   const id = getString(formData, "id");
   const name = getString(formData, "name");
   const city = getString(formData, "city");
@@ -287,7 +313,7 @@ export async function updateHostHomestay(formData: FormData) {
 }
 
 export async function deleteHostHomestay(formData: FormData) {
-  const { supabase, user } = await getCurrentUser();
+  const { supabase, user } = await getCurrentPartner();
   const id = getString(formData, "id");
 
   if (!id) {
@@ -339,19 +365,27 @@ export async function deleteHostHomestay(formData: FormData) {
   redirectToHost("deleted");
 }
 
-export async function promoteToHost(formData: FormData) {
+export async function promoteToHost() {
   const { supabase, user } = await getCurrentUser();
+  const adminSupabase = await createAdminClient();
 
-  // Mark the profile role as host
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("profiles")
-    .upsert({ id: user.id, role: "host" }, { onConflict: "id" });
+    .update({ role: "PARTNER" })
+    .eq("id", user.id);
 
   if (error) {
-    redirectToHostError("promote_failed");
+    const { error: fallbackError } = await supabase
+      .from("profiles")
+      .update({ role: "PARTNER" })
+      .eq("id", user.id);
+
+    if (fallbackError) {
+      redirect("/host/onboard?error=partner_failed");
+    }
   }
 
+  revalidatePath("/", "layout");
   revalidatePath("/host");
-  revalidatePath("/homestays");
-  redirect("/host?status=promoted");
+  redirect("/host/register");
 }

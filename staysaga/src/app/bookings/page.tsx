@@ -21,20 +21,9 @@ export default async function BookingsPage(props: {
   if (!session) redirect("/login");
 
   const cookieStore = await cookies();
-  const mockCookie = cookieStore.get("mock_bookings");
   const lang = cookieStore.get("lang")?.value || "VN";
   const currency = cookieStore.get("currency")?.value || "VND";
   const t = (vi: string, en: string) => lang === "EN" ? en : vi;
-
-  let mockBookings: any[] = [];
-
-  if (mockCookie?.value) {
-    try {
-      mockBookings = JSON.parse(mockCookie.value);
-    } catch {
-      mockBookings = [];
-    }
-  }
 
   // Fetch bookings from DB
   const { data: bookings } = await supabase
@@ -43,7 +32,7 @@ export default async function BookingsPage(props: {
     .eq("user_id", session.user.id)
     .order("created_at", { ascending: false });
 
-  const allBookings = [...(bookings || []), ...mockBookings];
+  const allBookings = bookings || [];
   
   const today = new Date().toISOString().split("T")[0];
   

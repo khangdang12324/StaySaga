@@ -381,10 +381,9 @@ export function applySmartFilters(query: string, current: FilterState): FilterSt
 }
 
 const activeFilterCount = (filters: FilterState) => {
-  const arrayCount = Object.values(filters).reduce(
-    (sum, value) => sum + (Array.isArray(value) ? value.length : 0),
-    0,
-  );
+  const arrayCount = Object.values(filters).reduce<number>((sum, value) => {
+    return sum + (Array.isArray(value) ? value.length : 0);
+  }, 0);
   return (
     arrayCount +
     (filters.priceMin !== PRICE_MIN ? 1 : 0) +

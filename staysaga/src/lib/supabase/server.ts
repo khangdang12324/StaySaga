@@ -27,3 +27,17 @@ export async function createClient() {
     }
   )
 }
+
+export async function createAdminClient() {
+  const { createClient: createJSClient } = await import('@supabase/supabase-js')
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn("Warning: SUPABASE_SERVICE_ROLE_KEY is missing in .env. Falling back to ANON_KEY.")
+  }
+  
+  return createJSClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    key!
+  )
+}

@@ -21,11 +21,18 @@ import {
   Search,
   ChevronDown,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { logout } from "@/core/auth/actions";
 import SafeImage from "@/components/ui/SafeImage";
-import { getUserRole, type AppRole, type SupabaseLike } from "@/lib/auth/roles";
+import {
+  canAccessAdmin,
+  canAccessPartner,
+  getUserRole,
+  type AppRole,
+  type SupabaseLike,
+} from "@/lib/auth/roles";
 import { useRouter } from "next/navigation";
 
 type OAuthIdentity = {
@@ -40,7 +47,7 @@ export default function Navbar() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [userRole, setUserRole] = useState<AppRole>("guest");
+  const [userRole, setUserRole] = useState<AppRole>("USER");
   
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
@@ -52,6 +59,7 @@ export default function Navbar() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const currencyRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -98,10 +106,10 @@ export default function Navbar() {
 
     const loadUserRole = async (userId?: string) => {
       if (!userId) {
-        setUserRole("guest");
+        setUserRole("USER");
         return;
       }
-      const role = await getUserRole(supabase as SupabaseLike, userId);
+      const role = await getUserRole(supabase as unknown as SupabaseLike, userId);
       setUserRole(role);
     };
 
@@ -170,6 +178,10 @@ export default function Navbar() {
   const userAvatar = typeof oauthAvatar === "string" && oauthAvatar.startsWith("http") ? oauthAvatar : null;
 
   const t = (vi: string, en: string) => lang === "EN" ? en : vi;
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>
@@ -416,32 +428,32 @@ export default function Navbar() {
                         <hr className="border-gray-100 dark:border-zinc-800" />
 
                         <div className="py-2">
-                          {(userRole === "host" || userRole === "admin") && (
+                          {canAccessPartner(userRole) && (
                             <Link
                               href="/host"
                               onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-rose-50 dark:hover:bg-zinc-800 transition-colors"
                             >
-                              <Home className="w-4 h-4 text-gray-400" />
+                              <Home className="w-4 h-4 text-rose-500" />
                               <span>{t("Quản lý chỗ ở (Host)", "Manage properties (Host)")}</span>
                             </Link>
                           )}
-                          {userRole === "admin" && (
+                          {canAccessAdmin(userRole) && (
                             <Link
                               href="/admin"
                               onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-rose-50 dark:hover:bg-zinc-800 transition-colors"
                             >
-                              <BarChart className="w-4 h-4 text-gray-400" />
+                              <BarChart className="w-4 h-4 text-rose-500" />
                               <span>{t("Quản trị website", "Admin Dashboard")}</span>
                             </Link>
                           )}
                           <Link
                             href="/settings"
                             onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                           >
-                            <Settings className="w-4 h-4 text-gray-400" />
+                            <Settings className="w-4 h-4 text-gray-500 dark:text-gray-300" />
                             <span>{t("Cài đặt", "Settings")}</span>
                           </Link>
                           <Link
@@ -606,7 +618,7 @@ export default function Navbar() {
                   >
                     <Star className="w-5 h-5 text-gray-400" /> {t("Đánh giá", "Reviews")}
                   </Link>
-                  {(userRole === "host" || userRole === "admin") && (
+                  {canAccessPartner(userRole) && (
                     <Link
                       href="/host"
                       onClick={() => setMobileMenuOpen(false)}
@@ -615,7 +627,7 @@ export default function Navbar() {
                       <Home className="w-5 h-5 text-gray-400" /> {t("Quản lý chỗ ở", "Manage properties")}
                     </Link>
                   )}
-                  {userRole === "admin" && (
+                  {canAccessAdmin(userRole) && (
                     <Link
                       href="/admin"
                       onClick={() => setMobileMenuOpen(false)}

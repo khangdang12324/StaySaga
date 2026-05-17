@@ -1,6 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getUserRole } from "@/lib/auth/roles";
+import {
+  canAccessAdmin,
+  canAccessPartner,
+  getProfileStatus,
+  getUserRole,
+  type SupabaseLike,
+} from "@/lib/auth/roles";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -74,15 +80,23 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && (isAdminRoute || isHostRoute)) {
-    const role = await getUserRole(supabase as any, user.id);
+    const authSupabase = supabase as unknown as SupabaseLike;
+    const role = await getUserRole(authSupabase, user.id);
+    const status = await getProfileStatus(authSupabase, user.id);
 
-    if (isAdminRoute && role !== "admin") {
+    if (status === "BLOCKED") {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
     }
 
-    if (isHostRoute && role !== "host" && role !== "admin") {
+    if (isAdminRoute && !canAccessAdmin(role)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+
+    if (isHostRoute && !canAccessPartner(role)) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
