@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import {
-  canAccessPartner,
-  getUserRole,
-  type AppRole,
-  type SupabaseLike,
-} from "@/lib/auth/roles";
+import { canAccessPartner, getUserRole, type AppRole, type SupabaseLike } from "@/lib/auth/roles";
 import { promoteToHost } from "@/core/host/actions";
 
 export const metadata = {
@@ -18,9 +13,7 @@ type HostOnboardPageProps = {
   }>;
 };
 
-export default async function HostOnboardPage({
-  searchParams,
-}: HostOnboardPageProps) {
+export default async function HostOnboardPage({ searchParams }: HostOnboardPageProps) {
   const supabase = await createClient();
   const params = searchParams ? await searchParams : {};
   const {
@@ -34,16 +27,11 @@ export default async function HostOnboardPage({
   return (
     <div className="flex min-h-screen items-center justify-center bg-white px-4">
       <div className="w-full max-w-xl rounded-2xl border border-rose-100 bg-white p-8 shadow-sm">
-        <p className="text-sm font-bold uppercase tracking-wide text-rose-600">
-          StaySaga Partner
-        </p>
-        <h1 className="mt-2 text-2xl font-extrabold text-gray-950">
-          Đăng chỗ nghỉ của Quý vị
-        </h1>
+        <p className="text-sm font-bold uppercase tracking-wide text-[#f60057]">StaySaga Partner</p>
+        <h1 className="mt-2 text-2xl font-extrabold text-gray-950">Đăng chỗ nghỉ của Quý vị</h1>
         <p className="mt-4 text-sm font-medium leading-6 text-gray-700">
-          Tài khoản PARTNER có thể đăng homestay/khách sạn, upload ảnh, quản lý
-          chỗ nghỉ và xem booking thuộc chỗ nghỉ của mình. Sau khi kích hoạt,
-          bạn sẽ được chuyển thẳng vào trang quản lý.
+          Tài khoản PARTNER có thể đăng homestay/khách sạn, upload ảnh, quản lý chỗ nghỉ và xem booking thuộc
+          chỗ nghỉ của mình. Sau khi kích hoạt, bạn sẽ được chuyển thẳng vào trang quản lý.
         </p>
 
         {params.error === "partner_failed" && (
@@ -56,7 +44,7 @@ export default async function HostOnboardPage({
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <Link
               href="/login?next=/host/onboard"
-              className="rounded-xl bg-rose-600 px-6 py-3 text-center text-sm font-bold text-white shadow-sm hover:bg-rose-700"
+              className="rounded-xl bg-[#f60057] px-6 py-3 text-center text-sm font-bold text-white shadow-sm hover:bg-[#f60057]"
             >
               Đăng nhập
             </Link>
@@ -70,7 +58,7 @@ export default async function HostOnboardPage({
         ) : canAccessPartner(role) ? (
           <Link
             href="/host"
-            className="mt-6 inline-flex rounded-xl bg-rose-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-rose-700"
+            className="mt-6 inline-flex rounded-xl bg-[#f60057] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#f60057]"
           >
             Vào trang quản lý
           </Link>
@@ -78,7 +66,7 @@ export default async function HostOnboardPage({
           <form action={promoteToHost} className="mt-6">
             <button
               type="submit"
-              className="w-full rounded-xl bg-rose-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-rose-700"
+              className="w-full rounded-xl bg-[#f60057] px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-[#f60057]"
             >
               Kích hoạt PARTNER và bắt đầu đăng chỗ nghỉ
             </button>

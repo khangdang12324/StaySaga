@@ -5,7 +5,7 @@ import { resolveToCanonicalSlug } from "@/lib/hotel-parser";
 import SafeImage from "@/components/ui/SafeImage";
 import { getProperties } from "@/core/properties/actions";
 import { createClient } from "@/lib/supabase/server";
-import { canAccessPartner, getUserRole } from "@/lib/auth/roles";
+import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/roles";
 import { getLocationImage } from "@/lib/images/location-images";
 
 type FeaturedProperty = {
@@ -33,7 +33,10 @@ export default async function FeaturedHomestays() {
 
   let hostHref = "/login?next=/host";
   if (session?.user) {
-    const role = await getUserRole(supabase, session.user.id);
+    const role = await getUserRole(
+      supabase as unknown as SupabaseLike,
+      session.user.id,
+    );
     hostHref = canAccessPartner(role) ? "/host" : "/login?next=/host";
   }
 

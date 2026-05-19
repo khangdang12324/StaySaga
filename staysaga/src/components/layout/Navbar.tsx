@@ -62,6 +62,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
 
+
+
   useEffect(() => {
     // Read from cookies
     if (typeof document !== 'undefined') {
@@ -179,8 +181,23 @@ export default function Navbar() {
 
   const t = (vi: string, en: string) => lang === "EN" ? en : vi;
 
-  if (pathname?.startsWith("/admin")) {
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/host")) {
     return null;
+  }
+
+  if (pathname === "/login" || pathname === "/register") {
+    return (
+      <header className="bg-[#f60057] text-white w-full">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="text-2xl font-black tracking-tight">
+            StaySaga<span className="text-rose-200">.</span>
+          </Link>
+          <Link href="/help" className="text-sm font-semibold hover:text-rose-200 transition-colors">
+            Trợ giúp
+          </Link>
+        </div>
+      </header>
+    );
   }
 
   return (

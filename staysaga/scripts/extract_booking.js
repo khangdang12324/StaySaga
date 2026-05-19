@@ -131,14 +131,24 @@ $('div[data-testid="property-card"]').each((i, el) => {
   });
 });
 
+// Attempt to extract additional fields from page-level meta if available
+const pageTitle = $('head title').text().trim();
+const metaDescription = $('head meta[name="description"]').attr('content') || '';
+
+// enrich results with page-level info
+results.forEach(r => {
+  r.source_page_title = pageTitle;
+  r.source_page_description = metaDescription;
+});
+
 // Write JSON and CSV
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-const baseName = 'dalat_listings';
+const baseName = 'booking_listings';
 const jsonPath = path.join(outDir, baseName + '.json');
 const csvPath = path.join(outDir, baseName + '.csv');
 fs.writeFileSync(jsonPath, JSON.stringify(results, null, 2), 'utf-8');
 
-const headers = ['id','title','room_name','price','original_price','discounted_price','price_currency','image_src','image_local_path','image_public_path','rating','reviews_count','remaining_rooms','prepayment_policy','free_cancellation','no_prepayment','bed_info','availability_text','link'];
+const headers = ['id','title','room_name','price','original_price','discounted_price','price_currency','image_src','image_local_path','image_public_path','rating','reviews_count','remaining_rooms','prepayment_policy','free_cancellation','no_prepayment','bed_info','availability_text','link','source_page_title','source_page_description'];
 const rows = results.map(r => headers.map(h => {
   const v = r[h] == null ? '' : String(r[h]);
   return '"' + v.replace(/"/g, '""') + '"';
@@ -148,3 +158,60 @@ fs.writeFileSync(csvPath, headers.join(',') + '\n' + rows.join('\n'), 'utf-8');
 console.log('Wrote', jsonPath);
 console.log('Wrote', csvPath);
 console.log('Total listings:', results.length);
+
+// Optional: import to Supabase when env vars present and --import flag used
+if (process.argv.includes('--import')) {
+  let supabaseUrl = process.env.SUPABASE_URL;
+  let supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('SUPABASE_URL and SUPABASE_KEY required to import. Skipping import.');
+    process.exit(0);
+  }
+  let supabase;
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    supabase = createClient(supabaseUrl, supabaseKey);
+  } catch (e) {
+    console.error('Missing dependency: @supabase/supabase-js. Run `npm install @supabase/supabase-js` and try again.');
+    process.exit(1);
+  }
+
+  (async () => {
+    try {
+      // ensure table `listings_imports` exists in your Supabase project; this script will insert rows
+      const payload = results.map(r => ({
+        title: r.title,
+        room_name: r.room_name,
+        price: r.price,
+        original_price: r.original_price,
+        price_currency: r.price_currency,
+        rating: r.rating,
+        reviews_count: r.reviews_count,
+        remaining_rooms: r.remaining_rooms,
+        prepayment_policy: r.prepayment_policy,
+        free_cancellation: r.free_cancellation,
+        bed_info: r.bed_info,
+        availability_text: r.availability_text,
+        link: r.link,
+        image_src: r.image_src,
+        source_page_title: r.source_page_title,
+        source_page_description: r.source_page_description
+      }));
+
+      // insert in batches of 100
+      for (let i = 0; i < payload.length; i += 100) {
+        const batch = payload.slice(i, i + 100);
+        const { data, error } = await supabase.from('listings_imports').insert(batch);
+        if (error) {
+          console.error('Supabase insert error:', error);
+          process.exit(1);
+        }
+        console.log('Inserted batch', i / 100 + 1, 'rows:', data.length);
+      }
+      console.log('Import complete.');
+    } catch (err) {
+      console.error('Import failed:', err);
+      process.exit(1);
+    }
+  })();
+}

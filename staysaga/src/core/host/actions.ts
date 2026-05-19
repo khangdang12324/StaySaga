@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import {
   canAccessPartner,
@@ -68,6 +69,9 @@ function createSlug(value: string) {
 }
 
 function redirectToHost(status: string): never {
+  if (status === "created") {
+    redirect("/host?status=created");
+  }
   redirect(`/host?status=${status}`);
 }
 
@@ -117,7 +121,7 @@ async function getCurrentPartner() {
 }
 
 async function uploadImage(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   userId: string,
   homestayId: string,
   file: File | null,
@@ -144,7 +148,7 @@ async function uploadImage(
     });
 
   if (uploadError) {
-    redirectToHostError("upload_failed");
+    return null;
   }
 
   const { data } = supabase.storage
@@ -160,22 +164,58 @@ async function uploadImage(
 
   if (imageError) {
     await supabase.storage.from(IMAGE_BUCKET).remove([storagePath]);
-    redirectToHostError("image_save_failed");
+    return null;
   }
 
   return data.publicUrl;
 }
 
+async function ensureImageBucket(supabase: SupabaseClient) {
+  const { data } = await supabase.storage.getBucket(IMAGE_BUCKET);
+  if (data) return;
+
+  await supabase.storage.createBucket(IMAGE_BUCKET, {
+    public: true,
+    fileSizeLimit: MAX_IMAGE_SIZE,
+    allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+  });
+}
+
+async function fetchHostListings(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  const baseSelect =
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, created_at, homestay_images(id, url, storage_path)";
+  const extendedSelect =
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, created_at, homestay_images(id, url, storage_path)";
+
+  const first = await supabase
+    .from("homestays")
+    .select(extendedSelect)
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (!first.error) return first.data || [];
+
+  const message = String(first.error.message || "").toLowerCase();
+  if (!message.includes("avg_rating") && !message.includes("status")) {
+    return [];
+  }
+
+  const fallback = await supabase
+    .from("homestays")
+    .select(baseSelect)
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: false });
+
+  return fallback.data || [];
+}
+
 export async function getHostDashboardData(): Promise<HostDashboardData> {
   const { supabase, user } = await getCurrentPartner();
 
-  const { data: listings } = await supabase
-    .from("homestays")
-    .select(
-      "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, created_at, homestay_images(id, url, storage_path)",
-    )
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
+  const listings = await fetchHostListings(supabase, user.id);
 
   const listingIds = (listings || []).map((listing) => listing.id);
   let totalRevenue = 0;
@@ -196,11 +236,20 @@ export async function getHostDashboardData(): Promise<HostDashboardData> {
       bookings?.filter((booking) => booking.status === "PENDING").length || 0;
   }
 
-  const normalizedListings = (listings || []).map((listing) => ({
-    ...listing,
-    price_per_night: Number(listing.price_per_night || 0),
-    avg_rating: Number(listing.avg_rating || 0),
-  })) as HostListing[];
+  const normalizedListings = (listings || []).map((listing) => {
+    const row = listing as Partial<HostListing> & {
+      price_per_night?: number | string;
+      avg_rating?: number | string | null;
+      status?: HostListing["status"] | null;
+    };
+
+    return {
+      ...row,
+      price_per_night: Number(row.price_per_night || 0),
+      avg_rating: Number(row.avg_rating || 0),
+      status: row.status || "APPROVED",
+    };
+  }) as HostListing[];
 
   const averageRating =
     normalizedListings.length > 0
@@ -228,40 +277,81 @@ export async function createHostHomestay(formData: FormData) {
     redirectToHostError("invalid");
   }
 
-  const { data, error } = await supabase
+  const imageFiles = formData
+    .getAll("images")
+    .filter((item): item is File => item instanceof File && item.size > 0);
+  const fallbackImage = formData.get("image");
+  const filesToUpload =
+    imageFiles.length > 0
+      ? imageFiles
+      : fallbackImage instanceof File && fallbackImage.size > 0
+        ? [fallbackImage]
+        : [];
+
+  if (filesToUpload.length < 5) {
+    redirectToHostError("image_count");
+  }
+
+  const payload = {
+    owner_id: user.id,
+    slug: createSlug(name),
+    name,
+    description: getString(formData, "description") || null,
+    address: getString(formData, "address") || null,
+    city,
+    country: getString(formData, "country") || "Vietnam",
+    price_per_night: price,
+    max_guests: Math.max(1, getNumber(formData, "max_guests", 2)),
+    bedrooms: Math.max(0, getNumber(formData, "bedrooms", 1)),
+    beds: Math.max(0, getNumber(formData, "beds", 1)),
+    bathrooms: Math.max(0, getNumber(formData, "bathrooms", 1)),
+    is_active: true,
+    status: "APPROVED",
+  };
+
+  let { data, error } = await supabase
     .from("homestays")
-    .insert({
-      owner_id: user.id,
-      slug: createSlug(name),
-      name,
-      description: getString(formData, "description") || null,
-      address: getString(formData, "address") || null,
-      city,
-      country: getString(formData, "country") || "Vietnam",
-      price_per_night: price,
-      max_guests: Math.max(1, getNumber(formData, "max_guests", 2)),
-      bedrooms: Math.max(0, getNumber(formData, "bedrooms", 1)),
-      beds: Math.max(0, getNumber(formData, "beds", 1)),
-      bathrooms: Math.max(0, getNumber(formData, "bathrooms", 1)),
-      is_active: true,
-      status: "PENDING",
-    })
+    .insert(payload)
     .select("id")
     .single();
+
+  if (error && String(error.message || "").toLowerCase().includes("status")) {
+    const payloadWithoutStatus = {
+      owner_id: payload.owner_id,
+      slug: payload.slug,
+      name: payload.name,
+      description: payload.description,
+      address: payload.address,
+      city: payload.city,
+      country: payload.country,
+      price_per_night: payload.price_per_night,
+      max_guests: payload.max_guests,
+      bedrooms: payload.bedrooms,
+      beds: payload.beds,
+      bathrooms: payload.bathrooms,
+      is_active: payload.is_active,
+    };
+    const retry = await supabase
+      .from("homestays")
+      .insert(payloadWithoutStatus)
+      .select("id")
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error || !data) {
     redirectToHostError("create_failed");
   }
 
-  const image = formData.get("image");
-  await uploadImage(
-    supabase,
-    user.id,
-    data.id,
-    image instanceof File ? image : null,
-  );
+  const adminSupabase = await createAdminClient();
+  await ensureImageBucket(adminSupabase);
+  for (const file of filesToUpload.slice(0, 8)) {
+    await uploadImage(adminSupabase, user.id, data.id, file);
+  }
 
   revalidatePath("/host");
+  revalidatePath("/host/list");
   revalidatePath("/homestays");
   redirectToHost("created");
 }
