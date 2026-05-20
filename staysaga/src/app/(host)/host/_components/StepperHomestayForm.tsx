@@ -30,7 +30,7 @@ export default function StepperHomestayForm({ listing, mode, action }: Props) {
   const prevStep = () => setStep((value) => Math.max(value - 1, 1));
 
   return (
-    <form action={action} encType="multipart/form-data" className="space-y-6">
+    <form action={action} className="space-y-6">
       {listing && <input type="hidden" name="id" value={listing.id} />}
 
       <div className="mb-8">

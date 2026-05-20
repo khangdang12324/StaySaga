@@ -60,7 +60,7 @@ export default function HostSuccessPage() {
           
           <div className="flex gap-4">
             <Link 
-              href="/host/register" 
+              href="/host/register?new=1" 
               className="inline-flex items-center gap-2 bg-white border border-[#f60057] text-[#f60057] font-bold px-4 py-2 rounded hover:bg-rose-50 text-sm"
             >
               <Plus className="h-4 w-4" /> Thêm chỗ nghỉ mới

@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
+    serverActions: {
+      bodySizeLimit: "64mb",
+    },
     viewTransition: true,
   },
 

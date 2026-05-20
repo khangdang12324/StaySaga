@@ -20,6 +20,9 @@ import {
   MapPin,
   Search,
   ChevronDown,
+  Shield,
+  Plus,
+  Users,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -406,7 +409,7 @@ export default function Navbar() {
                           </div>
                         </div>
 
-                        {/* Menu Items */}
+                        {/* Menu Items - User Base */}
                         <div className="py-2">
                           <Link
                             href="/profile"
@@ -442,33 +445,77 @@ export default function Navbar() {
                           </Link>
                         </div>
 
+                        {/* Menu Items - Partner/Admin specific */}
+                        {(canAccessPartner(userRole) || canAccessAdmin(userRole)) && (
+                          <>
+                            <hr className="border-gray-100 dark:border-zinc-800" />
+                            <div className="py-2">
+                              {/* Partner Menu */}
+                              {canAccessPartner(userRole) && (
+                                <>
+                                  <Link
+                                    href="/host"
+                                    onClick={() => setDropdownOpen(false)}
+                                    className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-rose-50 dark:hover:bg-zinc-800 transition-colors"
+                                  >
+                                    <Home className="w-4 h-4 text-rose-500" />
+                                    <span>{t("Quản lý chỗ nghỉ", "Manage Properties")}</span>
+                                  </Link>
+                                  <Link
+                                    href="/host/register"
+                                    onClick={() => setDropdownOpen(false)}
+                                    className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                                  >
+                                    <Plus className="w-4 h-4 text-gray-400" />
+                                    <span>{t("Thêm chỗ nghỉ mới", "Add New Property")}</span>
+                                  </Link>
+                                </>
+                              )}
+
+                              {/* Admin Menu */}
+                              {canAccessAdmin(userRole) && (
+                                <>
+                                  <Link
+                                    href="/admin"
+                                    onClick={() => setDropdownOpen(false)}
+                                    className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-zinc-800/50 transition-colors"
+                                  >
+                                    <Shield className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                                    <span>{t("Admin Dashboard", "Admin Dashboard")}</span>
+                                    <span className="ml-auto inline-flex items-center rounded-full bg-rose-100 dark:bg-rose-900/30 px-2 py-0.5 text-xs font-bold text-rose-700 dark:text-rose-300">
+                                      ADMIN
+                                    </span>
+                                  </Link>
+                                  <Link
+                                    href="/admin/users"
+                                    onClick={() => setDropdownOpen(false)}
+                                    className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors ml-2"
+                                  >
+                                    <Users className="w-4 h-4 text-gray-400" />
+                                    <span>{t("Quản lý người dùng", "Manage Users")}</span>
+                                  </Link>
+                                  <Link
+                                    href="/admin/properties"
+                                    onClick={() => setDropdownOpen(false)}
+                                    className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors ml-2"
+                                  >
+                                    <Home className="w-4 h-4 text-gray-400" />
+                                    <span>{t("Quản lý chỗ nghỉ", "Manage Properties")}</span>
+                                  </Link>
+                                </>
+                              )}
+                            </div>
+                          </>
+                        )}
+
                         <hr className="border-gray-100 dark:border-zinc-800" />
 
+                        {/* Menu Items - Settings */}
                         <div className="py-2">
-                          {canAccessPartner(userRole) && (
-                            <Link
-                              href="/host"
-                              onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-rose-50 dark:hover:bg-zinc-800 transition-colors"
-                            >
-                              <Home className="w-4 h-4 text-rose-500" />
-                              <span>{t("Quản lý chỗ ở (Host)", "Manage properties (Host)")}</span>
-                            </Link>
-                          )}
-                          {canAccessAdmin(userRole) && (
-                            <Link
-                              href="/admin"
-                              onClick={() => setDropdownOpen(false)}
-                              className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-rose-50 dark:hover:bg-zinc-800 transition-colors"
-                            >
-                              <BarChart className="w-4 h-4 text-rose-500" />
-                              <span>{t("Quản trị website", "Admin Dashboard")}</span>
-                            </Link>
-                          )}
                           <Link
                             href="/settings"
                             onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                            className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                           >
                             <Settings className="w-4 h-4 text-gray-500 dark:text-gray-300" />
                             <span>{t("Cài đặt", "Settings")}</span>
@@ -636,23 +683,49 @@ export default function Navbar() {
                     <Star className="w-5 h-5 text-gray-400" /> {t("Đánh giá", "Reviews")}
                   </Link>
                   {canAccessPartner(userRole) && (
-                    <Link
-                      href="/host"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 py-3 text-lg font-medium"
-                    >
-                      <Home className="w-5 h-5 text-gray-400" /> {t("Quản lý chỗ ở", "Manage properties")}
-                    </Link>
+                    <>
+                      <Link
+                        href="/host"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 py-3 text-lg font-medium"
+                      >
+                        <Home className="w-5 h-5 text-gray-400" /> {t("Quản lý chỗ nghỉ", "Manage Properties")}
+                      </Link>
+                      <Link
+                        href="/host/register"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 py-3 text-lg font-medium"
+                      >
+                        <Plus className="w-5 h-5 text-gray-400" /> {t("Thêm chỗ nghỉ mới", "Add New Property")}
+                      </Link>
+                    </>
                   )}
                   {canAccessAdmin(userRole) && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 py-3 text-lg font-medium"
-                    >
-                      <BarChart className="w-5 h-5 text-gray-400" /> {t("Quản trị website", "Admin Dashboard")}
-                    </Link>
+                    <>
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 py-3 text-lg font-bold text-rose-600"
+                      >
+                        <Shield className="w-5 h-5 text-rose-600" /> {t("Admin Dashboard", "Admin Dashboard")}
+                      </Link>
+                      <Link
+                        href="/admin/users"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 py-3 text-lg font-medium ml-6"
+                      >
+                        <Users className="w-5 h-5 text-gray-400" /> {t("Quản lý người dùng", "Manage Users")}
+                      </Link>
+                      <Link
+                        href="/admin/properties"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 py-3 text-lg font-medium ml-6"
+                      >
+                        <Home className="w-5 h-5 text-gray-400" /> {t("Quản lý chỗ nghỉ", "Manage Properties")}
+                      </Link>
+                    </>
                   )}
+                  <hr className="my-3 border-gray-100 dark:border-zinc-800" />
                 </>
               )}
             </div>

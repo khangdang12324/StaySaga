@@ -75,7 +75,7 @@ export default async function ListYourPropertyPage() {
                 Xem chỗ nghỉ của tôi
               </Link>
               <Link
-                href="/host/register"
+                href="/host/register?new=1"
                 className="block px-5 py-3 text-base hover:bg-rose-50 hover:text-[#f60057] focus:bg-rose-50 focus:text-[#f60057] focus:outline-none"
               >
                 Thêm chỗ nghỉ mới
@@ -169,7 +169,7 @@ export default async function ListYourPropertyPage() {
                         Bắt đầu đăng ký mới?
                       </p>
                       <Link
-                        href="/host/register"
+                        href="/host/register?new=1"
                         className="inline-flex items-center justify-center gap-3 w-full rounded-full bg-[#f60057] text-white py-3 font-semibold shadow-sm hover:bg-[#f60057] transition-colors"
                       >
                         Tạo đăng ký mới <ArrowRight className="w-4 h-4" />

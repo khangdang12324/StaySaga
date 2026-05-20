@@ -433,6 +433,7 @@ export async function getProperties(params: SearchParams) {
 
     const { data, error, count } = await query
       .eq("is_active", true)
+      .eq("status", "APPROVED")
       .range(offset, offset + limit - 1)
       .order(orderBy, { ascending });
 
@@ -488,6 +489,8 @@ export async function getPropertyBySlug(slug: string) {
       "*, owner:profiles(*), homestay_amenities(amenities(*)), homestay_images(*)",
     )
     .or(`slug.eq.${slug},id.eq.${slug}`)
+    .eq("is_active", true)
+    .eq("status", "APPROVED")
     .single();
 
   if (error || !data) {

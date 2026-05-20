@@ -1,17 +1,36 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Bell, ChevronDown, Globe2, Search } from "lucide-react";
+import {
+  BarChart3,
+  Bell,
+  CalendarDays,
+  Home,
+  Inbox,
+  LineChart,
+  LogOut,
+  MessageSquare,
+  Plus,
+  Search,
+  Star,
+  WalletCards,
+} from "lucide-react";
+import { logout } from "@/core/auth/actions";
 import { HostAccountMenu } from "./HostAccountMenu";
 
 type HostNavKey =
   | "home"
+  | "list"
+  | "new"
+  | "calendar"
   | "bookings"
-  | "revenue"
   | "reviews"
+  | "messages"
   | "finance"
+  | "analytics"
   | "bulk"
   | "opportunities"
-  | "market-data";
+  | "market-data"
+  | "revenue";
 
 type HostExtranetShellProps = {
   active: HostNavKey;
@@ -20,69 +39,73 @@ type HostExtranetShellProps = {
   hideNav?: boolean;
 };
 
-const navItems: { key: HostNavKey; label: string; href: string }[] = [
-  { key: "home", label: "Trang chủ Nhóm chỗ nghỉ", href: "/host" },
-  { key: "bookings", label: "Đặt phòng", href: "/host/bookings" },
-  { key: "revenue", label: "Doanh thu chiến lược", href: "/host/revenue" },
-  { key: "reviews", label: "Đánh giá", href: "/host/reviews" },
-  { key: "finance", label: "Tài chính", href: "/host/finance" },
-  { key: "bulk", label: "Chỉnh sửa đồng loạt", href: "/host/bulk" },
-  { key: "opportunities", label: "Trung tâm Cơ hội", href: "/host/opportunities" },
+const navItems: { key: HostNavKey; label: string; href: string; icon: ReactNode }[] = [
+  { key: "home", label: "Tổng quan", href: "/host", icon: <Home className="h-5 w-5" /> },
+  { key: "list", label: "Chỗ nghỉ của tôi", href: "/host/list", icon: <Inbox className="h-5 w-5" /> },
+  { key: "new", label: "Thêm chỗ nghỉ mới", href: "/host/properties/new", icon: <Plus className="h-5 w-5" /> },
+  { key: "calendar", label: "Giá & lịch trống", href: "/host/calendar", icon: <CalendarDays className="h-5 w-5" /> },
+  { key: "bookings", label: "Đơn đặt phòng", href: "/host/bookings", icon: <CalendarDays className="h-5 w-5" /> },
+  { key: "reviews", label: "Đánh giá của khách", href: "/host/reviews", icon: <Star className="h-5 w-5" /> },
+  { key: "messages", label: "Tin nhắn", href: "/host/messages", icon: <MessageSquare className="h-5 w-5" /> },
+  { key: "finance", label: "Tài chính", href: "/host/finance", icon: <WalletCards className="h-5 w-5" /> },
+  { key: "analytics", label: "Phân tích hiệu suất", href: "/host/analytics", icon: <BarChart3 className="h-5 w-5" /> },
+  { key: "bulk", label: "Chỉnh sửa đồng loạt", href: "/host/bulk", icon: <LineChart className="h-5 w-5" /> },
+  { key: "opportunities", label: "Trung tâm Cơ hội", href: "/host/opportunities", icon: <LineChart className="h-5 w-5" /> },
+  { key: "market-data", label: "Dữ liệu thị trường", href: "/host/market-data", icon: <BarChart3 className="h-5 w-5" /> },
 ];
 
 export function HostExtranetShell({ active, userName, children, hideNav = false }: HostExtranetShellProps) {
   return (
-    <div className="min-h-screen bg-[#f2f2f2] text-slate-950">
-      <header className="bg-[#f60057] text-white">
-        <div className="mx-auto flex h-20 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-3xl font-black tracking-tight">
-            StaySaga<span className="text-white">.</span>
+    <div className="min-h-screen bg-[#f4f5f7] text-slate-950">
+      <header className="sticky top-0 z-40 border-b border-rose-700/20 bg-[#f60057] text-white shadow-sm">
+        <div className="flex h-16 items-center gap-4 px-4 sm:px-6">
+          <Link href="/" className="text-2xl font-black tracking-tight">
+            StaySaga<span>.</span>
           </Link>
-          <span className="h-8 w-px bg-white/35" />
-          <div className="hidden items-center gap-3 md:flex">
-            <span className="font-semibold">{userName}</span>
-            <span className="rounded bg-emerald-600 px-2 py-1 text-xs font-bold">Tài khoản chính</span>
+          <div className="hidden h-8 w-px bg-white/35 md:block" />
+          <div className="hidden min-w-0 items-center gap-3 md:flex">
+            <span className="truncate font-bold">{userName}</span>
+            <span className="rounded bg-white/15 px-2 py-1 text-xs font-bold ring-1 ring-white/30">Đối tác</span>
           </div>
-          <div className="ml-auto hidden h-12 min-w-[360px] items-center rounded bg-white/10 px-4 md:flex">
+          <div className="ml-auto hidden h-11 w-full max-w-md items-center rounded bg-white/12 px-4 md:flex">
             <span className="flex-1 text-white/90">Tìm kiếm</span>
             <Search className="h-5 w-5" />
           </div>
-          <span className="rounded-full bg-[#d9004e] px-2 py-1 text-xs font-bold ring-1 ring-white/30">VN</span>
-          <Globe2 className="h-6 w-6" />
+          <Link href="/" className="hidden rounded border border-white/35 px-3 py-2 text-sm font-bold hover:bg-white/10 md:inline-flex">
+            Xem website
+          </Link>
           <Bell className="h-6 w-6" />
           <HostAccountMenu userName={userName} />
         </div>
+      </header>
+
+      <div className="flex">
         {!hideNav && (
-          <nav className="border-t border-white/10 bg-[#f60057]">
-            <div className="no-scrollbar mx-auto flex max-w-7xl overflow-x-auto px-4 sm:px-6 lg:px-8">
+          <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-72 shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-4 lg:block">
+            <nav className="space-y-1">
               {navItems.map((item) => (
                 <Link
                   key={item.key}
                   href={item.href}
-                  className={`whitespace-nowrap px-4 py-4 text-sm font-semibold hover:bg-white/10 ${
-                    active === item.key ? "shadow-[inset_0_-4px_0_#fff]" : ""
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold transition ${
+                    active === item.key ? "bg-rose-50 text-[#f60057]" : "text-slate-700 hover:bg-slate-50 hover:text-[#f60057]"
                   }`}
                 >
+                  {item.icon}
                   {item.label}
                 </Link>
               ))}
-              <div className="group relative">
-                <button className="flex items-center gap-1 whitespace-nowrap px-4 py-4 text-sm font-semibold hover:bg-white/10">
-                  Khác <ChevronDown className="h-4 w-4" />
-                </button>
-                <div className="invisible absolute right-0 top-full z-20 min-w-56 pt-1 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  <div className="border border-slate-200 bg-white py-2 text-slate-900 shadow-lg">
-                    <Link href="/host/market-data" className="block px-5 py-3 text-sm font-semibold hover:bg-rose-50 hover:text-[#f60057]">
-                      Dữ liệu thị trường
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </nav>
+            </nav>
+            <form action={logout} className="mt-6 border-t border-slate-100 pt-4">
+              <button className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold text-slate-700 hover:bg-rose-50 hover:text-[#f60057]">
+                <LogOut className="h-5 w-5" />
+                Đăng xuất
+              </button>
+            </form>
+          </aside>
         )}
-      </header>
-      {children}
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
     </div>
   );
 }

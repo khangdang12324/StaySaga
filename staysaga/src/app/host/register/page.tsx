@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HelpCircle, UserCircle } from "lucide-react";
-import { PropertyRegistrationWizard } from "./PropertyRegistrationWizard";
+import PropertyRegistrationWizard from "./PropertyRegistrationWizard";
 import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,15 +21,15 @@ export default async function HostRegisterPage() {
   if (!canAccessPartner(role)) redirect("/host/onboard");
 
   return (
-    <div className="min-h-screen bg-[#f7f7f7] text-slate-950">
-      <header className="h-[76px] bg-[#f60057] text-white">
-        <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-2xl font-black tracking-tight">
-            StaySaga<span className="text-rose-200">.</span>
+    <div className="min-h-screen bg-[#f5f5f5] text-gray-950">
+      <header className="h-[72px] bg-[#f60057] text-white">
+        <div className="flex h-full items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="text-[28px] font-bold tracking-tight">
+            StaySaga.
           </Link>
-          <div className="flex items-center gap-5 text-sm font-semibold">
-            <span className="rounded-full bg-[#d9004e] px-3 py-1 text-xs ring-1 ring-white/30">VN</span>
-            <Link href="/help" className="flex items-center gap-2 hover:text-rose-100">
+          <div className="flex items-center gap-5 text-[15px] font-semibold">
+            <span className="rounded-full border border-white/40 px-3 py-1 text-sm">VN</span>
+            <Link href="/help" className="flex items-center gap-2 hover:text-white/80">
               Trợ giúp <HelpCircle className="h-5 w-5" />
             </Link>
             <Link href="/profile" aria-label="Tài khoản">

@@ -23,7 +23,7 @@ type HostAccountMenuProps = {
 const menuItems = [
   { icon: <KeyRound className="h-5 w-5" />, label: "Thay đổi mật khẩu", href: "/profile" },
   { icon: <Bell className="h-5 w-5" />, label: "Cài đặt thông báo", href: "/settings" },
-  { icon: <ClipboardCheck className="h-5 w-5" />, label: "Cá nhân hóa nội dung của Quý vị", href: "/host/opportunities" },
+  { icon: <ClipboardCheck className="h-5 w-5" />, label: "Cá nhân hóa nội dung", href: "/host/opportunities" },
   { icon: <UserPlus className="h-5 w-5" />, label: "Tạo và quản lý người dùng", href: "/host" },
   { icon: <UsersRound className="h-5 w-5" />, label: "Thông tin liên hệ", href: "/profile" },
   { icon: <Smartphone className="h-5 w-5" />, label: "Các thiết bị của tôi", href: "/settings" },
@@ -48,7 +48,7 @@ function getInitials(value: string) {
 export function HostAccountMenu({ userName }: HostAccountMenuProps) {
   return (
     <div className="group relative">
-      <button className="flex h-11 w-11 items-center justify-center rounded-full ring-2 ring-white/80">
+      <button className="flex h-11 w-11 items-center justify-center rounded-full ring-2 ring-white/80" aria-label="Mở menu tài khoản">
         <UserCircle className="h-9 w-9" />
       </button>
       <div className="invisible absolute right-0 top-full z-50 min-w-[340px] pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
@@ -59,19 +59,13 @@ export function HostAccountMenu({ userName }: HostAccountMenuProps) {
             </span>
             <div className="min-w-0">
               <p className="truncate font-bold">{userName}</p>
-              <span className="mt-1 inline-flex rounded bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
-                Tài khoản chính
-              </span>
+              <span className="mt-1 inline-flex rounded bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">Đối tác</span>
             </div>
           </div>
 
           <div className="py-2">
             {menuItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="flex items-center gap-4 px-5 py-3 text-sm font-semibold hover:bg-rose-50 hover:text-[#f60057]"
-              >
+              <Link key={item.label} href={item.href} className="flex items-center gap-4 px-5 py-3 text-sm font-semibold hover:bg-rose-50 hover:text-[#f60057]">
                 <span className="text-slate-500">{item.icon}</span>
                 {item.label}
               </Link>
@@ -86,8 +80,8 @@ export function HostAccountMenu({ userName }: HostAccountMenuProps) {
           </form>
 
           <div className="border-t border-slate-100 px-5 py-4">
-            <p className="font-black">Thêm chỗ nghỉ vào tài khoản của Quý vị</p>
-            <Link href="/host/register" className="mt-4 flex items-center gap-4 text-sm font-semibold hover:text-[#f60057]">
+            <p className="font-black">Thêm chỗ nghỉ vào tài khoản của bạn</p>
+            <Link href="/host/properties/new" className="mt-4 flex items-center gap-4 text-sm font-semibold hover:text-[#f60057]">
               <PlusCircle className="h-6 w-6 text-slate-500" />
               Thêm chỗ nghỉ mới
             </Link>
