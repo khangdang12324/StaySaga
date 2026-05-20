@@ -2,7 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HelpCircle, UserCircle } from "lucide-react";
 import PropertyRegistrationWizard from "./PropertyRegistrationWizard";
-import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/roles";
+import {
+  canAccessPartner,
+  getUserRole,
+  type SupabaseLike,
+} from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
@@ -17,7 +21,10 @@ export default async function HostRegisterPage() {
 
   if (!session?.user) redirect("/login?next=/host/register");
 
-  const role = await getUserRole(supabase as unknown as SupabaseLike, session.user.id);
+  const role = await getUserRole(
+    supabase as unknown as SupabaseLike,
+    session.user.id,
+  );
   if (!canAccessPartner(role)) redirect("/host/onboard");
 
   return (
@@ -28,8 +35,13 @@ export default async function HostRegisterPage() {
             StaySaga.
           </Link>
           <div className="flex items-center gap-5 text-[15px] font-semibold">
-            <span className="rounded-full border border-white/40 px-3 py-1 text-sm">VN</span>
-            <Link href="/help" className="flex items-center gap-2 hover:text-white/80">
+            <span className="rounded-full border border-white/40 px-3 py-1 text-sm">
+              VN
+            </span>
+            <Link
+              href="/help"
+              className="flex items-center gap-2 hover:text-white/80"
+            >
               Trợ giúp <HelpCircle className="h-5 w-5" />
             </Link>
             <Link href="/profile" aria-label="Tài khoản">

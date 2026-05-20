@@ -51,62 +51,68 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userRole, setUserRole] = useState<AppRole>("USER");
-  
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  
+
   const [currency, setCurrency] = useState("VND");
   const [lang, setLang] = useState("VN");
-  
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const currencyRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const supabase = useMemo(() => createClient(), []);
 
-
-
   useEffect(() => {
     // Read from cookies
-    if (typeof document !== 'undefined') {
-       const cookies = document.cookie.split(';');
-       let foundCurrency = "VND";
-       let foundLang = "VN";
-       for (const cookie of cookies) {
-          const [key, value] = cookie.trim().split('=');
-          if (key === 'currency') foundCurrency = value;
-          if (key === 'lang') foundLang = value;
-       }
-       setCurrency(foundCurrency);
-       setLang(foundLang);
+    if (typeof document !== "undefined") {
+      const cookies = document.cookie.split(";");
+      let foundCurrency = "VND";
+      let foundLang = "VN";
+      for (const cookie of cookies) {
+        const [key, value] = cookie.trim().split("=");
+        if (key === "currency") foundCurrency = value;
+        if (key === "lang") foundLang = value;
+      }
+      setCurrency(foundCurrency);
+      setLang(foundLang);
 
-       if (foundLang === "EN") {
-          if (!document.getElementById("google-translate-script")) {
-             const script = document.createElement("script");
-             script.id = "google-translate-script";
-             script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-             script.async = true;
-             document.body.appendChild(script);
-             const style = document.createElement("style");
-             style.innerHTML = "body { top: 0 !important; } .skiptranslate > iframe.skiptranslate { display: none !important; visibility: hidden !important; } #goog-gt-tt { display: none !important; }";
-             document.head.appendChild(style);
+      if (foundLang === "EN") {
+        if (!document.getElementById("google-translate-script")) {
+          const script = document.createElement("script");
+          script.id = "google-translate-script";
+          script.src =
+            "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+          script.async = true;
+          document.body.appendChild(script);
+          const style = document.createElement("style");
+          style.innerHTML =
+            "body { top: 0 !important; } .skiptranslate > iframe.skiptranslate { display: none !important; visibility: hidden !important; } #goog-gt-tt { display: none !important; }";
+          document.head.appendChild(style);
 
-             (window as any).googleTranslateElementInit = () => {
-               new (window as any).google.translate.TranslateElement(
-                 { pageLanguage: 'vi', includedLanguages: 'en', autoDisplay: false },
-                 'google_translate_element'
-               );
-               setTimeout(() => {
-                  const select = document.querySelector('select.goog-te-combo') as HTMLSelectElement;
-                  if (select) {
-                     select.value = 'en';
-                     select.dispatchEvent(new Event('change'));
-                  }
-               }, 500);
-             };
-          }
-       }
+          (window as any).googleTranslateElementInit = () => {
+            new (window as any).google.translate.TranslateElement(
+              {
+                pageLanguage: "vi",
+                includedLanguages: "en",
+                autoDisplay: false,
+              },
+              "google_translate_element",
+            );
+            setTimeout(() => {
+              const select = document.querySelector(
+                "select.goog-te-combo",
+              ) as HTMLSelectElement;
+              if (select) {
+                select.value = "en";
+                select.dispatchEvent(new Event("change"));
+              }
+            }, 500);
+          };
+        }
+      }
     }
 
     const loadUserRole = async (userId?: string) => {
@@ -114,12 +120,17 @@ export default function Navbar() {
         setUserRole("USER");
         return;
       }
-      const role = await getUserRole(supabase as unknown as SupabaseLike, userId);
+      const role = await getUserRole(
+        supabase as unknown as SupabaseLike,
+        userId,
+      );
       setUserRole(role);
     };
 
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setUser(session?.user || null);
       await loadUserRole(session?.user?.id);
     };
@@ -133,10 +144,16 @@ export default function Navbar() {
     );
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
-      if (currencyRef.current && !currencyRef.current.contains(e.target as Node)) {
+      if (
+        currencyRef.current &&
+        !currencyRef.current.contains(e.target as Node)
+      ) {
         setCurrencyOpen(false);
       }
       if (langRef.current && !langRef.current.contains(e.target as Node)) {
@@ -158,9 +175,16 @@ export default function Navbar() {
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`);
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`,
+            );
             const data = await res.json();
-            const city = data.address.city || data.address.town || data.address.county || data.address.state || "Đà Lạt";
+            const city =
+              data.address.city ||
+              data.address.town ||
+              data.address.county ||
+              data.address.state ||
+              "Đà Lạt";
             router.push(`/homestays?location=${encodeURIComponent(city)}`);
           } catch (error) {
             router.push("/homestays");
@@ -168,21 +192,38 @@ export default function Navbar() {
         },
         () => {
           router.push("/homestays");
-        }
+        },
       );
     } else {
       router.push("/homestays");
     }
   };
 
-  const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
+  const userName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "User";
   const identities = (user?.identities || []) as OAuthIdentity[];
-  const googleIdentity = identities.find((identity) => identity.provider === "google");
-  const facebookIdentity = identities.find((identity) => identity.provider === "facebook");
-  const oauthAvatar = user?.user_metadata?.picture || user?.user_metadata?.avatar_url || googleIdentity?.identity_data?.picture || facebookIdentity?.identity_data?.avatar_url || facebookIdentity?.identity_data?.picture || null;
-  const userAvatar = typeof oauthAvatar === "string" && oauthAvatar.startsWith("http") ? oauthAvatar : null;
+  const googleIdentity = identities.find(
+    (identity) => identity.provider === "google",
+  );
+  const facebookIdentity = identities.find(
+    (identity) => identity.provider === "facebook",
+  );
+  const oauthAvatar =
+    user?.user_metadata?.picture ||
+    user?.user_metadata?.avatar_url ||
+    googleIdentity?.identity_data?.picture ||
+    facebookIdentity?.identity_data?.avatar_url ||
+    facebookIdentity?.identity_data?.picture ||
+    null;
+  const userAvatar =
+    typeof oauthAvatar === "string" && oauthAvatar.startsWith("http")
+      ? oauthAvatar
+      : null;
 
-  const t = (vi: string, en: string) => lang === "EN" ? en : vi;
+  const t = (vi: string, en: string) => (lang === "EN" ? en : vi);
 
   if (pathname?.startsWith("/admin") || pathname?.startsWith("/host")) {
     return null;
@@ -195,7 +236,10 @@ export default function Navbar() {
           <Link href="/" className="text-2xl font-black tracking-tight">
             StaySaga<span className="text-rose-200">.</span>
           </Link>
-          <Link href="/help" className="text-sm font-semibold hover:text-rose-200 transition-colors">
+          <Link
+            href="/help"
+            className="text-sm font-semibold hover:text-rose-200 transition-colors"
+          >
             Trợ giúp
           </Link>
         </div>
@@ -207,48 +251,56 @@ export default function Navbar() {
     <>
       <div id="google_translate_element" style={{ display: "none" }}></div>
       <motion.nav
-          initial={{ y: -100 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.5 }}
-          className={cn(
-            "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out",
-            "bg-gradient-to-r from-pink-600 to-rose-500 text-white py-4 shadow-lg",
-          )}
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out",
+          "bg-gradient-to-r from-pink-600 to-rose-500 text-white py-4 shadow-lg",
+        )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0 mr-8">
-                <span className="text-2xl font-black tracking-tighter text-white transition-colors">
-                  StaySaga<span className="text-rose-300">.</span>
-                </span>
+            <Link
+              href="/"
+              className="flex items-center gap-2 flex-shrink-0 mr-8"
+            >
+              <span className="text-2xl font-black tracking-tighter text-white transition-colors">
+                StaySaga<span className="text-rose-300">.</span>
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6 mr-auto">
-                <Link
-                  href="/destinations"
-                  className={cn("font-medium transition-colors hover:text-rose-100 text-white")}
-                >
-                  {t("Điểm đến", "Destinations")}
-                </Link>
-                <button
-                  onClick={handleHotelsClick}
-                  className={cn("font-medium transition-colors hover:text-rose-100 text-white cursor-pointer")}
-                >
-                  StaySaga Hotels
-                </button>
-                <Link
-                  href="/blog"
-                  className={cn("font-medium transition-colors hover:text-rose-100 text-white")}
-                >
-                  {t("Trải nghiệm", "Experiences")}
-                </Link>
+              <Link
+                href="/destinations"
+                className={cn(
+                  "font-medium transition-colors hover:text-rose-100 text-white",
+                )}
+              >
+                {t("Điểm đến", "Destinations")}
+              </Link>
+              <button
+                onClick={handleHotelsClick}
+                className={cn(
+                  "font-medium transition-colors hover:text-rose-100 text-white cursor-pointer",
+                )}
+              >
+                StaySaga Hotels
+              </button>
+              <Link
+                href="/blog"
+                className={cn(
+                  "font-medium transition-colors hover:text-rose-100 text-white",
+                )}
+              >
+                {t("Trải nghiệm", "Experiences")}
+              </Link>
             </div>
 
             {/* Actions */}
             <div className="hidden md:flex items-center gap-2 flex-none">
-              
               {/* Currency Selector */}
               <div className="relative" ref={currencyRef}>
                 <button
@@ -266,17 +318,29 @@ export default function Navbar() {
                       transition={{ duration: 0.15 }}
                       className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
                     >
-                      <button 
-                         onClick={() => { setCurrency("VND"); document.cookie = "currency=VND; path=/; max-age=31536000"; setCurrencyOpen(false); window.location.reload(); }}
-                         className={`notranslate translate-no w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currency === "VND" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
+                      <button
+                        onClick={() => {
+                          setCurrency("VND");
+                          document.cookie =
+                            "currency=VND; path=/; max-age=31536000";
+                          setCurrencyOpen(false);
+                          window.location.reload();
+                        }}
+                        className={`notranslate translate-no w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currency === "VND" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
                       >
-                         VND
+                        VND
                       </button>
-                      <button 
-                         onClick={() => { setCurrency("USD"); document.cookie = "currency=USD; path=/; max-age=31536000"; setCurrencyOpen(false); window.location.reload(); }}
-                         className={`notranslate translate-no w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currency === "USD" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
+                      <button
+                        onClick={() => {
+                          setCurrency("USD");
+                          document.cookie =
+                            "currency=USD; path=/; max-age=31536000";
+                          setCurrencyOpen(false);
+                          window.location.reload();
+                        }}
+                        className={`notranslate translate-no w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currency === "USD" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
                       >
-                         USD
+                        USD
                       </button>
                     </motion.div>
                   )}
@@ -291,14 +355,16 @@ export default function Navbar() {
                 >
                   {lang === "VN" ? (
                     <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700">
-                       <span className="text-yellow-400 text-[10px] leading-none">★</span>
+                      <span className="text-yellow-400 text-[10px] leading-none">
+                        ★
+                      </span>
                     </div>
                   ) : (
                     <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative">
-                       <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
-                       <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
-                       <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
-                       <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
+                      <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
+                      <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
+                      <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
+                      <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
                     </div>
                   )}
                 </button>
@@ -311,26 +377,38 @@ export default function Navbar() {
                       transition={{ duration: 0.15 }}
                       className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50"
                     >
-                      <button 
-                         onClick={() => { setLang("VN"); document.cookie = "lang=VN; path=/; max-age=31536000"; setLangOpen(false); window.location.reload(); }}
-                         className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${lang === "VN" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
+                      <button
+                        onClick={() => {
+                          setLang("VN");
+                          document.cookie = "lang=VN; path=/; max-age=31536000";
+                          setLangOpen(false);
+                          window.location.reload();
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${lang === "VN" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
                       >
-                         <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700 shrink-0">
-                            <span className="text-yellow-400 text-[10px] leading-none">★</span>
-                         </div>
-                         Tiếng Việt
+                        <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700 shrink-0">
+                          <span className="text-yellow-400 text-[10px] leading-none">
+                            ★
+                          </span>
+                        </div>
+                        Tiếng Việt
                       </button>
-                      <button 
-                         onClick={() => { setLang("EN"); document.cookie = "lang=EN; path=/; max-age=31536000"; setLangOpen(false); window.location.reload(); }}
-                         className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${lang === "EN" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
+                      <button
+                        onClick={() => {
+                          setLang("EN");
+                          document.cookie = "lang=EN; path=/; max-age=31536000";
+                          setLangOpen(false);
+                          window.location.reload();
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${lang === "EN" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
                       >
-                         <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative shrink-0">
-                            <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
-                            <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
-                            <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
-                            <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
-                         </div>
-                         English
+                        <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative shrink-0">
+                          <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
+                          <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
+                          <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
+                          <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
+                        </div>
+                        English
                       </button>
                     </motion.div>
                   )}
@@ -338,8 +416,11 @@ export default function Navbar() {
               </div>
 
               {/* Help Link */}
-              <Link href="/help" className="p-2 text-white hover:bg-white/10 rounded-full transition-colors mr-2">
-                 <HelpCircle className="w-5 h-5" />
+              <Link
+                href="/help"
+                className="p-2 text-white hover:bg-white/10 rounded-full transition-colors mr-2"
+              >
+                <HelpCircle className="w-5 h-5" />
               </Link>
 
               {/* Host quick-link: Booking-style list page */}
@@ -350,7 +431,9 @@ export default function Navbar() {
                   "bg-white text-rose-600 border border-white/30 flex items-center gap-2 py-1.5 shadow-sm hover:shadow-md hover:bg-rose-50",
                 )}
               >
-                <span className="hidden sm:inline text-sm">{t("Đăng chỗ nghỉ", "List your property")}</span>
+                <span className="hidden sm:inline text-sm">
+                  {t("Đăng chỗ nghỉ", "List your property")}
+                </span>
               </Link>
 
               {user ? (
@@ -425,7 +508,9 @@ export default function Navbar() {
                             className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                           >
                             <CalendarCheck className="w-4 h-4 text-gray-400" />
-                            <span>{t("Đặt phòng & Chuyến đi", "Bookings & Trips")}</span>
+                            <span>
+                              {t("Đặt phòng & Chuyến đi", "Bookings & Trips")}
+                            </span>
                           </Link>
                           <Link
                             href="/favorites"
@@ -446,7 +531,8 @@ export default function Navbar() {
                         </div>
 
                         {/* Menu Items - Partner/Admin specific */}
-                        {(canAccessPartner(userRole) || canAccessAdmin(userRole)) && (
+                        {(canAccessPartner(userRole) ||
+                          canAccessAdmin(userRole)) && (
                           <>
                             <hr className="border-gray-100 dark:border-zinc-800" />
                             <div className="py-2">
@@ -459,7 +545,12 @@ export default function Navbar() {
                                     className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-rose-50 dark:hover:bg-zinc-800 transition-colors"
                                   >
                                     <Home className="w-4 h-4 text-rose-500" />
-                                    <span>{t("Quản lý chỗ nghỉ", "Manage Properties")}</span>
+                                    <span>
+                                      {t(
+                                        "Quản lý chỗ nghỉ",
+                                        "Manage Properties",
+                                      )}
+                                    </span>
                                   </Link>
                                   <Link
                                     href="/host/register"
@@ -467,7 +558,12 @@ export default function Navbar() {
                                     className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                                   >
                                     <Plus className="w-4 h-4 text-gray-400" />
-                                    <span>{t("Thêm chỗ nghỉ mới", "Add New Property")}</span>
+                                    <span>
+                                      {t(
+                                        "Thêm chỗ nghỉ mới",
+                                        "Add New Property",
+                                      )}
+                                    </span>
                                   </Link>
                                 </>
                               )}
@@ -481,7 +577,9 @@ export default function Navbar() {
                                     className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-zinc-800/50 transition-colors"
                                   >
                                     <Shield className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                                    <span>{t("Admin Dashboard", "Admin Dashboard")}</span>
+                                    <span>
+                                      {t("Admin Dashboard", "Admin Dashboard")}
+                                    </span>
                                     <span className="ml-auto inline-flex items-center rounded-full bg-rose-100 dark:bg-rose-900/30 px-2 py-0.5 text-xs font-bold text-rose-700 dark:text-rose-300">
                                       ADMIN
                                     </span>
@@ -492,7 +590,9 @@ export default function Navbar() {
                                     className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors ml-2"
                                   >
                                     <Users className="w-4 h-4 text-gray-400" />
-                                    <span>{t("Quản lý người dùng", "Manage Users")}</span>
+                                    <span>
+                                      {t("Quản lý người dùng", "Manage Users")}
+                                    </span>
                                   </Link>
                                   <Link
                                     href="/admin/properties"
@@ -500,7 +600,12 @@ export default function Navbar() {
                                     className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors ml-2"
                                   >
                                     <Home className="w-4 h-4 text-gray-400" />
-                                    <span>{t("Quản lý chỗ nghỉ", "Manage Properties")}</span>
+                                    <span>
+                                      {t(
+                                        "Quản lý chỗ nghỉ",
+                                        "Manage Properties",
+                                      )}
+                                    </span>
                                   </Link>
                                 </>
                               )}
@@ -625,7 +730,8 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 py-3 text-lg font-medium"
               >
-                <Globe className="w-5 h-5 text-gray-400" /> {t("Điểm đến", "Destinations")}
+                <Globe className="w-5 h-5 text-gray-400" />{" "}
+                {t("Điểm đến", "Destinations")}
               </Link>
               <button
                 onClick={(e) => {
@@ -634,21 +740,24 @@ export default function Navbar() {
                 }}
                 className="flex items-center gap-3 py-3 text-lg font-medium text-left"
               >
-                <MapPin className="w-5 h-5 text-gray-400" /> StaySaga Hotels {t("(Gần tôi)", "(Near me)")}
+                <MapPin className="w-5 h-5 text-gray-400" /> StaySaga Hotels{" "}
+                {t("(Gần tôi)", "(Near me)")}
               </button>
               <Link
                 href="/host/list"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 py-3 text-lg font-medium"
               >
-                <Home className="w-5 h-5 text-gray-400" /> {t("Đăng chỗ nghỉ", "List your property")}
+                <Home className="w-5 h-5 text-gray-400" />{" "}
+                {t("Đăng chỗ nghỉ", "List your property")}
               </Link>
               <Link
                 href="/blog"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 py-3 text-lg font-medium"
               >
-                <Star className="w-5 h-5 text-gray-400" /> {t("Trải nghiệm", "Experiences")}
+                <Star className="w-5 h-5 text-gray-400" />{" "}
+                {t("Trải nghiệm", "Experiences")}
               </Link>
 
               {user && (
@@ -659,28 +768,32 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 py-3 text-lg font-medium"
                   >
-                    <User className="w-5 h-5 text-gray-400" /> {t("Tài khoản", "Account")}
+                    <User className="w-5 h-5 text-gray-400" />{" "}
+                    {t("Tài khoản", "Account")}
                   </Link>
                   <Link
                     href="/bookings"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 py-3 text-lg font-medium"
                   >
-                    <CalendarCheck className="w-5 h-5 text-gray-400" /> {t("Đặt phòng & Chuyến đi", "Bookings & Trips")}
+                    <CalendarCheck className="w-5 h-5 text-gray-400" />{" "}
+                    {t("Đặt phòng & Chuyến đi", "Bookings & Trips")}
                   </Link>
                   <Link
                     href="/favorites"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 py-3 text-lg font-medium"
                   >
-                    <Heart className="w-5 h-5 text-gray-400" /> {t("Đã lưu", "Saved")}
+                    <Heart className="w-5 h-5 text-gray-400" />{" "}
+                    {t("Đã lưu", "Saved")}
                   </Link>
                   <Link
                     href="/reviews"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 py-3 text-lg font-medium"
                   >
-                    <Star className="w-5 h-5 text-gray-400" /> {t("Đánh giá", "Reviews")}
+                    <Star className="w-5 h-5 text-gray-400" />{" "}
+                    {t("Đánh giá", "Reviews")}
                   </Link>
                   {canAccessPartner(userRole) && (
                     <>
@@ -689,14 +802,16 @@ export default function Navbar() {
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 py-3 text-lg font-medium"
                       >
-                        <Home className="w-5 h-5 text-gray-400" /> {t("Quản lý chỗ nghỉ", "Manage Properties")}
+                        <Home className="w-5 h-5 text-gray-400" />{" "}
+                        {t("Quản lý chỗ nghỉ", "Manage Properties")}
                       </Link>
                       <Link
                         href="/host/register"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 py-3 text-lg font-medium"
                       >
-                        <Plus className="w-5 h-5 text-gray-400" /> {t("Thêm chỗ nghỉ mới", "Add New Property")}
+                        <Plus className="w-5 h-5 text-gray-400" />{" "}
+                        {t("Thêm chỗ nghỉ mới", "Add New Property")}
                       </Link>
                     </>
                   )}
@@ -707,21 +822,24 @@ export default function Navbar() {
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 py-3 text-lg font-bold text-rose-600"
                       >
-                        <Shield className="w-5 h-5 text-rose-600" /> {t("Admin Dashboard", "Admin Dashboard")}
+                        <Shield className="w-5 h-5 text-rose-600" />{" "}
+                        {t("Admin Dashboard", "Admin Dashboard")}
                       </Link>
                       <Link
                         href="/admin/users"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 py-3 text-lg font-medium ml-6"
                       >
-                        <Users className="w-5 h-5 text-gray-400" /> {t("Quản lý người dùng", "Manage Users")}
+                        <Users className="w-5 h-5 text-gray-400" />{" "}
+                        {t("Quản lý người dùng", "Manage Users")}
                       </Link>
                       <Link
                         href="/admin/properties"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 py-3 text-lg font-medium ml-6"
                       >
-                        <Home className="w-5 h-5 text-gray-400" /> {t("Quản lý chỗ nghỉ", "Manage Properties")}
+                        <Home className="w-5 h-5 text-gray-400" />{" "}
+                        {t("Quản lý chỗ nghỉ", "Manage Properties")}
                       </Link>
                     </>
                   )}
