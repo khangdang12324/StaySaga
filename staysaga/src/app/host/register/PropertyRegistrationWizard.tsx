@@ -15,7 +15,9 @@ import {
   Building2,
   Camera,
   Check,
+  ChevronDown,
   CircleHelp,
+  Globe,
   Home,
   Hotel,
   ImageIcon,
@@ -26,19 +28,23 @@ import {
   Search,
   TentTree,
   ThumbsUp,
-  Upload,
   X,
 } from "lucide-react";
 import { PendingSubmitButton } from "@/components/ui/PendingSubmitButton";
 import { createHostHomestay } from "@/core/host/actions";
 
-const PRIMARY = "#f60057";
-const PRIMARY_HOVER = "#d9004c";
 const DRAFT_KEY = "staysaga-host-register-v9";
 const DB_NAME = "staysaga-host-register";
 const FILE_STORE = "files";
 const MIN_PHOTOS = 5;
 const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
+
+type Owner = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+};
 
 type Draft = {
   propertyType: string;
@@ -88,6 +94,17 @@ type Draft = {
   contactPhone: string;
   contactEmail: string;
   verificationConfirmed: boolean;
+  legalOwnerType: "individual" | "business";
+  businessName: string;
+  businessAddress: string;
+  businessPostalCode: string;
+  businessCity: string;
+  businessCountry: string;
+  businessTradeName: string;
+  owners: Owner[];
+  otherOwnerDetails: string;
+  legalConfirmed: boolean;
+  termsConfirmed: boolean;
 };
 
 type Bedroom = {
@@ -128,6 +145,7 @@ type WizardStep =
   | "rates"
   | "non-refundable"
   | "group-pricing"
+  | "legal"
   | "review";
 
 const steps: WizardStep[] = [
@@ -150,6 +168,7 @@ const steps: WizardStep[] = [
   "rates",
   "non-refundable",
   "group-pricing",
+  "legal",
   "review",
 ];
 
@@ -205,7 +224,7 @@ const commonAmenities = [
   "Phòng xông hơi",
   "Ban công",
   "Nhìn ra vườn",
-  "Sân thượng / hiên",
+  "S�n thu?ng / hi�n",
   "Tầm nhìn ra khung cảnh",
 ];
 
@@ -213,14 +232,14 @@ const serviceAmenities = [
   "Bữa sáng",
   "Nhà hàng",
   "Dịch vụ phòng",
-  "Lễ tân 24 giờ",
-  "Đưa đón sân bay",
+  "L? t�n 24 gi?",
+  "�ua d�n s�n bay",
 ];
 const supportedLanguages = [
   "Tiếng Anh",
   "Tiếng Pháp",
   "Tiếng Trung",
-  "Tiếng Tây Ban Nha",
+  "Ti?ng T�y Ban Nha",
   "Tiếng Việt",
 ];
 const extraLanguages = [
@@ -300,14 +319,26 @@ const createDefaultDraft = (): Draft => ({
   contactPhone: "",
   contactEmail: "",
   verificationConfirmed: true,
+  legalOwnerType: "individual",
+  businessName: "",
+  businessAddress: "",
+  businessPostalCode: "",
+  businessCity: "Đà Nẵng",
+  businessCountry: "Việt Nam",
+  businessTradeName: "",
+  owners: [{ id: makeId(), firstName: "", lastName: "", dateOfBirth: "" }],
+  otherOwnerDetails: "",
+  legalConfirmed: false,
+  termsConfirmed: false,
 });
 
 const stageForStep = (index: number) => {
-  if (index <= 5) return 0;
-  if (index <= 12) return 1;
-  if (index <= 13) return 2;
-  if (index <= 18) return 3;
-  return 5;
+  if (index <= 5) return 0; // category, units, confirm, name, address, channel
+  if (index <= 12) return 1; // details, bedroom, amenities, services, languages, policies, partner-profile
+  if (index <= 13) return 2; // photos
+  if (index <= 18) return 3; // booking, price, rates, non-refundable, group-pricing
+  if (index <= 19) return 4; // legal
+  return 5; // review
 };
 
 const formatVnd = (amount: number) =>
@@ -424,6 +455,26 @@ function getStepValidation(
     errors.push(`Cần ít nhất ${MIN_PHOTOS} ảnh hợp lệ để tiếp tục.`);
   if (step === "price" && parsePrice(draft.price) <= 0)
     errors.push("Vui lòng nhập giá mỗi đêm.");
+  if (step === "legal") {
+    if (draft.legalOwnerType === "business") {
+      if (!draft.businessName.trim())
+        errors.push("Vui l�ng nh?p t�n d?y d? c?a ph�p nh�n doanh nghi?p.");
+      if (!draft.businessAddress.trim())
+        errors.push("Vui l�ng nh?p d?a ch? c?a ph�p nh�n doanh nghi?p.");
+      if (!draft.businessPostalCode.trim())
+        errors.push("Vui l�ng nh?p m� buu di?n.");
+      if (!draft.businessCity.trim())
+        errors.push("Vui l�ng nh?p th�nh ph? c?a ph�p nh�n doanh nghi?p.");
+    }
+    draft.owners.forEach((owner, idx) => {
+      if (!owner.firstName.trim() || !owner.lastName.trim()) {
+        errors.push(`Vui l�ng di?n d?y d? h? v� t�n cho c� nh�n #${idx + 1}.`);
+      }
+      if (!owner.dateOfBirth) {
+        errors.push(`Vui l�ng di?n ng�y sinh cho c� nh�n #${idx + 1}.`);
+      }
+    });
+  }
   if (step === "review") errors.push(...getFinalErrors(draft, photos));
 
   return errors;
@@ -444,6 +495,30 @@ function getFinalErrors(draft: Draft, photos: StoredPhoto[]) {
   if (draft.amenities.length < 1) errors.push("Thiếu tiện nghi.");
   if (!draft.verificationConfirmed) errors.push("Chưa xác nhận thông tin.");
 
+  if (draft.legalOwnerType === "business") {
+    if (
+      !draft.businessName.trim() ||
+      !draft.businessAddress.trim() ||
+      !draft.businessPostalCode.trim() ||
+      !draft.businessCity.trim()
+    ) {
+      errors.push("Thi?u th�ng tin ph�p nh�n doanh nghi?p.");
+    }
+  }
+  const hasIncompleteOwner = draft.owners.some(
+    (owner) =>
+      !owner.firstName.trim() || !owner.lastName.trim() || !owner.dateOfBirth,
+  );
+  if (hasIncompleteOwner) {
+    errors.push("Thiếu hoặc chưa hoàn thành thông tin người sở hữu.");
+  }
+  if (!draft.legalConfirmed) {
+    errors.push("Vui lòng cam đoan chỗ nghỉ hợp pháp.");
+  }
+  if (!draft.termsConfirmed) {
+    errors.push("Vui lòng đồng ý với Điều khoản chung.");
+  }
+
   return errors;
 }
 
@@ -458,6 +533,30 @@ export default function PropertyRegistrationWizard() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [restored, setRestored] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  
+  // New States for Confirmation / Warning modals
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [targetStepIndex, setTargetStepIndex] = useState<number | null>(null);
+  const [showNotReadyModal, setShowNotReadyModal] = useState(false);
+  const [notReadyReasons, setNotReadyReasons] = useState<string[]>([]);
+
+  const stageSteps = [
+    ["category", "units", "confirm", "name", "address", "channel"],
+    [
+      "details",
+      "bedroom",
+      "amenities",
+      "services",
+      "languages",
+      "policies",
+      "partner-profile",
+    ],
+    ["photos"],
+    ["booking", "price", "rates", "non-refundable", "group-pricing"],
+    ["legal"],
+    ["review"],
+  ];
+
   const current = steps[currentStep];
   const activeBedroom =
     draft.bedrooms.find((room) => room.id === activeBedroomId) ??
@@ -472,6 +571,46 @@ export default function PropertyRegistrationWizard() {
     [draft, photos],
   );
 
+  const isStageAccessible = (targetIndex: number) => {
+    if (targetIndex === 0) return true;
+    if (targetIndex <= stageIndex) return true;
+
+    // Check validation for all steps in stages before targetIndex
+    for (let i = 0; i < targetIndex; i++) {
+      const stepsInPrevStage = stageSteps[i];
+      for (const stepName of stepsInPrevStage) {
+        const errs = getStepValidation(stepName as WizardStep, draft, photos);
+        if (errs.length > 0) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const onSelectStage = (index: number) => {
+    const firstStepOfStage = stageSteps[index][0];
+    const targetIdx = steps.indexOf(firstStepOfStage as WizardStep);
+    if (targetIdx !== -1) {
+      setTargetStepIndex(targetIdx);
+      setShowLeaveModal(true);
+    }
+  };
+
+  const handleConfirmLeave = () => {
+    if (targetStepIndex !== null) {
+      setCurrentStep(targetStepIndex);
+    }
+    setShowLeaveModal(false);
+    setTargetStepIndex(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelLeave = () => {
+    setShowLeaveModal(false);
+    setTargetStepIndex(null);
+  };
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
@@ -481,6 +620,9 @@ export default function PropertyRegistrationWizard() {
           ...createDefaultDraft(),
           ...parsed,
           bedrooms: parsed.bedrooms?.length ? parsed.bedrooms : [makeBedroom()],
+          owners: parsed.owners?.length
+            ? parsed.owners
+            : [{ id: makeId(), firstName: "", lastName: "", dateOfBirth: "" }],
         });
         setActiveBedroomId(parsed.bedrooms?.[0]?.id ?? "");
       }
@@ -611,115 +753,269 @@ export default function PropertyRegistrationWizard() {
   const price = parsePrice(draft.price);
 
   return (
-    <form action={createHostHomestay} className="pb-12">
-      <ProgressHeader currentStep={currentStep} stageIndex={stageIndex} />
-      <HiddenFields draft={draft} validPhotos={validPhotos.length} />
-
-      {showStepErrors && stepErrors.length > 0 ? (
-        <div className="mx-auto mt-8 max-w-[1200px] px-4 lg:ml-[110px]">
-          <div className="w-full max-w-[620px] rounded-md border border-red-300 bg-red-50 p-5 text-sm text-red-700">
-            <div className="flex gap-3">
-              <Info className="mt-0.5 h-5 w-5 shrink-0" />
-              <div>
-                <p className="font-bold">Vui lòng kiểm tra lại thông tin</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5">
-                  {stepErrors.map((error) => (
-                    <li key={error}>{error}</li>
-                  ))}
-                </ul>
+    <div className="min-h-screen bg-[#f5f5f5] text-gray-950 flex flex-col font-sans">
+      {/* Dynamic Header */}
+      <header className="h-[72px] bg-[#f60057] text-white shrink-0">
+        <div className="flex h-full items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2">
+            <span className="text-[28px] font-bold tracking-tight">
+              StaySaga.
+            </span>
+          </div>
+          <div className="flex items-center gap-6 text-[14px]">
+            {/* Property details */}
+            <div className="hidden md:flex flex-col text-right">
+              <div className="font-bold flex items-center justify-end gap-1 cursor-pointer">
+                <span>{draft.name || "StaySaga"}</span>
+                <ChevronDown className="h-4 w-4" />
               </div>
+              <span className="text-[12px] text-rose-100 truncate max-w-[280px]">
+                {[draft.address, draft.district, draft.city].filter(Boolean).join(", ") || "Chưa cập nhật địa chỉ"}
+              </span>
+            </div>
+            
+            {/* Language */}
+            <div className="flex items-center gap-1.5 cursor-pointer font-semibold">
+              <Globe className="h-5 w-5 text-white" />
+              <span>Tiếng Việt</span>
+            </div>
+
+            {/* Help */}
+            <div className="flex items-center gap-1.5 cursor-pointer font-semibold">
+              <CircleHelp className="h-5 w-5" />
+              <span>Trợ giúp</span>
+            </div>
+
+            {/* User Profile Icon */}
+            <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center cursor-pointer">
+              <span className="text-[14px] font-bold">K</span>
             </div>
           </div>
         </div>
-      ) : null}
+      </header>
 
-      <main
-        className={
-          current === "address"
-            ? ""
-            : "mx-auto max-w-[1200px] px-4 py-12 lg:ml-[110px]"
-        }
-      >
-        {current === "category" ? (
-          <section className="max-w-[1180px] py-12">
-            <h1 className="max-w-[900px] text-[38px] font-bold leading-tight tracking-tight text-gray-950">
-              Đăng chỗ nghỉ của Quý vị trên StaySaga và bắt đầu đón khách nhanh
-              chóng!
-            </h1>
-            <p className="mt-4 text-xl text-gray-800">
-              Để bắt đầu, chọn loại chỗ nghỉ Quý vị muốn đăng trên StaySaga.
+      <form action={createHostHomestay} className="pb-12 flex-1 flex flex-col">
+        <ProgressHeader 
+          currentStep={currentStep} 
+          stageIndex={stageIndex} 
+          onSelectStage={onSelectStage}
+          isStageAccessible={isStageAccessible}
+        />
+        <HiddenFields draft={draft} validPhotos={validPhotos.length} />
+
+        {showStepErrors && stepErrors.length > 0 ? (
+          <div className="mx-auto mt-8 w-full max-w-[1200px] px-4 lg:ml-[110px]">
+            <div className="w-full max-w-[620px] rounded-md border border-red-300 bg-red-50 p-5 text-sm text-red-700">
+              <div className="flex gap-3">
+                <Info className="mt-0.5 h-5 w-5 shrink-0" />
+                <div>
+                  <p className="font-bold">Vui lòng kiểm tra lại thông tin</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {stepErrors.map((error) => (
+                      <li key={error}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <main
+          className={
+            current === "address"
+              ? "flex-1 flex flex-col"
+              : "mx-auto w-full max-w-[1200px] px-4 py-12 lg:ml-[110px] flex-1"
+          }
+        >
+          {current === "category" ? (
+            <section className="max-w-[1180px] py-12">
+              <h1 className="max-w-[900px] text-[38px] font-bold leading-tight tracking-tight text-gray-950">
+                Đăng chỗ nghỉ của Quý vị trên StaySaga và bắt đầu đón khách nhanh
+                chóng!
+              </h1>
+              <p className="mt-4 text-xl text-gray-800">
+                Để bắt đầu, chọn loại chỗ nghỉ Quý vị muốn đăng trên StaySaga.
+              </p>
+              <div className="relative mt-14 grid max-w-[1100px] grid-cols-1 border border-gray-300 bg-white md:grid-cols-4">
+                <span className="absolute -top-4 left-16 rounded bg-emerald-600 px-5 py-1.5 text-sm font-bold text-white">
+                  Bắt đầu nhanh
+                </span>
+                {propertyTypes.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        updateDraft("propertyType", item.id);
+                        setCurrentStep(1);
+                      }}
+                      className={`min-h-[300px] border-b border-gray-300 p-7 text-center transition hover:bg-gray-50 md:border-b-0 md:border-r last:md:border-r-0 cursor-pointer ${
+                        draft.propertyType === item.id
+                          ? "outline outline-2 outline-[#f60057]"
+                          : ""
+                      }`}
+                    >
+                      <Icon
+                        className="mx-auto h-14 w-14 text-[#f60057]"
+                        strokeWidth={1.8}
+                      />
+                      <h2 className="mt-5 text-lg font-bold">{item.title}</h2>
+                      <p className="mx-auto mt-4 min-h-[64px] max-w-[220px] text-sm leading-6 text-gray-700">
+                        {item.text}
+                      </p>
+                      <span className="mt-7 inline-flex w-full items-center justify-center rounded-sm bg-[#f60057] px-4 py-3 font-bold text-white hover:bg-[#d9004c]">
+                        Đăng chỗ nghỉ
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : current === "address" ? (
+            <AddressStep
+              draft={draft}
+              mapQuery={mapQuery}
+              touched={touched}
+              setTouched={setTouched}
+              updateDraft={updateDraft}
+              onBack={goBack}
+              onNext={goNext}
+            />
+          ) : (
+            <div className="grid max-w-[980px] grid-cols-1 gap-7 lg:grid-cols-[560px_340px]">
+              <section
+                className={
+                  current === "photos" || current === "price" || current === "review"
+                    ? "lg:col-span-2"
+                    : ""
+                }
+              >
+                {renderStep()}
+                <BottomNav
+                  onBack={goBack}
+                  onNext={goNext}
+                  isLast={current === "review"}
+                  canContinue={
+                    current === "review" ? finalErrors.length === 0 : canContinue
+                  }
+                  pendingText="Đang gửi duyệt..."
+                  confirmMessage="Sau khi gửi duyệt, quản trị viên StaySaga sẽ kiểm tra thông tin chỗ nghỉ trước khi hiển thị công khai."
+                  onNotReady={() => setShowNotReadyModal(true)}
+                />
+              </section>
+            </div>
+          )}
+        </main>
+      </form>
+
+      {/* Leave Warning Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative w-full max-w-[560px] rounded-lg bg-white p-6 shadow-xl animate-in fade-in zoom-in duration-200">
+            <button
+              type="button"
+              onClick={handleCancelLeave}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <h2 className="text-[20px] font-bold text-gray-900 pr-8">
+              Trước khi Quý vị rời đi
+            </h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-gray-600">
+              Qu� v? d� th?c hi?n m?t s? thay d?i trong trang n�y. N?u Qu� v? r?i di b�y gi?, nh?ng thay d?i d� s? b? m?t.
             </p>
-            <div className="relative mt-14 grid max-w-[1100px] grid-cols-1 border border-gray-300 bg-white md:grid-cols-4">
-              <span className="absolute -top-4 left-16 rounded bg-emerald-600 px-5 py-1.5 text-sm font-bold text-white">
-                Bắt đầu nhanh
-              </span>
-              {propertyTypes.map((item) => {
-                const Icon = item.icon;
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleCancelLeave}
+                className="rounded-sm border border-[#f60057] px-5 py-2.5 font-bold text-[#f60057] hover:bg-rose-50 transition cursor-pointer"
+              >
+                Ở lại
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmLeave}
+                className="rounded-sm bg-[#f60057] px-5 py-2.5 font-bold text-white hover:bg-[#d9004c] transition cursor-pointer"
+              >
+                Rời đi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* "Tôi chưa sẵn sàng" Modal */}
+      {showNotReadyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative w-full max-w-[560px] rounded-lg bg-white p-6 shadow-xl animate-in fade-in zoom-in duration-200">
+            <button
+              type="button"
+              onClick={() => setShowNotReadyModal(false)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <h2 className="text-[19px] font-bold text-gray-900 pr-8 leading-snug">
+              Có lý do nào khiến Quý vị không muốn mở để nhận đặt phòng không?
+            </h2>
+            <div className="mt-6 space-y-4">
+              {[
+                "Chỗ nghỉ của tôi chưa sẵn sàng để nhận khách",
+                "Tôi muốn kết nối với công cụ quản lý kênh của mình",
+                "Tôi muốn cập nhật lịch của mình",
+                "Tôi có thông tin cần thêm (hình ảnh, tiện nghi, giá, v.v.)",
+                "Lý do khác",
+              ].map((reason) => {
+                const checked = notReadyReasons.includes(reason);
                 return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      updateDraft("propertyType", item.id);
-                      setCurrentStep(1);
-                    }}
-                    className={`min-h-[300px] border-b border-gray-300 p-7 text-center transition hover:bg-gray-50 md:border-b-0 md:border-r last:md:border-r-0 ${
-                      draft.propertyType === item.id
-                        ? "outline outline-2 outline-[#f60057]"
-                        : ""
-                    }`}
-                  >
-                    <Icon
-                      className="mx-auto h-14 w-14 text-[#f60057]"
-                      strokeWidth={1.8}
+                  <label key={reason} className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        if (checked) {
+                          setNotReadyReasons(notReadyReasons.filter((r) => r !== reason));
+                        } else {
+                          setNotReadyReasons([...notReadyReasons, reason]);
+                        }
+                      }}
+                      className="peer sr-only"
                     />
-                    <h2 className="mt-5 text-lg font-bold">{item.title}</h2>
-                    <p className="mx-auto mt-4 min-h-[64px] max-w-[220px] text-sm leading-6 text-gray-700">
-                      {item.text}
-                    </p>
-                    <span className="mt-7 inline-flex w-full items-center justify-center rounded-sm bg-[#f60057] px-4 py-3 font-bold text-white hover:bg-[#d9004c]">
-                      Đăng chỗ nghỉ
+                    <span
+                      className={`flex h-6 w-6 mt-0.5 shrink-0 items-center justify-center rounded-sm border ${
+                        checked
+                          ? "border-[#f60057] bg-[#f60057]"
+                          : "border-gray-400 bg-white"
+                      }`}
+                    >
+                      {checked ? <Check className="h-4 w-4 text-white" /> : null}
                     </span>
-                  </button>
+                    <span className="text-[15px] leading-relaxed text-gray-700 select-none">
+                      {reason}
+                    </span>
+                  </label>
                 );
               })}
             </div>
-          </section>
-        ) : current === "address" ? (
-          <AddressStep
-            draft={draft}
-            mapQuery={mapQuery}
-            touched={touched}
-            setTouched={setTouched}
-            updateDraft={updateDraft}
-            onBack={goBack}
-            onNext={goNext}
-          />
-        ) : (
-          <div className="grid max-w-[980px] grid-cols-1 gap-7 lg:grid-cols-[560px_340px]">
-            <section
-              className={
-                current === "photos" || current === "price"
-                  ? "lg:col-span-2"
-                  : ""
-              }
-            >
-              {renderStep()}
-              <BottomNav
-                onBack={goBack}
-                onNext={goNext}
-                isLast={current === "review"}
-                canContinue={
-                  current === "review" ? finalErrors.length === 0 : canContinue
-                }
-                pendingText="Đang gửi duyệt..."
-                confirmMessage="Sau khi gửi duyệt, quản trị viên StaySaga sẽ kiểm tra thông tin chỗ nghỉ trước khi hiển thị công khai."
-              />
-            </section>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNotReadyModal(false);
+                  window.location.href = "/host";
+                }}
+                className="rounded-sm bg-[#f60057] px-6 py-3 font-bold text-white hover:bg-[#d9004c] transition w-full text-center cursor-pointer"
+              >
+                Gửi và tiếp tục đăng ký
+              </button>
+            </div>
           </div>
-        )}
-      </main>
-    </form>
+        </div>
+      )}
+    </div>
   );
 
   function renderStep() {
@@ -810,7 +1106,7 @@ export default function PropertyRegistrationWizard() {
                   title="Tại sao tôi cần đặt tên cho chỗ nghỉ của mình?"
                 >
                   <p className="text-[15px] leading-6 text-gray-800">
-                    Tên này sẽ hiển thị với khách trên StaySaga. Hãy chọn tên dễ
+                    T�n n�y s? hi?n th? v?i kh�ch tr�n StaySaga. H�y ch?n t�n d?
                     nhớ và không bao gồm địa chỉ đầy đủ.
                   </p>
                 </HelpCard>
@@ -849,7 +1145,7 @@ export default function PropertyRegistrationWizard() {
         return (
           <Question title="Chi tiết chỗ nghỉ">
             <Panel>
-              <p className="mb-5 text-[17px]">Khách có thể ngủ ở đâu?</p>
+              <p className="mb-5 text-[17px]">Kh�ch c� th? ng? ? d�u?</p>
               <div className="space-y-5">
                 {draft.bedrooms.map((room, index) => (
                   <button
@@ -1037,7 +1333,7 @@ export default function PropertyRegistrationWizard() {
               />
               <Divider />
               <RadioBlock
-                label="Chỗ đậu xe ở đâu?"
+                label="Ch? d?u xe ? d�u?"
                 options={[
                   ["onsite", "Trong khuôn viên"],
                   ["offsite", "Ngoài khuôn viên"],
@@ -1052,7 +1348,7 @@ export default function PropertyRegistrationWizard() {
               />
               <Divider />
               <RadioBlock
-                label="Đây là loại chỗ đậu xe gì?"
+                label="��y l� lo?i ch? d?u xe g�?"
                 options={[
                   ["private", "Riêng"],
                   ["public", "Công cộng"],
@@ -1067,7 +1363,7 @@ export default function PropertyRegistrationWizard() {
         );
       case "languages":
         return (
-          <Question title="Quý vị hoặc nhân viên của mình sử dụng ngôn ngữ nào?">
+          <Question title="Qu� v? ho?c nh�n vi�n c?a m�nh s? d?ng ng�n ng? n�o?">
             <Panel>
               <h2 className="mb-5 font-bold">Chọn ngôn ngữ</h2>
               {supportedLanguages.map((language) => (
@@ -1228,7 +1524,7 @@ export default function PropertyRegistrationWizard() {
                 </p>
                 <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">
                   <li>Ảnh phải là jpg, jpeg hoặc png</li>
-                  <li>Ảnh nên có độ phân giải đủ rõ và không bị trùng</li>
+                  <li>?nh n�n c� d? ph�n gi?i d? r� v� kh�ng b? tr�ng</li>
                 </ul>
               </div>
             ) : null}
@@ -1367,7 +1663,7 @@ export default function PropertyRegistrationWizard() {
                     Đưa ra giá cạnh tranh để tăng khả năng nhận thêm đặt phòng.
                   </p>
                   <p className="mt-4">
-                    Đây là khoảng giá của các chỗ nghỉ tương tự với Quý vị.
+                    ��y l� kho?ng gi� c?a c�c ch? ngh? tuong t? v?i Qu� v?.
                   </p>
                   <div className="mt-8 px-3">
                     <div className="relative h-1 bg-rose-100">
@@ -1574,7 +1870,7 @@ export default function PropertyRegistrationWizard() {
                 trong nhiều kiểu tìm kiếm.
               </p>
               <ToggleLine
-                label="Đã bật"
+                label="�� b?t"
                 checked={draft.groupPricing}
                 onChange={(value) => updateDraft("groupPricing", value)}
               />
@@ -1616,56 +1912,474 @@ export default function PropertyRegistrationWizard() {
             </Panel>
           </Question>
         );
-      case "review":
+      case "legal":
         return (
-          <Question title="Xem lại và gửi duyệt">
-            <Panel>
-              <div className="grid gap-6">
-                {firstImage ? (
-                  <img
-                    src={firstImage}
-                    alt={draft.name}
-                    className="h-56 w-full rounded-sm object-cover"
-                  />
-                ) : null}
-                <ReviewRow
-                  label="Loại chỗ nghỉ"
-                  value={
-                    propertyTypes.find((item) => item.id === draft.propertyType)
-                      ?.title ?? "Chưa chọn"
-                  }
-                />
-                <ReviewRow
-                  label="Tên chỗ nghỉ"
-                  value={draft.name || "Chưa nhập"}
-                />
-                <ReviewRow label="Vị trí" value={addressQuery || "Chưa nhập"} />
-                <ReviewRow
-                  label="Sức chứa"
-                  value={`${draft.maxGuests} khách · ${draft.bedrooms.length} phòng ngủ · ${totalBeds(draft.bedrooms)} giường · ${draft.bathrooms} phòng tắm`}
-                />
-                <ReviewRow label="Giá mỗi đêm" value={formatVnd(price)} />
-                <ReviewRow
-                  label="Ảnh"
-                  value={`${validPhotos.length} ảnh hợp lệ`}
-                />
+          <Question title="Xác minh đối tác">
+            <Panel className="space-y-6">
+              <div className="rounded-md bg-rose-50 p-4 text-[15px] leading-relaxed text-gray-800">
+                �? tu�n th? c�c y�u c?u ph�p l� v� quy d?nh kh�c nhau, ch�ng t�i
+                cần thu thập và xác minh một số thông tin về Quý vị và chỗ nghỉ.
               </div>
-              {finalErrors.length ? (
-                <div className="mt-8 rounded-md border border-red-300 bg-red-50 p-4 text-red-700">
-                  <p className="font-bold">Còn thiếu thông tin</p>
-                  <ul className="mt-2 list-disc pl-5 text-sm">
-                    {finalErrors.map((error) => (
-                      <li key={error}>{error}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="mt-8 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
-                  Thông tin đã đủ. Quý vị có thể gửi chỗ nghỉ cho StaySaga
-                  duyệt.
+
+              <div>
+                <label
+                  className="text-sm font-bold block mb-2"
+                  htmlFor="owner-type"
+                >
+                  Ch? ngh? du?c s? h?u b?i c� nh�n hay ph�p nh�n doanh nghi?p?
+                </label>
+                <select
+                  id="owner-type"
+                  value={draft.legalOwnerType}
+                  onChange={(e) =>
+                    updateDraft(
+                      "legalOwnerType",
+                      e.target.value as "individual" | "business",
+                    )
+                  }
+                  className="h-11 w-full rounded-sm border border-gray-500 px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057] bg-white cursor-pointer"
+                >
+                  <option value="individual">
+                    T�i l� c� nh�n ri�ng l? t? di?u h�nh vi?c kinh doanh c?a m�nh
+                  </option>
+                  <option value="business">
+                    T�i l� d?i di?n cho ph�p nh�n doanh nghi?p
+                  </option>
+                </select>
+              </div>
+
+              {draft.legalOwnerType === "business" && (
+                <div className="space-y-4 pt-2 border-t border-gray-100">
+                  <div>
+                    <label
+                      className="text-sm font-bold block mb-1"
+                      htmlFor="business-name"
+                    >
+                      T�n d?y d? c?a ph�p nh�n doanh nghi?p *
+                    </label>
+                    <input
+                      id="business-name"
+                      value={draft.businessName}
+                      onChange={(e) =>
+                        updateDraft("businessName", e.target.value)
+                      }
+                      className="h-11 w-full rounded-sm border border-gray-500 px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                      placeholder="Nhập tên doanh nghiệp đầy đủ"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className="text-sm font-bold block mb-1"
+                      htmlFor="business-address"
+                    >
+                      �?a ch? c?a ph�p nh�n doanh nghi?p *
+                    </label>
+                    <input
+                      id="business-address"
+                      value={draft.businessAddress}
+                      onChange={(e) =>
+                        updateDraft("businessAddress", e.target.value)
+                      }
+                      className="h-11 w-full rounded-sm border border-gray-500 px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                      placeholder="Nhập địa chỉ doanh nghiệp"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        className="text-sm font-bold block mb-1"
+                        htmlFor="business-postal"
+                      >
+                        M� buu di?n *
+                      </label>
+                      <input
+                        id="business-postal"
+                        value={draft.businessPostalCode}
+                        onChange={(e) =>
+                          updateDraft("businessPostalCode", e.target.value)
+                        }
+                        className="h-11 w-full rounded-sm border border-gray-500 px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                        placeholder="Ví dụ: 550000"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="text-sm font-bold block mb-1"
+                        htmlFor="business-city"
+                      >
+                        Thành phố *
+                      </label>
+                      <input
+                        id="business-city"
+                        value={draft.businessCity}
+                        onChange={(e) =>
+                          updateDraft("businessCity", e.target.value)
+                        }
+                        className="h-11 w-full rounded-sm border border-gray-500 px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                        placeholder="Ví dụ: Đà Nẵng"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      className="text-sm font-bold block mb-1"
+                      htmlFor="business-country"
+                    >
+                      Quốc gia *
+                    </label>
+                    <select
+                      id="business-country"
+                      value={draft.businessCountry}
+                      onChange={(e) =>
+                        updateDraft("businessCountry", e.target.value)
+                      }
+                      className="h-11 w-full rounded-sm border border-gray-500 px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057] bg-white cursor-pointer"
+                    >
+                      <option value="Việt Nam">Việt Nam</option>
+                      <option value="Mỹ">Mỹ</option>
+                      <option value="Anh">Anh</option>
+                      <option value="Pháp">Pháp</option>
+                      <option value="Nhật Bản">Nhật Bản</option>
+                      <option value="Hàn Quốc">Hàn Quốc</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      className="text-sm font-bold block mb-1"
+                      htmlFor="business-trade-name"
+                    >
+                      Nếu công ty hoạt động dưới tên khác (ví dụ: tên thương
+                      mại) liên quan đến chỗ nghỉ, vui lòng cung cấp chi tiết{" "}
+                      <span className="text-gray-500 font-normal">
+                        - không bắt buộc
+                      </span>
+                    </label>
+                    <input
+                      id="business-trade-name"
+                      value={draft.businessTradeName}
+                      onChange={(e) =>
+                        updateDraft("businessTradeName", e.target.value)
+                      }
+                      className="h-11 w-full rounded-sm border border-gray-500 px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                      placeholder="Tên thương mại khác (nếu có)"
+                    />
+                  </div>
                 </div>
               )}
+
+              <div className="pt-4 border-t border-gray-100 space-y-4">
+                <p className="text-sm font-semibold text-gray-800 leading-relaxed">
+                  Vui l�ng cung c?p t�n d?y d? v� ng�y sinh c?a t?t c? c� nh�n,
+                  những người sở hữu từ 25% trở lên của chỗ nghỉ.
+                </p>
+
+                {draft.owners.map((owner, index) => (
+                  <div
+                    key={owner.id}
+                    className="p-4 rounded-md border border-gray-200 bg-gray-50 relative space-y-3"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        C� nh�n #{index + 1}
+                      </span>
+                      {draft.owners.length > 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateDraft(
+                              "owners",
+                              draft.owners.filter((o) => o.id !== owner.id),
+                            );
+                          }}
+                          className="text-xs font-bold text-[#f60057] hover:underline"
+                        >
+                          Xóa
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[13px] font-bold block mb-1">
+                          Tên *
+                        </label>
+                        <input
+                          value={owner.firstName}
+                          onChange={(e) => {
+                            const newOwners = draft.owners.map((o) =>
+                              o.id === owner.id
+                                ? { ...o, firstName: e.target.value }
+                                : o,
+                            );
+                            updateDraft("owners", newOwners);
+                          }}
+                          className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                          placeholder="Ví dụ: Dạng"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[13px] font-bold block mb-1">
+                          Họ *
+                        </label>
+                        <input
+                          value={owner.lastName}
+                          onChange={(e) => {
+                            const newOwners = draft.owners.map((o) =>
+                              o.id === owner.id
+                                ? { ...o, lastName: e.target.value }
+                                : o,
+                            );
+                            updateDraft("owners", newOwners);
+                          }}
+                          className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                          placeholder="Ví dụ: Khang"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[13px] font-bold block mb-1">
+                        Ngày sinh *
+                      </label>
+                      <input
+                        type="date"
+                        value={owner.dateOfBirth}
+                        onChange={(e) => {
+                          const newOwners = draft.owners.map((o) =>
+                            o.id === owner.id
+                              ? { ...o, dateOfBirth: e.target.value }
+                              : o,
+                          );
+                          updateDraft("owners", newOwners);
+                        }}
+                        className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateDraft("owners", [
+                      ...draft.owners,
+                      {
+                        id: makeId(),
+                        firstName: "",
+                        lastName: "",
+                        dateOfBirth: "",
+                      },
+                    ]);
+                  }}
+                  className="inline-flex items-center gap-2 text-sm font-bold text-[#f60057] hover:underline"
+                >
+                  <Plus className="h-4 w-4" /> Thêm
+                </button>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
+                <label
+                  className="text-sm font-bold block mb-1"
+                  htmlFor="other-owner-details"
+                >
+                  Nếu một chủ sở hữu nào đó có tên khác, vui lòng cung cấp chi
+                  tiết{" "}
+                  <span className="text-gray-500 font-normal">
+                    - không bắt buộc
+                  </span>
+                </label>
+                <textarea
+                  id="other-owner-details"
+                  value={draft.otherOwnerDetails}
+                  onChange={(e) =>
+                    updateDraft("otherOwnerDetails", e.target.value)
+                  }
+                  className="min-h-[80px] w-full rounded-sm border border-gray-500 px-3 py-2 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                  placeholder="Ví dụ: Tên khác hoặc chi tiết bổ sung..."
+                />
+              </div>
             </Panel>
+          </Question>
+        );
+      case "review":
+        return (
+          <Question title="Xem lại và hoàn tất">
+            <div className="grid gap-7 lg:grid-cols-[560px_340px]">
+              <div>
+                <Panel className="space-y-6">
+                  <h2 className="text-[17px] font-bold text-gray-800">
+                    Một số thông tin quan trọng trước khi Quý vị đăng chỗ nghỉ
+                    trên StaySaga
+                  </h2>
+
+                  <div className="space-y-6">
+                    <div className="flex gap-4">
+                      <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-[#f60057]">
+                        <BedDouble className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900">
+                          Tôi có thể quyết định khi nào tôi nhận đặt phòng
+                          không?
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                          Có. Cách tốt nhất để làm điều này là luôn cập nhật
+                          lịch của Quý vị. Đóng những ngày Quý vị không muốn
+                          nhận đặt phòng. Nếu Quý vị có đặt phòng trên những
+                          trang khác, vui lòng cũng đóng những ngày đó.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-[#f60057]">
+                        <Info className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900">
+                          Đặt phòng có được xác nhận ngay tức thì?
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                          Có. Đặt phòng được xác nhận ngay khi khách đặt.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-[#f60057]">
+                        <ThumbsUp className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900">
+                          Tôi có thể chọn khách lưu trú tại chỗ của tôi?
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-700">
+                          Không. Nếu một ngày được mở bán trong lịch Quý vị, tất
+                          cả khách hàng sử dụng trang web chúng tôi đều có thể
+                          đặt ngày đó.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-gray-100 space-y-4">
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={draft.legalConfirmed}
+                        onChange={() =>
+                          updateDraft("legalConfirmed", !draft.legalConfirmed)
+                        }
+                        className="peer sr-only"
+                      />
+                      <span
+                        className={`flex h-6 w-6 mt-1 shrink-0 items-center justify-center rounded-sm border ${
+                          draft.legalConfirmed
+                            ? "border-[#f60057] bg-[#f60057]"
+                            : "border-gray-400 bg-white"
+                        }`}
+                      >
+                        {draft.legalConfirmed ? (
+                          <Check className="h-4 w-4 text-white" />
+                        ) : null}
+                      </span>
+                      <span className="text-[15px] leading-relaxed text-gray-700">
+                        T�i cam doan r?ng d�y l� doanh nghi?p ch? ngh? h?p ph�p
+                        với tất cả giấy phép cần thiết mà tôi có thể xuất trình
+                        khi được yêu cầu chứng minh. StaySaga giữ quyền xác minh
+                        và điều tra bất kỳ chi tiết nào được cung cấp trong quá
+                        trình đăng ký này.
+                      </span>
+                    </label>
+
+                    <label className="flex cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={draft.termsConfirmed}
+                        onChange={() =>
+                          updateDraft("termsConfirmed", !draft.termsConfirmed)
+                        }
+                        className="peer sr-only"
+                      />
+                      <span
+                        className={`flex h-6 w-6 mt-1 shrink-0 items-center justify-center rounded-sm border ${
+                          draft.termsConfirmed
+                            ? "border-[#f60057] bg-[#f60057]"
+                            : "border-gray-400 bg-white"
+                        }`}
+                      >
+                        {draft.termsConfirmed ? (
+                          <Check className="h-4 w-4 text-white" />
+                        ) : null}
+                      </span>
+                      <span className="text-[15px] leading-relaxed text-gray-700">
+                        T�i d� d?c, ch?p nh?n v� d?ng � v?i{" "}
+                        <span className="text-[#f60057] underline">
+                          Điều khoản chung
+                        </span>
+                        .
+                      </span>
+                    </label>
+                  </div>
+
+                  {finalErrors.length > 0 ? (
+                    <div className="rounded-md border border-red-300 bg-red-50 p-4 text-red-700 text-sm">
+                      <p className="font-bold">
+                        Còn thiếu thông tin để hoàn tất:
+                      </p>
+                      <ul className="mt-2 list-disc pl-5 space-y-1">
+                        {finalErrors.map((error) => (
+                          <li key={error}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </Panel>
+              </div>
+
+              <div>
+                <Panel className="space-y-4">
+                  <h3 className="font-bold text-[17px] text-gray-800">
+                    Tóm tắt chỗ nghỉ
+                  </h3>
+                  <div className="space-y-3 text-sm text-gray-700">
+                    {firstImage ? (
+                      <img
+                        src={firstImage}
+                        alt={draft.name}
+                        className="h-40 w-full object-cover rounded-sm"
+                      />
+                    ) : null}
+                    <div>
+                      <span className="font-bold block">Tên chỗ nghỉ:</span>
+                      <span>{draft.name || "Chưa nhập"}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold block">Địa chỉ:</span>
+                      <span>{addressQuery || "Chưa nhập"}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold block">Giá mỗi đêm:</span>
+                      <span>{formatVnd(price)}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold block">
+                        Người sở hữu pháp lý:
+                      </span>
+                      <span>
+                        {draft.legalOwnerType === "business"
+                          ? `Doanh nghiệp: ${draft.businessName || "Chưa nhập"}`
+                          : `C� nh�n: ${draft.owners.map((o) => `${o.lastName} ${o.firstName}`).filter(Boolean).join(", ") || "Chua nh?p"}`}
+                      </span>
+                    </div>
+                  </div>
+                </Panel>
+              </div>
+            </div>
           </Question>
         );
       default:
@@ -1690,6 +2404,143 @@ export default function PropertyRegistrationWizard() {
   }
 }
 
+type AddressSuggestion = {
+  title: string;
+  subtitle: string;
+  fullAddress: string;
+  city: string;
+  district: string;
+  lat: number;
+  lon: number;
+};
+
+const DEFAULT_MAP_ADDRESS = "Việt Nam";
+
+function normalizeAddressSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim();
+}
+
+function getAddressSuggestions(value: string, city: string): AddressSuggestion[] {
+  const normalized = normalizeAddressSearch(value);
+  if (normalized.length < 2) return [];
+
+  if (
+    normalized.includes("dan kia") ||
+    normalized.includes("dankia") ||
+    normalized.startsWith("17")
+  ) {
+        return [
+      {
+        title: "17 Đan Kia",
+        subtitle: "Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Đan Kia, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Lang Biang",
+        lat: 12.0126,
+        lon: 108.4016,
+      },
+      {
+        title: "17 Hẻm Đan Kia",
+        subtitle: "Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Hẻm Đan Kia, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Lang Biang",
+        lat: 12.0132,
+        lon: 108.4022,
+      },
+      {
+        title: "17 Hẻm 19A Dankia",
+        subtitle: "Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Hẻm 19A Dankia, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Lang Biang",
+        lat: 12.0119,
+        lon: 108.4009,
+      },
+    ];
+  }
+
+  const displayCity = city || "Đà Lạt";
+  const compactValue = value.replace(/\s+/g, " ").trim();
+
+  return [
+    {
+      title: compactValue,
+      subtitle: `${displayCity}, Việt Nam`,
+      fullAddress: `${compactValue}, ${displayCity}, Việt Nam`,
+      city: displayCity,
+      district: "",
+      lat: 11.9404,
+      lon: 108.4583,
+    },
+    {
+      title: `${compactValue} 1`,
+      subtitle: `${displayCity}, Việt Nam`,
+      fullAddress: `${compactValue} 1, ${displayCity}, Việt Nam`,
+      city: displayCity,
+      district: "",
+      lat: 11.943,
+      lon: 108.461,
+    },
+    {
+      title: `${compactValue} Residence`,
+      subtitle: `${displayCity}, Việt Nam`,
+      fullAddress: `${compactValue} Residence, ${displayCity}, Việt Nam`,
+      city: displayCity,
+      district: "",
+      lat: 11.937,
+      lon: 108.455,
+    },
+  ];
+}
+
+function getAddressTitle(address: string) {
+  return address.split(",")[0]?.trim() || address.trim();
+}
+
+function InteractiveMap({
+  mapAddress,
+  selectedCoords,
+  mapType,
+  onMapClick,
+}: {
+  mapAddress: string;
+  selectedCoords: { lat: number; lon: number } | null;
+  mapType: "map" | "satellite";
+  onMapClick?: () => void;
+}) {
+  const mapTarget = selectedCoords
+    ? `${selectedCoords.lat},${selectedCoords.lon}`
+    : mapAddress || DEFAULT_MAP_ADDRESS;
+  const zoom = selectedCoords || mapAddress !== DEFAULT_MAP_ADDRESS ? 16 : 5;
+  const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(
+    mapTarget,
+  )}&z=${zoom}&t=${mapType === "satellite" ? "k" : "m"}&output=embed`;
+
+  return (
+    <>
+      <iframe
+        key={mapUrl}
+        title="Bản đồ vị trí chỗ nghỉ"
+        src={mapUrl}
+        className="absolute inset-0 h-full w-full border-0"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+      />
+      <div 
+        className="absolute inset-0 bg-gradient-to-r from-white/55 via-white/20 to-transparent cursor-pointer"
+        onClick={onMapClick} 
+      />
+    </>
+  );
+}
+
 function AddressStep({
   draft,
   mapQuery,
@@ -1710,116 +2561,240 @@ function AddressStep({
   onNext: () => void;
 }) {
   const [mapType, setMapType] = useState<"map" | "satellite">("map");
-  const suggestions = [
-    draft.address || "17 Phước Mỹ 1",
-    draft.address ? `${draft.address} gần trung tâm` : "17 Đan Kia",
-    draft.address ? `${draft.address} ${draft.city}` : "17 Hẻm 19A Đan Kia",
-  ];
+  const [mapAddress, setMapAddress] = useState(mapQuery || DEFAULT_MAP_ADDRESS);
+  const [searchInput, setSearchInput] = useState(draft.address);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [selectedCoords, setSelectedCoords] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(
+    draft.latitude && draft.longitude
+      ? { lat: parseFloat(draft.latitude), lon: parseFloat(draft.longitude) }
+      : null,
+  );
+
+  const selectedAddress = draft.address.trim() || searchInput.trim();
+  const selectedTitle = getAddressTitle(selectedAddress);
+  const selectedSubtitle =
+    selectedAddress && selectedAddress !== selectedTitle
+      ? selectedAddress
+      : [draft.district, draft.city, draft.country].filter(Boolean).join(", ");
+  const showSelectedAddress = selectedAddress.length > 0;
+  const canContinue = draft.address.trim().length > 0;
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    updateDraft("address", value);
+    setMapAddress(value || mapQuery || DEFAULT_MAP_ADDRESS);
+    setSuggestions(getAddressSuggestions(value, draft.city));
+  };
+
+  const handleSuggestionClick = (suggestion: AddressSuggestion) => {
+    setSearchInput(suggestion.fullAddress);
+    updateDraft("address", suggestion.fullAddress);
+    updateDraft("city", suggestion.city);
+    updateDraft("district", suggestion.district);
+    updateDraft("country", "Việt Nam");
+    updateDraft("latitude", String(suggestion.lat));
+    updateDraft("longitude", String(suggestion.lon));
+    setMapAddress(suggestion.fullAddress);
+    setSelectedCoords({ lat: suggestion.lat, lon: suggestion.lon });
+    setSuggestions([]);
+  };
+
+  const handleClearAddress = () => {
+    setSearchInput("");
+    updateDraft("address", "");
+    updateDraft("latitude", "");
+    updateDraft("longitude", "");
+    setSelectedCoords(null);
+    setMapAddress(mapQuery || DEFAULT_MAP_ADDRESS);
+    setSuggestions([]);
+  };
+
+  const handleContinue = () => {
+    setTouched((prev) => ({ ...prev, address: true }));
+    if (canContinue) onNext();
+  };
+
+  const openGoogleMaps = () => {
+    const target = selectedCoords
+      ? `${selectedCoords.lat},${selectedCoords.lon}`
+      : mapAddress || DEFAULT_MAP_ADDRESS;
+
+    window.open(
+      `https://www.google.com/maps?q=${encodeURIComponent(target)}&t=${
+        mapType === "satellite" ? "k" : "m"
+      }&z=17`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
 
   return (
-    <section className="relative min-h-[780px] overflow-hidden bg-gray-100">
-      <iframe
-        title="Bản đồ vị trí chỗ nghỉ"
-        src={`https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed&t=${mapType === "satellite" ? "k" : "m"}`}
-        className="absolute inset-0 h-full w-full border-0 opacity-80"
-        loading="lazy"
+    <section className="relative min-h-[calc(100vh-142px)] overflow-hidden bg-gray-100">
+      <InteractiveMap
+        mapAddress={mapAddress || DEFAULT_MAP_ADDRESS}
+        selectedCoords={selectedCoords}
+        mapType={mapType}
+        onMapClick={openGoogleMaps}
       />
-      <div className="absolute right-8 top-8 z-10 flex rounded-sm bg-white shadow">
+
+      <div className="absolute right-8 top-7 z-20 flex overflow-hidden rounded-sm bg-white shadow-md ring-1 ring-black/10 pointer-events-auto">
         <button
           type="button"
-          className={`px-6 py-3 font-bold ${mapType === "map" ? "bg-white" : "bg-gray-100"}`}
+          className={`px-6 py-3 text-lg font-bold ${
+            mapType === "map"
+              ? "bg-white text-gray-950"
+              : "bg-gray-100 text-gray-600"
+          }`}
           onClick={() => setMapType("map")}
         >
           Bản đồ
         </button>
         <button
           type="button"
-          className={`px-6 py-3 font-bold ${mapType === "satellite" ? "bg-white" : "bg-gray-100"}`}
+          className={`border-l border-gray-200 px-6 py-3 text-lg font-bold ${
+            mapType === "satellite"
+              ? "bg-white text-gray-950"
+              : "bg-gray-100 text-gray-600"
+          }`}
           onClick={() => setMapType("satellite")}
         >
           Vệ tinh
         </button>
       </div>
-      <div className="relative z-10 px-4 py-20 lg:ml-[110px]">
-        <h1 className="mb-8 text-[36px] font-bold tracking-tight">
+
+      <div className="relative z-10 px-4 pb-8 pt-20 sm:px-6 lg:ml-[150px] pointer-events-none">
+        <h1 className="mb-8 max-w-[650px] text-[38px] font-bold leading-tight tracking-tight text-gray-950 pointer-events-auto">
           Chỗ nghỉ của Quý vị ở đâu?
         </h1>
-        <div className="w-full max-w-[560px] rounded-md border border-gray-200 bg-white p-8 shadow-sm">
-          <div className="flex border-b">
+
+        <div className="w-full max-w-[620px] rounded-md border border-gray-200 bg-white px-10 pb-8 pt-9 shadow-sm pointer-events-auto">
+          <div className="flex border-b border-gray-200">
             <button
               type="button"
-              className="border-b-2 border-[#f60057] px-5 py-3 font-semibold text-[#f60057]"
+              className="border-b-2 border-[#f60057] px-5 py-3 font-medium text-[#f60057]"
             >
               Tìm kiếm nhanh
             </button>
-            <button type="button" className="px-5 py-3">
+            <button type="button" className="px-5 py-3 text-gray-900">
               Biểu mẫu Địa chỉ
             </button>
           </div>
-          <label className="mt-6 block text-sm font-bold">Địa chỉ</label>
-          <div className="mt-2 flex h-14 items-center gap-3 border border-gray-500 px-3 focus-within:border-[#f60057] focus-within:ring-1 focus-within:ring-[#f60057]">
-            <Search className="h-5 w-5 text-gray-500" />
-            <input
-              value={draft.address}
-              onChange={(event) => updateDraft("address", event.target.value)}
-              onBlur={() => setTouched((prev) => ({ ...prev, address: true }))}
-              className="w-full outline-none"
-              placeholder="Bắt đầu nhập địa chỉ của Quý vị"
-            />
-            {draft.address ? (
-              <button type="button" onClick={() => updateDraft("address", "")}>
-                <X className="h-5 w-5" />
-              </button>
+
+          <label className="mt-6 block text-sm font-bold text-gray-950">
+            Địa chỉ
+          </label>
+
+          <div className="relative mt-3">
+            <div className="flex h-[62px] items-center gap-4 border-2 border-gray-950 bg-white px-4 focus-within:border-[#f60057] focus-within:ring-2 focus-within:ring-[#f60057]">
+              <Search className="h-6 w-6 shrink-0 text-gray-600" />
+              <input
+                value={searchInput}
+                onChange={(event) => handleSearchChange(event.target.value)}
+                onFocus={() =>
+                  setSuggestions(getAddressSuggestions(searchInput, draft.city))
+                }
+                onBlur={() => {
+                  setTouched((prev) => ({ ...prev, address: true }));
+                }}
+                className="h-full min-w-0 flex-1 bg-transparent text-lg text-gray-950 outline-none placeholder:text-gray-500"
+                placeholder="Bắt đầu nhập địa chỉ của Quý vị"
+              />
+              {searchInput ? (
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={handleClearAddress}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-800 hover:bg-gray-100"
+                  aria-label="Xóa địa chỉ"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              ) : null}
+            </div>
+
+            {suggestions.length > 0 ? (
+              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 overflow-hidden rounded-md border border-gray-200 bg-white shadow-xl">
+                {suggestions.map((item) => (
+                  <button
+                    key={`${item.title}-${item.lat}-${item.lon}`}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => handleSuggestionClick(item)}
+                    className="flex w-full items-start gap-4 border-b border-gray-200 px-4 py-3 text-left last:border-b-0 hover:bg-rose-50"
+                  >
+                    <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700">
+                      <MapPin className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block font-bold text-gray-950">
+                        {item.title}
+                      </span>
+                      <span className="block text-sm text-gray-600">
+                        {item.subtitle}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+                <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600">
+                  Google Maps
+                  <Info className="h-4 w-4" />
+                </div>
+              </div>
             ) : null}
           </div>
+
           {(touched.address || false) && !draft.address.trim() ? (
-            <p className="mt-2 text-sm font-semibold text-red-600">
+            <p className="mt-2 text-sm font-semibold text-[#f60057]">
               Vui lòng nhập địa chỉ.
             </p>
           ) : null}
-          <div className="mt-4 rounded-md border border-gray-200 bg-white shadow">
-            {suggestions.map((item, index) => (
+
+          {showSelectedAddress ? (
+            <div className="mt-7">
+              <h2 className="text-xl font-bold text-gray-950">
+                {selectedTitle}
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                {selectedSubtitle || selectedAddress}
+              </p>
               <button
-                key={`${item}-${index}`}
                 type="button"
-                onClick={() => updateDraft("address", item)}
-                className="flex w-full gap-4 border-b px-4 py-3 text-left last:border-b-0 hover:bg-gray-50"
+                onClick={openGoogleMaps}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-rose-50 px-4 py-2 font-bold text-[#f60057] hover:bg-rose-100"
               >
-                <MapPin className="mt-1 h-5 w-5 text-[#f60057]" />
-                <span>
-                  <span className="block font-bold">{item}</span>
-                  <span className="text-sm text-gray-600">
-                    {draft.district} - {draft.city}, {draft.country}
-                  </span>
-                </span>
+                Maps
+                <span aria-hidden>↗</span>
               </button>
-            ))}
-          </div>
-          <div className="mt-5">
-            <button
-              type="button"
-              className="rounded-full bg-rose-100 px-4 py-2 font-bold text-[#f60057]"
-            >
-              Maps ↗
-            </button>
-            <p className="mt-4 text-sm text-gray-600">
-              Nếu đặt ghim sai vị trí, hãy chỉnh lại địa chỉ hoặc nhập tọa độ
-              thủ công sau.
-            </p>
-          </div>
+              <p className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+                Google Maps <Info className="h-4 w-4" />
+              </p>
+              <p className="mt-7 border-t border-gray-200 pt-5 text-sm text-gray-800">
+                Nếu vị trí không chính xác, vui lòng điều chỉnh địa chỉ. Bấm vào bản đồ để mở Google Maps.
+              </p>
+            </div>
+          ) : null}
         </div>
-        <div className="mt-8 flex w-full max-w-[560px] gap-3">
+
+        <div className="mt-8 flex w-full max-w-[620px] gap-3 pointer-events-auto">
           <button
             type="button"
             onClick={onBack}
-            className="h-14 w-20 rounded-sm border border-[#f60057] text-[#f60057]"
+            className="h-14 w-20 rounded-sm border border-[#f60057] bg-white text-[#f60057] hover:bg-rose-50"
           >
             <ArrowLeft className="mx-auto h-5 w-5" />
           </button>
           <button
             type="button"
-            onClick={onNext}
-            className="h-14 flex-1 rounded-sm bg-[#f60057] font-bold text-white hover:bg-[#d9004c]"
+            onClick={handleContinue}
+            disabled={!canContinue}
+            className={`h-14 flex-1 rounded-sm font-bold text-white ${
+              canContinue
+                ? "bg-[#f60057] hover:bg-[#d9004c]"
+                : "cursor-not-allowed bg-gray-300 text-gray-500"
+            }`}
           >
             Tiếp tục
           </button>
@@ -1832,44 +2807,79 @@ function AddressStep({
 function ProgressHeader({
   currentStep,
   stageIndex,
+  onSelectStage,
+  isStageAccessible,
 }: {
   currentStep: number;
   stageIndex: number;
+  onSelectStage: (index: number) => void;
+  isStageAccessible: (index: number) => boolean;
 }) {
+  const stageSteps = [
+    ["category", "units", "confirm", "name", "address", "channel"],
+    [
+      "details",
+      "bedroom",
+      "amenities",
+      "services",
+      "languages",
+      "policies",
+      "partner-profile",
+    ],
+    ["photos"],
+    ["booking", "price", "rates", "non-refundable", "group-pricing"],
+    ["legal"],
+    ["review"],
+  ];
+
   return (
-    <div className="border-b border-gray-200 bg-white">
-      <div className="grid grid-cols-6 text-center text-[15px] text-gray-300">
-        {stageLabels.map((label, index) => (
-          <div
-            key={label}
-            className={`px-2 py-6 ${index <= stageIndex ? "text-gray-900" : ""}`}
-          >
-            <span>{label}</span>
-            {index < stageIndex ? (
-              <Check className="ml-2 inline h-4 w-4 rounded-full bg-emerald-600 p-0.5 text-white" />
-            ) : null}
-          </div>
-        ))}
+    <div className="border-b border-gray-200 bg-white select-none">
+      <div className="grid grid-cols-6 text-center text-[15px]">
+        {stageLabels.map((label, index) => {
+          const accessible = isStageAccessible(index);
+          return (
+            <button
+              type="button"
+              key={label}
+              disabled={!accessible}
+              onClick={() => onSelectStage(index)}
+              className={`px-2 py-6 outline-none transition ${
+                accessible
+                  ? "text-gray-900 font-medium cursor-pointer hover:bg-gray-50"
+                  : "text-gray-300 cursor-not-allowed"
+              }`}
+            >
+              <span>{label}</span>
+              {index < stageIndex ? (
+                <Check className="ml-2 inline h-4 w-4 rounded-full bg-emerald-600 p-0.5 text-white" />
+              ) : null}
+            </button>
+          );
+        })}
       </div>
       <div className="grid grid-cols-6">
-        {stageLabels.map((label, index) => (
-          <div key={label} className="flex gap-1 px-6">
-            {Array.from({ length: index === 1 || index === 3 ? 5 : 2 }).map(
-              (_, segment) => (
+        {stageLabels.map((label, index) => {
+          const stepsInStage = stageSteps[index];
+          const currentStepName = steps[currentStep];
+          const stepIndexInStage = stepsInStage.indexOf(currentStepName);
+
+          return (
+            <div key={label} className="flex gap-1 px-6">
+              {stepsInStage.map((_, segment) => (
                 <span
                   key={segment}
                   className={`h-1 flex-1 ${
                     index < stageIndex
                       ? "bg-emerald-300"
-                      : index === stageIndex && segment <= currentStep % 5
+                      : index === stageIndex && segment <= stepIndexInStage
                         ? "bg-[#f60057]"
                         : "bg-gray-300"
                   }`}
                 />
-              ),
-            )}
-          </div>
-        ))}
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1917,6 +2927,7 @@ function BottomNav({
   canContinue,
   pendingText,
   confirmMessage,
+  onNotReady,
 }: {
   onBack: () => void;
   onNext: () => void;
@@ -1924,35 +2935,47 @@ function BottomNav({
   canContinue: boolean;
   pendingText: string;
   confirmMessage: string;
+  onNotReady?: () => void;
 }) {
   return (
-    <div className="mt-8 flex w-full max-w-[560px] gap-3">
-      <button
-        type="button"
-        onClick={onBack}
-        className="h-14 w-20 rounded-sm border border-[#f60057] text-[#f60057]"
-      >
-        <ArrowLeft className="mx-auto h-5 w-5" />
-      </button>
-      {isLast ? (
-        <PendingSubmitButton
-          disabled={!canContinue}
-          pendingText={pendingText}
-          confirmMessage={confirmMessage}
-          className="h-14 flex-1 rounded-sm bg-[#f60057] font-bold text-white hover:bg-[#d9004c]"
-        >
-          Gửi duyệt chỗ nghỉ
-        </PendingSubmitButton>
-      ) : (
+    <div className="mt-8 flex w-full max-w-[560px] flex-col gap-4">
+      <div className="flex w-full gap-3">
         <button
           type="button"
-          onClick={onNext}
-          disabled={!canContinue}
-          className="h-14 flex-1 rounded-sm bg-[#f60057] font-bold text-white hover:bg-[#d9004c] disabled:bg-gray-300 disabled:text-gray-500 disabled:hover:bg-gray-300"
+          onClick={onBack}
+          className="h-14 w-20 rounded-sm border border-[#f60057] text-[#f60057] cursor-pointer"
         >
-          Tiếp tục
+          <ArrowLeft className="mx-auto h-5 w-5" />
         </button>
-      )}
+        {isLast ? (
+          <PendingSubmitButton
+            disabled={!canContinue}
+            pendingText={pendingText}
+            confirmMessage={confirmMessage}
+            className="h-14 flex-1 rounded-sm bg-[#f60057] font-bold text-white hover:bg-[#d9004c]"
+          >
+            Mở để nhận đặt phòng
+          </PendingSubmitButton>
+        ) : (
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={!canContinue}
+            className="h-14 flex-1 rounded-sm bg-[#f60057] font-bold text-white hover:bg-[#d9004c] disabled:bg-gray-300 disabled:text-gray-500 disabled:hover:bg-gray-300 cursor-pointer disabled:cursor-not-allowed"
+          >
+            Tiếp tục
+          </button>
+        )}
+      </div>
+      {isLast ? (
+        <button
+          type="button"
+          onClick={onNotReady}
+          className="text-center font-bold text-[#f60057] hover:underline py-2 block cursor-pointer outline-none w-full"
+        >
+          Tôi chưa sẵn sàng
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -2292,6 +3315,44 @@ function HiddenFields({
     draft.description ||
     `${draft.name || "Chỗ nghỉ"} tại ${draft.city} có không gian tiện nghi, phù hợp cho khách du lịch và gia đình.`;
 
+  const verificationDetails = {
+    ownerType: draft.legalOwnerType,
+    businessDetails:
+      draft.legalOwnerType === "business"
+        ? {
+            name: draft.businessName,
+            address: draft.businessAddress,
+            postalCode: draft.businessPostalCode,
+            city: draft.businessCity,
+            country: draft.businessCountry,
+            tradeName: draft.businessTradeName,
+          }
+        : null,
+    owners: draft.owners.map((o) => ({
+      firstName: o.firstName,
+      lastName: o.lastName,
+      dateOfBirth: o.dateOfBirth,
+    })),
+    otherOwnerDetails: draft.otherOwnerDetails,
+  };
+
+  const verificationNoteText = `Ảnh hợp lệ: ${validPhotos}. Hồ sơ: ${draft.partnerProfile.join(
+    ", ",
+  )}. Xác minh pháp lý: ${JSON.stringify(verificationDetails)}`;
+
+  const calculatedOwnerName =
+    draft.legalOwnerType === "business"
+      ? draft.businessName
+      : draft.owners[0]
+        ? `${draft.owners[0].lastName} ${draft.owners[0].firstName}`.trim()
+        : "";
+
+  const finalOwnerName =
+    calculatedOwnerName ||
+    draft.ownerName ||
+    draft.partnerName ||
+    "Đối tác StaySaga";
+
   return (
     <div className="hidden" aria-hidden="true">
       <input name="property_type" value={draft.propertyType} readOnly />
@@ -2364,27 +3425,15 @@ function HiddenFields({
         value={`Hút thuốc: ${draft.allowSmoking ? "Có" : "Không"}. Tiệc tùng: ${draft.allowParties ? "Có" : "Không"}.`}
         readOnly
       />
-      <input
-        name="owner_name"
-        value={draft.ownerName || draft.partnerName || "Đối tác StaySaga"}
-        readOnly
-      />
-      <input
-        name="host_name"
-        value={draft.partnerName || draft.ownerName || "Đối tác StaySaga"}
-        readOnly
-      />
+      <input name="owner_name" value={finalOwnerName} readOnly />
+      <input name="host_name" value={finalOwnerName} readOnly />
       <input
         name="contact_phone"
         value={draft.contactPhone || "0900000000"}
         readOnly
       />
       <input name="contact_email" value={draft.contactEmail || ""} readOnly />
-      <input
-        name="verification_note"
-        value={`Ảnh hợp lệ: ${validPhotos}. Hồ sơ: ${draft.partnerProfile.join(", ")}`}
-        readOnly
-      />
+      <input name="verification_note" value={verificationNoteText} readOnly />
       {draft.bookingMode === "instant" ? (
         <input name="instant_booking" value="on" readOnly />
       ) : null}
