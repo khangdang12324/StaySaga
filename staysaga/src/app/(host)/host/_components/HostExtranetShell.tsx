@@ -97,7 +97,7 @@ export function HostExtranetShell({
         </div>
 
         {!hideNav ? (
-          <nav className="mx-auto flex max-w-[1400px] items-end overflow-x-auto px-6">
+          <nav className="mx-auto flex max-w-[1400px] items-end overflow-x-auto px-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {navItems.map((item) => (
               <Link
                 key={item.key}
