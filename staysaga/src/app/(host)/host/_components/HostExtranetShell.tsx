@@ -1,20 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
-  BarChart3,
   Bell,
-  CalendarDays,
-  Home,
-  Inbox,
-  LineChart,
-  LogOut,
-  MessageSquare,
-  Plus,
+  ChevronDown,
+  CircleHelp,
+  Globe2,
   Search,
-  Star,
-  WalletCards,
 } from "lucide-react";
-import { logout } from "@/core/auth/actions";
 import { HostAccountMenu } from "./HostAccountMenu";
 
 type HostNavKey =
@@ -39,73 +31,98 @@ type HostExtranetShellProps = {
   hideNav?: boolean;
 };
 
-const navItems: { key: HostNavKey; label: string; href: string; icon: ReactNode }[] = [
-  { key: "home", label: "Tổng quan", href: "/host", icon: <Home className="h-5 w-5" /> },
-  { key: "list", label: "Chỗ nghỉ của tôi", href: "/host/list", icon: <Inbox className="h-5 w-5" /> },
-  { key: "new", label: "Thêm chỗ nghỉ mới", href: "/host/properties/new", icon: <Plus className="h-5 w-5" /> },
-  { key: "calendar", label: "Giá & lịch trống", href: "/host/calendar", icon: <CalendarDays className="h-5 w-5" /> },
-  { key: "bookings", label: "Đơn đặt phòng", href: "/host/bookings", icon: <CalendarDays className="h-5 w-5" /> },
-  { key: "reviews", label: "Đánh giá của khách", href: "/host/reviews", icon: <Star className="h-5 w-5" /> },
-  { key: "messages", label: "Tin nhắn", href: "/host/messages", icon: <MessageSquare className="h-5 w-5" /> },
-  { key: "finance", label: "Tài chính", href: "/host/finance", icon: <WalletCards className="h-5 w-5" /> },
-  { key: "analytics", label: "Phân tích hiệu suất", href: "/host/analytics", icon: <BarChart3 className="h-5 w-5" /> },
-  { key: "bulk", label: "Chỉnh sửa đồng loạt", href: "/host/bulk", icon: <LineChart className="h-5 w-5" /> },
-  { key: "opportunities", label: "Trung tâm Cơ hội", href: "/host/opportunities", icon: <LineChart className="h-5 w-5" /> },
-  { key: "market-data", label: "Dữ liệu thị trường", href: "/host/market-data", icon: <BarChart3 className="h-5 w-5" /> },
+const navItems: { key: HostNavKey; label: string; href: string }[] = [
+  { key: "home", label: "Trang chủ Nhóm chỗ nghỉ", href: "/host" },
+  { key: "bookings", label: "Đặt phòng", href: "/host/bookings" },
+  { key: "messages", label: "Hộp thư", href: "/host/messages" },
+  { key: "revenue", label: "Doanh thu chiến lược", href: "/host/revenue" },
+  { key: "reviews", label: "Đánh giá", href: "/host/reviews" },
+  { key: "finance", label: "Tài chính", href: "/host/finance" },
+  { key: "bulk", label: "Chỉnh sửa đồng loạt", href: "/host/bulk" },
+  {
+    key: "opportunities",
+    label: "Trung tâm Cơ hội dành cho Nhóm chỗ nghỉ",
+    href: "/host/opportunities",
+  },
 ];
 
-export function HostExtranetShell({ active, userName, children, hideNav = false }: HostExtranetShellProps) {
+export function HostExtranetShell({
+  active,
+  userName,
+  children,
+  hideNav = false,
+}: HostExtranetShellProps) {
   return (
-    <div className="min-h-screen bg-[#f4f5f7] text-slate-950">
-      <header className="sticky top-0 z-40 border-b border-rose-700/20 bg-[#f60057] text-white shadow-sm">
-        <div className="flex h-16 items-center gap-4 px-4 sm:px-6">
-          <Link href="/" className="text-2xl font-black tracking-tight">
-            StaySaga<span>.</span>
+    <div className="min-h-screen bg-[#f3f3f3] text-[#1a1a1a]">
+      <header className="bg-[#f60057] text-white">
+        <div className="mx-auto flex h-20 max-w-[1400px] items-center gap-5 px-6">
+          <Link href="/host" className="text-3xl font-bold tracking-tight">
+            StaySaga
           </Link>
-          <div className="hidden h-8 w-px bg-white/35 md:block" />
-          <div className="hidden min-w-0 items-center gap-3 md:flex">
-            <span className="truncate font-bold">{userName}</span>
-            <span className="rounded bg-white/15 px-2 py-1 text-xs font-bold ring-1 ring-white/30">Đối tác</span>
+          <div className="hidden h-8 w-px bg-white/40 lg:block" />
+          <div className="hidden min-w-0 items-center gap-3 lg:flex">
+            <span className="max-w-[260px] truncate font-semibold">
+              {userName}
+            </span>
+            <span className="rounded-sm bg-emerald-600 px-2 py-1 text-xs font-bold">
+              Tài khoản chính
+            </span>
           </div>
-          <div className="ml-auto hidden h-11 w-full max-w-md items-center rounded bg-white/12 px-4 md:flex">
+          <div className="ml-auto hidden h-11 w-full max-w-[520px] items-center rounded-sm bg-white/10 px-4 ring-1 ring-white/10 lg:flex">
             <span className="flex-1 text-white/90">Tìm kiếm</span>
             <Search className="h-5 w-5" />
           </div>
-          <Link href="/" className="hidden rounded border border-white/35 px-3 py-2 text-sm font-bold hover:bg-white/10 md:inline-flex">
-            Xem website
+          <Link
+            href="/host/list"
+            className="hidden h-11 w-11 items-center justify-center rounded-full bg-white/15 text-lg font-bold ring-1 ring-white/25 lg:flex"
+          >
+            ★
+          </Link>
+          <Link
+            href="/settings"
+            className="hidden items-center gap-2 font-semibold lg:inline-flex"
+          >
+            <Globe2 className="h-5 w-5" />
+            Tiếng Việt
+          </Link>
+          <Link
+            href="/help"
+            className="hidden items-center gap-2 font-semibold lg:inline-flex"
+          >
+            <CircleHelp className="h-5 w-5" />
+            Trợ giúp
           </Link>
           <Bell className="h-6 w-6" />
           <HostAccountMenu userName={userName} />
         </div>
+
+        {!hideNav ? (
+          <nav className="mx-auto flex max-w-[1400px] items-end overflow-x-auto px-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                className={`whitespace-nowrap px-4 py-5 text-[15px] font-medium transition ${
+                  active === item.key
+                    ? "bg-white/12 text-white"
+                    : "text-white hover:bg-white/10"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <Link
+              href="/host/list"
+              className="inline-flex items-center gap-1 whitespace-nowrap px-4 py-5 text-[15px] font-medium hover:bg-white/10"
+            >
+              Khác
+              <ChevronDown className="h-4 w-4" />
+            </Link>
+          </nav>
+        ) : null}
       </header>
 
-      <div className="flex">
-        {!hideNav && (
-          <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-72 shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-4 lg:block">
-            <nav className="space-y-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold transition ${
-                    active === item.key ? "bg-rose-50 text-[#f60057]" : "text-slate-700 hover:bg-slate-50 hover:text-[#f60057]"
-                  }`}
-                >
-                  {item.icon}
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            <form action={logout} className="mt-6 border-t border-slate-100 pt-4">
-              <button className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold text-slate-700 hover:bg-rose-50 hover:text-[#f60057]">
-                <LogOut className="h-5 w-5" />
-                Đăng xuất
-              </button>
-            </form>
-          </aside>
-        )}
-        <div className="min-w-0 flex-1">{children}</div>
-      </div>
+      {children}
     </div>
   );
 }

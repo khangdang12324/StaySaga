@@ -7,6 +7,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -22,6 +23,7 @@ import {
   Hotel,
   ImageIcon,
   Info,
+  Lightbulb,
   MapPin,
   Minus,
   Plus,
@@ -86,15 +88,23 @@ type Draft = {
   bookingMode: "instant" | "request";
   price: string;
   promotion: boolean;
+  availabilityStart: "asap" | "specific";
+  availabilityOpenMode: "continuous" | "first18";
+  availabilityOpenDays: number;
+  syncCalendar: boolean;
+  allowLongStays: boolean;
+  maxStayNights: number;
   nonRefundable: boolean;
   nonRefundableDiscount: number;
+  cancellationFreeDays: number;
+  accidentalBookingProtection: boolean;
   groupPricing: boolean;
   groupDiscounts: Record<string, number>;
   ownerName: string;
   contactPhone: string;
   contactEmail: string;
   verificationConfirmed: boolean;
-  legalOwnerType: "individual" | "business";
+  legalOwnerType: "" | "individual" | "business";
   businessName: string;
   businessAddress: string;
   businessPostalCode: string;
@@ -142,6 +152,7 @@ type WizardStep =
   | "photos"
   | "booking"
   | "price"
+  | "availability"
   | "rates"
   | "non-refundable"
   | "group-pricing"
@@ -165,6 +176,7 @@ const steps: WizardStep[] = [
   "photos",
   "booking",
   "price",
+  "availability",
   "rates",
   "non-refundable",
   "group-pricing",
@@ -224,7 +236,7 @@ const commonAmenities = [
   "Phòng xông hơi",
   "Ban công",
   "Nhìn ra vườn",
-  "S�n thu?ng / hi�n",
+  "Sân thượng / hiên",
   "Tầm nhìn ra khung cảnh",
 ];
 
@@ -232,14 +244,14 @@ const serviceAmenities = [
   "Bữa sáng",
   "Nhà hàng",
   "Dịch vụ phòng",
-  "L? t�n 24 gi?",
-  "�ua d�n s�n bay",
+  "Lễ tân 24 giờ",
+  "Đưa đón sân bay",
 ];
 const supportedLanguages = [
   "Tiếng Anh",
   "Tiếng Pháp",
   "Tiếng Trung",
-  "Ti?ng T�y Ban Nha",
+  "Tiếng Tây Ban Nha",
   "Tiếng Việt",
 ];
 const extraLanguages = [
@@ -311,15 +323,23 @@ const createDefaultDraft = (): Draft => ({
   bookingMode: "instant",
   price: "400000",
   promotion: true,
+  availabilityStart: "asap",
+  availabilityOpenMode: "continuous",
+  availabilityOpenDays: 365,
+  syncCalendar: false,
+  allowLongStays: true,
+  maxStayNights: 90,
   nonRefundable: false,
   nonRefundableDiscount: 10,
+  cancellationFreeDays: 1,
+  accidentalBookingProtection: true,
   groupPricing: true,
   groupDiscounts: { "3": 10, "2": 15, "1": 20 },
   ownerName: "",
   contactPhone: "",
   contactEmail: "",
   verificationConfirmed: true,
-  legalOwnerType: "individual",
+  legalOwnerType: "",
   businessName: "",
   businessAddress: "",
   businessPostalCode: "",
@@ -336,8 +356,8 @@ const stageForStep = (index: number) => {
   if (index <= 5) return 0; // category, units, confirm, name, address, channel
   if (index <= 12) return 1; // details, bedroom, amenities, services, languages, policies, partner-profile
   if (index <= 13) return 2; // photos
-  if (index <= 18) return 3; // booking, price, rates, non-refundable, group-pricing
-  if (index <= 19) return 4; // legal
+  if (index <= 19) return 3; // booking, price, availability, rates, non-refundable, group-pricing
+  if (index <= 20) return 4; // legal
   return 5; // review
 };
 
@@ -456,22 +476,26 @@ function getStepValidation(
   if (step === "price" && parsePrice(draft.price) <= 0)
     errors.push("Vui lòng nhập giá mỗi đêm.");
   if (step === "legal") {
+    if (!draft.legalOwnerType) {
+      errors.push("Vui lòng chọn loại chủ sở hữu chỗ nghỉ.");
+      return errors;
+    }
     if (draft.legalOwnerType === "business") {
       if (!draft.businessName.trim())
-        errors.push("Vui l�ng nh?p t�n d?y d? c?a ph�p nh�n doanh nghi?p.");
+    errors.push("Vui lòng nhập tên đầy đủ của pháp nhân doanh nghiệp.");
       if (!draft.businessAddress.trim())
-        errors.push("Vui l�ng nh?p d?a ch? c?a ph�p nh�n doanh nghi?p.");
+    errors.push("Vui lòng nhập địa chỉ của pháp nhân doanh nghiệp.");
       if (!draft.businessPostalCode.trim())
-        errors.push("Vui l�ng nh?p m� buu di?n.");
+    errors.push("Vui lòng nhập mã bưu điện.");
       if (!draft.businessCity.trim())
-        errors.push("Vui l�ng nh?p th�nh ph? c?a ph�p nh�n doanh nghi?p.");
+    errors.push("Vui lòng nhập thành phố của pháp nhân doanh nghiệp.");
     }
     draft.owners.forEach((owner, idx) => {
       if (!owner.firstName.trim() || !owner.lastName.trim()) {
-        errors.push(`Vui l�ng di?n d?y d? h? v� t�n cho c� nh�n #${idx + 1}.`);
+      errors.push(`Vui lòng điền đầy đủ họ và tên cho cá nhân #${idx + 1}.`);
       }
       if (!owner.dateOfBirth) {
-        errors.push(`Vui l�ng di?n ng�y sinh cho c� nh�n #${idx + 1}.`);
+      errors.push(`Vui lòng điền ngày sinh cho cá nhân #${idx + 1}.`);
       }
     });
   }
@@ -494,6 +518,7 @@ function getFinalErrors(draft: Draft, photos: StoredPhoto[]) {
   if (parsePrice(draft.price) <= 0) errors.push("Thiếu giá mỗi đêm.");
   if (draft.amenities.length < 1) errors.push("Thiếu tiện nghi.");
   if (!draft.verificationConfirmed) errors.push("Chưa xác nhận thông tin.");
+  if (!draft.legalOwnerType) errors.push("Thiếu loại chủ sở hữu chỗ nghỉ.");
 
   if (draft.legalOwnerType === "business") {
     if (
@@ -502,7 +527,7 @@ function getFinalErrors(draft: Draft, photos: StoredPhoto[]) {
       !draft.businessPostalCode.trim() ||
       !draft.businessCity.trim()
     ) {
-      errors.push("Thi?u th�ng tin ph�p nh�n doanh nghi?p.");
+    errors.push("Thiếu thông tin pháp nhân doanh nghiệp.");
     }
   }
   const hasIncompleteOwner = draft.owners.some(
@@ -539,6 +564,13 @@ export default function PropertyRegistrationWizard() {
   const [targetStepIndex, setTargetStepIndex] = useState<number | null>(null);
   const [showNotReadyModal, setShowNotReadyModal] = useState(false);
   const [notReadyReasons, setNotReadyReasons] = useState<string[]>([]);
+  const [showAllBedOptions, setShowAllBedOptions] = useState(false);
+  const [editingRatePolicy, setEditingRatePolicy] = useState(false);
+  const [showRatePolicyHelp, setShowRatePolicyHelp] = useState(true);
+  const [availabilityTips, setAvailabilityTips] = useState({
+    sync: true,
+    longStay: true,
+  });
 
   const stageSteps = [
     ["category", "units", "confirm", "name", "address", "channel"],
@@ -552,7 +584,14 @@ export default function PropertyRegistrationWizard() {
       "partner-profile",
     ],
     ["photos"],
-    ["booking", "price", "rates", "non-refundable", "group-pricing"],
+    [
+      "booking",
+      "price",
+      "availability",
+      "rates",
+      "non-refundable",
+      "group-pricing",
+    ],
     ["legal"],
     ["review"],
   ];
@@ -589,9 +628,15 @@ export default function PropertyRegistrationWizard() {
   };
 
   const onSelectStage = (index: number) => {
-    const firstStepOfStage = stageSteps[index][0];
-    const targetIdx = steps.indexOf(firstStepOfStage as WizardStep);
+    const stage = stageSteps[index];
+    const targetStep = index < stageIndex ? stage[stage.length - 1] : stage[0];
+    const targetIdx = steps.indexOf(targetStep as WizardStep);
     if (targetIdx !== -1) {
+      if (targetIdx <= currentStep) {
+        setCurrentStep(targetIdx);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
       setTargetStepIndex(targetIdx);
       setShowLeaveModal(true);
     }
@@ -616,6 +661,37 @@ export default function PropertyRegistrationWizard() {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Draft;
+
+        // Auto-sanitize draft if it loaded corrupted strings
+        if (parsed.address) {
+          const hasCorrupted = parsed.address.includes("an Kia") || parsed.address.includes("?") || parsed.address.includes("\uFFFD");
+          if (hasCorrupted && parsed.address.includes("17")) {
+            parsed.address = "17 Đan Kia, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam";
+            parsed.city = "Đà Lạt";
+            parsed.district = "Lang Biang";
+            parsed.latitude = "12.0126";
+            parsed.longitude = "108.4016";
+          }
+        }
+
+        if (parsed.address) parsed.address = sanitizeText(parsed.address);
+        if (parsed.city) parsed.city = sanitizeText(parsed.city);
+        if (parsed.district) parsed.district = sanitizeText(parsed.district);
+        if (parsed.country) parsed.country = sanitizeText(parsed.country);
+        if (parsed.name) parsed.name = sanitizeText(parsed.name);
+        if (parsed.description) parsed.description = sanitizeText(parsed.description);
+        if (parsed.businessName) parsed.businessName = sanitizeText(parsed.businessName);
+        if (parsed.businessAddress) parsed.businessAddress = sanitizeText(parsed.businessAddress);
+        if (parsed.businessCity) parsed.businessCity = sanitizeText(parsed.businessCity);
+        if (parsed.businessCountry) parsed.businessCountry = sanitizeText(parsed.businessCountry);
+        if (Array.isArray(parsed.owners)) {
+          parsed.owners = parsed.owners.map(owner => ({
+            ...owner,
+            firstName: sanitizeText(owner.firstName || ""),
+            lastName: sanitizeText(owner.lastName || ""),
+          }));
+        }
+
         setDraft({
           ...createDefaultDraft(),
           ...parsed,
@@ -661,6 +737,10 @@ export default function PropertyRegistrationWizard() {
     setDraft((prev) => ({ ...prev, [key]: value }));
   };
 
+  const updateDraftFields = (fields: Partial<Draft>) => {
+    setDraft((prev) => ({ ...prev, ...fields }));
+  };
+
   const updateBedroom = (id: string, key: keyof Bedroom, value: number) => {
     setDraft((prev) => ({
       ...prev,
@@ -668,6 +748,18 @@ export default function PropertyRegistrationWizard() {
         room.id === id ? { ...room, [key]: Math.max(0, value) } : room,
       ),
     }));
+  };
+
+  const saveBedroom = () => {
+    setDraft((prev) => {
+      const capacity = totalBedroomCapacity(prev.bedrooms);
+      return {
+        ...prev,
+        maxGuests: Math.max(prev.maxGuests, capacity || 1),
+      };
+    });
+    setCurrentStep(6);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const toggleArray = (
@@ -713,13 +805,19 @@ export default function PropertyRegistrationWizard() {
   const goNext = () => {
     setAttemptedSteps((prev) => ({ ...prev, [currentStep]: true }));
     if (!canContinue) return;
+    if (current === "details") {
+      setCurrentStep(8);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goBack = () => {
-    if (current === "bedroom") {
+    if (current === "amenities") {
       setCurrentStep(6);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     setCurrentStep((step) => Math.max(step - 1, 0));
@@ -728,6 +826,7 @@ export default function PropertyRegistrationWizard() {
 
   const addBedroom = () => {
     const bedroom = makeBedroom({ single: 0 });
+    setShowAllBedOptions(false);
     setDraft((prev) => ({ ...prev, bedrooms: [...prev.bedrooms, bedroom] }));
     setActiveBedroomId(bedroom.id);
     setCurrentStep(7);
@@ -735,6 +834,7 @@ export default function PropertyRegistrationWizard() {
   };
 
   const selectBedroom = (id: string) => {
+    setShowAllBedOptions(false);
     setActiveBedroomId(id);
     setCurrentStep(7);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -755,7 +855,7 @@ export default function PropertyRegistrationWizard() {
   return (
     <div className="min-h-screen bg-[#f5f5f5] text-gray-950 flex flex-col font-sans">
       {/* Dynamic Header */}
-      <header className="h-[72px] bg-[#f60057] text-white shrink-0">
+      <header className="h-[68px] bg-[#f60057] text-white shrink-0">
         <div className="flex h-full items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <span className="text-[28px] font-bold tracking-tight">
@@ -794,7 +894,7 @@ export default function PropertyRegistrationWizard() {
         </div>
       </header>
 
-      <form action={createHostHomestay} className="pb-12 flex-1 flex flex-col">
+      <form action={createHostHomestay} className="flex min-h-0 flex-1 flex-col">
         <ProgressHeader 
           currentStep={currentStep} 
           stageIndex={stageIndex} 
@@ -803,7 +903,7 @@ export default function PropertyRegistrationWizard() {
         />
         <HiddenFields draft={draft} validPhotos={validPhotos.length} />
 
-        {showStepErrors && stepErrors.length > 0 ? (
+        {current !== "address" && showStepErrors && stepErrors.length > 0 ? (
           <div className="mx-auto mt-8 w-full max-w-[1200px] px-4 lg:ml-[110px]">
             <div className="w-full max-w-[620px] rounded-md border border-red-300 bg-red-50 p-5 text-sm text-red-700">
               <div className="flex gap-3">
@@ -824,20 +924,20 @@ export default function PropertyRegistrationWizard() {
         <main
           className={
             current === "address"
-              ? "flex-1 flex flex-col"
-              : "mx-auto w-full max-w-[1200px] px-4 py-12 lg:ml-[110px] flex-1"
+              ? "h-[calc(100dvh-68px-94px)] min-h-[560px] flex-none overflow-hidden"
+              : "mx-auto w-full max-w-[1200px] px-4 py-8 lg:ml-[110px] flex-1"
           }
         >
           {current === "category" ? (
-            <section className="max-w-[1180px] py-12">
-              <h1 className="max-w-[900px] text-[38px] font-bold leading-tight tracking-tight text-gray-950">
+            <section className="max-w-[1180px] py-6">
+              <h1 className="max-w-[900px] text-[34px] font-bold leading-tight tracking-tight text-gray-950">
                 Đăng chỗ nghỉ của Quý vị trên StaySaga và bắt đầu đón khách nhanh
                 chóng!
               </h1>
               <p className="mt-4 text-xl text-gray-800">
                 Để bắt đầu, chọn loại chỗ nghỉ Quý vị muốn đăng trên StaySaga.
               </p>
-              <div className="relative mt-14 grid max-w-[1100px] grid-cols-1 border border-gray-300 bg-white md:grid-cols-4">
+              <div className="relative mt-10 grid max-w-[1100px] grid-cols-1 border border-gray-300 bg-white md:grid-cols-4">
                 <span className="absolute -top-4 left-16 rounded bg-emerald-600 px-5 py-1.5 text-sm font-bold text-white">
                   Bắt đầu nhanh
                 </span>
@@ -851,7 +951,7 @@ export default function PropertyRegistrationWizard() {
                         updateDraft("propertyType", item.id);
                         setCurrentStep(1);
                       }}
-                      className={`min-h-[300px] border-b border-gray-300 p-7 text-center transition hover:bg-gray-50 md:border-b-0 md:border-r last:md:border-r-0 cursor-pointer ${
+                      className={`min-h-[260px] border-b border-gray-300 p-6 text-center transition hover:bg-gray-50 md:border-b-0 md:border-r last:md:border-r-0 cursor-pointer ${
                         draft.propertyType === item.id
                           ? "outline outline-2 outline-[#f60057]"
                           : ""
@@ -880,6 +980,7 @@ export default function PropertyRegistrationWizard() {
               touched={touched}
               setTouched={setTouched}
               updateDraft={updateDraft}
+              updateDraftFields={updateDraftFields}
               onBack={goBack}
               onNext={goNext}
             />
@@ -893,17 +994,22 @@ export default function PropertyRegistrationWizard() {
                 }
               >
                 {renderStep()}
-                <BottomNav
-                  onBack={goBack}
-                  onNext={goNext}
-                  isLast={current === "review"}
-                  canContinue={
-                    current === "review" ? finalErrors.length === 0 : canContinue
-                  }
-                  pendingText="Đang gửi duyệt..."
-                  confirmMessage="Sau khi gửi duyệt, quản trị viên StaySaga sẽ kiểm tra thông tin chỗ nghỉ trước khi hiển thị công khai."
-                  onNotReady={() => setShowNotReadyModal(true)}
-                />
+                {current !== "confirm" &&
+                !(current === "rates" && editingRatePolicy) ? (
+                  <BottomNav
+                    onBack={goBack}
+                    onNext={current === "bedroom" ? saveBedroom : goNext}
+                    isLast={current === "review"}
+                    canContinue={
+                      current === "review" ? finalErrors.length === 0 : canContinue
+                    }
+                    pendingText="Đang gửi duyệt..."
+                    confirmMessage="Sau khi gửi duyệt, quản trị viên StaySaga sẽ kiểm tra thông tin chỗ nghỉ trước khi hiển thị công khai."
+                    onNotReady={() => setShowNotReadyModal(true)}
+                    nextLabel={current === "bedroom" ? "Lưu" : "Tiếp tục"}
+                    backLabel={current === "bedroom" ? "Hủy" : undefined}
+                  />
+                ) : null}
               </section>
             </div>
           )}
@@ -925,7 +1031,7 @@ export default function PropertyRegistrationWizard() {
               Trước khi Quý vị rời đi
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-gray-600">
-              Qu� v? d� th?c hi?n m?t s? thay d?i trong trang n�y. N?u Qu� v? r?i di b�y gi?, nh?ng thay d?i d� s? b? m?t.
+              Quý vị đã thực hiện một số thay đổi trong trang này. Nếu Quý vị rời đi bây giờ, những thay đổi đó sẽ bị mất.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -1106,7 +1212,7 @@ export default function PropertyRegistrationWizard() {
                   title="Tại sao tôi cần đặt tên cho chỗ nghỉ của mình?"
                 >
                   <p className="text-[15px] leading-6 text-gray-800">
-                    T�n n�y s? hi?n th? v?i kh�ch tr�n StaySaga. H�y ch?n t�n d?
+                    Tên này sẽ hiển thị với khách trên StaySaga. Hãy chọn tên dễ
                     nhớ và không bao gồm địa chỉ đầy đủ.
                   </p>
                 </HelpCard>
@@ -1145,7 +1251,7 @@ export default function PropertyRegistrationWizard() {
         return (
           <Question title="Chi tiết chỗ nghỉ">
             <Panel>
-              <p className="mb-5 text-[17px]">Kh�ch c� th? ng? ? d�u?</p>
+              <p className="mb-5 text-[17px]">Khách có thể ngủ ở đâu?</p>
               <div className="space-y-5">
                 {draft.bedrooms.map((room, index) => (
                   <button
@@ -1224,31 +1330,33 @@ export default function PropertyRegistrationWizard() {
           </Question>
         );
       case "bedroom":
+        const bedOptions = [
+          ["single", "Giường đơn", "Rộng 90 - 130 cm"],
+          ["double", "Giường đôi", "Rộng 131 - 150 cm"],
+          ["king", "Giường lớn (cỡ King)", "Rộng 151 - 180 cm"],
+          [
+            "superKing",
+            "Giường cực lớn (cỡ Super-king)",
+            "Rộng 181 - 210 cm",
+          ],
+          ["bunk", "Giường tầng", "Nhiều kích cỡ"],
+          ["sofa", "Giường sofa", "Nhiều kích cỡ"],
+          ["futon", "Nệm Futon", "Nhiều kích cỡ"],
+        ];
+        const visibleBedOptions = showAllBedOptions ? bedOptions : bedOptions.slice(0, 4);
         return (
           <Question
             title={`Phòng ngủ ${Math.max(1, draft.bedrooms.findIndex((room) => room.id === activeBedroom.id) + 1)}`}
           >
-            <Panel>
-              <p className="mb-7">Phòng này có giường loại nào?</p>
-              {[
-                ["single", "Giường đơn", "Rộng 90 - 130 cm"],
-                ["double", "Giường đôi", "Rộng 131 - 150 cm"],
-                ["king", "Giường lớn (cỡ King)", "Rộng 151 - 180 cm"],
-                [
-                  "superKing",
-                  "Giường cực lớn (cỡ Super-king)",
-                  "Rộng 181 - 210 cm",
-                ],
-                ["bunk", "Giường tầng", "Nhiều kích cỡ"],
-                ["sofa", "Giường sofa", "Nhiều kích cỡ"],
-                ["futon", "Nệm Futon", "Nhiều kích cỡ"],
-              ].map(([key, label, sub]) => (
+            <Panel className="max-w-[625px] p-5">
+              <p className="mb-4 text-[17px]">Phòng này có giường loại nào?</p>
+              {visibleBedOptions.map(([key, label, sub]) => (
                 <div
                   key={key}
-                  className="flex items-center justify-between py-4"
+                  className="flex items-center justify-between py-3"
                 >
-                  <div className="flex items-center gap-5">
-                    <BedDouble className="h-8 w-8 text-gray-400" />
+                  <div className="flex items-center gap-4">
+                    <BedDouble className="h-7 w-7 text-gray-400" />
                     <div>
                       <p className="font-bold">{label}</p>
                       <p className="text-sm text-gray-600">{sub}</p>
@@ -1267,6 +1375,16 @@ export default function PropertyRegistrationWizard() {
                   />
                 </div>
               ))}
+              {!showAllBedOptions ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllBedOptions(true)}
+                  className="mt-3 inline-flex items-center gap-2 font-semibold text-[#f60057]"
+                >
+                  <ChevronDown className="h-4 w-4 -rotate-90" />
+                  Thêm các lựa chọn giường
+                </button>
+              ) : null}
             </Panel>
           </Question>
         );
@@ -1333,7 +1451,7 @@ export default function PropertyRegistrationWizard() {
               />
               <Divider />
               <RadioBlock
-                label="Ch? d?u xe ? d�u?"
+                label="Chỗ đậu xe ở đâu?"
                 options={[
                   ["onsite", "Trong khuôn viên"],
                   ["offsite", "Ngoài khuôn viên"],
@@ -1348,7 +1466,7 @@ export default function PropertyRegistrationWizard() {
               />
               <Divider />
               <RadioBlock
-                label="��y l� lo?i ch? d?u xe g�?"
+                label="Đây là loại chỗ đậu xe gì?"
                 options={[
                   ["private", "Riêng"],
                   ["public", "Công cộng"],
@@ -1363,7 +1481,7 @@ export default function PropertyRegistrationWizard() {
         );
       case "languages":
         return (
-          <Question title="Qu� v? ho?c nh�n vi�n c?a m�nh s? d?ng ng�n ng? n�o?">
+          <Question title="Quý vị hoặc nhân viên của mình sẽ sử dụng ngôn ngữ nào?">
             <Panel>
               <h2 className="mb-5 font-bold">Chọn ngôn ngữ</h2>
               {supportedLanguages.map((language) => (
@@ -1524,7 +1642,7 @@ export default function PropertyRegistrationWizard() {
                 </p>
                 <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">
                   <li>Ảnh phải là jpg, jpeg hoặc png</li>
-                  <li>?nh n�n c� d? ph�n gi?i d? r� v� kh�ng b? tr�ng</li>
+                  <li>Ảnh nên có độ phân giải tốt, rõ và không bị trùng</li>
                 </ul>
               </div>
             ) : null}
@@ -1663,7 +1781,7 @@ export default function PropertyRegistrationWizard() {
                     Đưa ra giá cạnh tranh để tăng khả năng nhận thêm đặt phòng.
                   </p>
                   <p className="mt-4">
-                    ��y l� kho?ng gi� c?a c�c ch? ngh? tuong t? v?i Qu� v?.
+                    Đây là khoảng giá của các chỗ nghỉ tương tự với Quý vị.
                   </p>
                   <div className="mt-8 px-3">
                     <div className="relative h-1 bg-rose-100">
@@ -1752,7 +1870,318 @@ export default function PropertyRegistrationWizard() {
             </div>
           </Question>
         );
+      case "availability":
+        return (
+          <Question title="Tình trạng phòng trống">
+            <div className="grid gap-7 lg:grid-cols-[620px_340px]">
+              <div className="space-y-6">
+                <Panel className="max-w-[620px]">
+                  <p className="mb-7 font-bold">
+                    Ngày đầu tiên mà khách có thể nhận phòng là khi nào?
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={draft.availabilityStart === "asap"}
+                        onChange={() => updateDraft("availabilityStart", "asap")}
+                        className="h-5 w-5 accent-[#f60057]"
+                      />
+                      Càng sớm càng tốt
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={draft.availabilityStart === "specific"}
+                        onChange={() =>
+                          updateDraft("availabilityStart", "specific")
+                        }
+                        className="h-5 w-5 accent-[#f60057]"
+                      />
+                      Vào một ngày cụ thể
+                    </label>
+                  </div>
+                </Panel>
+
+                <Panel className="max-w-[620px]">
+                  <p className="mb-7 font-bold">
+                    Quý vị muốn mở ngày để nhận đặt phòng ra sao?
+                  </p>
+                  <label className="flex cursor-pointer items-center gap-3">
+                    <input
+                      type="radio"
+                      checked={draft.availabilityOpenMode === "continuous"}
+                      onChange={() =>
+                        updateDraft("availabilityOpenMode", "continuous")
+                      }
+                      className="h-5 w-5 accent-[#f60057]"
+                    />
+                    Liên tục mở phòng cho:
+                  </label>
+                  <select
+                    value={draft.availabilityOpenDays}
+                    onChange={(event) =>
+                      updateDraft("availabilityOpenDays", Number(event.target.value))
+                    }
+                    className="ml-8 mt-3 h-11 w-[260px] rounded-sm border border-gray-500 bg-white px-3 outline-none"
+                  >
+                    <option value={365}>365 ngày</option>
+                    <option value={180}>180 ngày</option>
+                    <option value={90}>90 ngày</option>
+                    <option value={30}>30 ngày</option>
+                  </select>
+                  <label className="mt-5 flex cursor-pointer items-center gap-3">
+                    <input
+                      type="radio"
+                      checked={draft.availabilityOpenMode === "first18"}
+                      onChange={() =>
+                        updateDraft("availabilityOpenMode", "first18")
+                      }
+                      className="h-5 w-5 accent-[#f60057]"
+                    />
+                    Chỉ mở trong 18 tháng đầu
+                  </label>
+                </Panel>
+
+                <Panel className="max-w-[620px]">
+                  <p className="font-bold">
+                    Đồng bộ tình trạng phòng trống của Quý vị với một trang web
+                    khác
+                  </p>
+                  <p className="mt-3 text-sm text-emerald-700">
+                    Tránh đặt phòng bị trùng và giúp khách đặt phòng nhanh hơn
+                    tới 80% bằng cách nhập lịch phòng trống.
+                  </p>
+                  <div className="mt-7 space-y-4">
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        type="radio"
+                        checked={draft.syncCalendar}
+                        onChange={() => updateDraft("syncCalendar", true)}
+                        className="h-5 w-5 accent-[#f60057]"
+                      />
+                      Nhập lịch phòng trống
+                      <Info className="h-4 w-4" />
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        type="radio"
+                        checked={!draft.syncCalendar}
+                        onChange={() => updateDraft("syncCalendar", false)}
+                        className="h-5 w-5 accent-[#f60057]"
+                      />
+                      Bỏ qua
+                    </label>
+                  </div>
+                </Panel>
+
+                <Panel className="max-w-[620px]">
+                  <p className="font-bold">
+                    Quý vị có muốn cho phép khách lưu trú trên 30 đêm không?
+                  </p>
+                  <p className="mt-4">
+                    Cho phép khách lưu trú đến 90 đêm có thể giúp Quý vị lấp
+                    phòng và nắm bắt xu hướng làm việc từ xa của khách.
+                  </p>
+                  <p className="mt-7 font-bold">
+                    Quý vị có chấp nhận đơn đặt có thời gian lưu trú hơn 30 đêm
+                    không?
+                  </p>
+                  <div className="mt-3 flex gap-4">
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={draft.allowLongStays}
+                        onChange={() => updateDraft("allowLongStays", true)}
+                        className="h-5 w-5 accent-[#f60057]"
+                      />
+                      Có
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={!draft.allowLongStays}
+                        onChange={() => updateDraft("allowLongStays", false)}
+                        className="h-5 w-5 accent-[#f60057]"
+                      />
+                      Không
+                    </label>
+                  </div>
+                  {draft.allowLongStays ? (
+                    <label className="mt-7 block font-bold">
+                      Quý vị cho phép khách đặt tối đa bao nhiêu đêm?
+                      <select
+                        value={draft.maxStayNights}
+                        onChange={(event) =>
+                          updateDraft("maxStayNights", Number(event.target.value))
+                        }
+                        className="mt-2 block h-11 w-full max-w-[410px] rounded-sm border border-gray-500 bg-white px-3 font-normal outline-none"
+                      >
+                        <option value={90}>90</option>
+                        <option value={60}>60</option>
+                        <option value={45}>45</option>
+                        <option value={30}>30</option>
+                      </select>
+                    </label>
+                  ) : null}
+                </Panel>
+              </div>
+
+              <div className="space-y-6">
+                {availabilityTips.sync ? (
+                  <TipCard
+                    title="Đồng bộ ngay để được đặt phòng nhanh hơn"
+                    onClose={() =>
+                      setAvailabilityTips((prev) => ({ ...prev, sync: false }))
+                    }
+                  >
+                    Quý vị có thể để sau, nhưng việc đồng bộ hóa ngay bây giờ sẽ
+                    tránh đặt phòng bị trùng và giúp Quý vị được đặt phòng nhanh
+                    hơn với hàng triệu khách của StaySaga.
+                  </TipCard>
+                ) : null}
+                {availabilityTips.longStay ? (
+                  <TipCard
+                    title="Nếu sau này tôi muốn thay đổi lựa chọn của mình thì sao?"
+                    onClose={() =>
+                      setAvailabilityTips((prev) => ({
+                        ...prev,
+                        longStay: false,
+                      }))
+                    }
+                  >
+                    Đây không phải là lựa chọn cố định. Quý vị có thể thay đổi
+                    bất kì lúc nào trong phần Chính sách sau khi đăng kí xong.
+                    <span className="mt-4 block text-[#f60057]">
+                      Đọc thêm về đợt lưu trú trên 30 đêm
+                    </span>
+                  </TipCard>
+                ) : null}
+              </div>
+            </div>
+          </Question>
+        );
       case "rates":
+        if (editingRatePolicy) {
+          return (
+            <Question title="Chính sách hủy đặt phòng">
+              <div className="grid gap-7 lg:grid-cols-[560px_340px]">
+                <div>
+                  <Panel>
+                    <p className="font-semibold">
+                      Khách có thể{" "}
+                      <span className="font-bold">hủy đặt phòng miễn phí</span>{" "}
+                      trước ngày nhận phòng bao nhiêu ngày?
+                    </p>
+                    <div className="mt-5">
+                      <span className="inline-flex rounded-sm bg-emerald-700 px-2 py-1 text-sm font-semibold text-white">
+                        Được đề xuất
+                      </span>
+                      <div className="flex w-fit max-w-full flex-wrap rounded-full border border-gray-300 bg-gray-100 p-1">
+                        {[1, 5, 14, 30].map((days) => (
+                          <button
+                            key={days}
+                            type="button"
+                            onClick={() =>
+                              updateDraft("cancellationFreeDays", days)
+                            }
+                            className={`min-w-[84px] rounded-full px-4 py-2 text-sm transition ${
+                              draft.cancellationFreeDays === days
+                                ? "border border-gray-700 bg-white font-semibold shadow-sm"
+                                : "border border-transparent"
+                            }`}
+                          >
+                            {days} ngày
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {draft.cancellationFreeDays === 1 ? (
+                      <div className="mt-7 rounded-sm border border-orange-500 bg-orange-50 p-4">
+                        Cho phép khách hủy phòng chậm nhất là 1 ngày trước khi
+                        đến để dễ dàng thu hút đặt phòng hơn
+                      </div>
+                    ) : null}
+                    <div className="mt-6 flex gap-3">
+                      <Info className="mt-1 h-5 w-5 shrink-0 text-blue-600" />
+                      <p>
+                        Khách thích sự linh hoạt - giá hủy miễn phí thường là
+                        giá được đặt nhiều nhất trên trang web của chúng tôi.
+                        Nhận đặt phòng đầu tiên của Quý vị sớm hơn bằng cách
+                        cho phép khách hủy muộn nhất {draft.cancellationFreeDays}{" "}
+                        ngày trước thời điểm nhận phòng.
+                      </p>
+                    </div>
+                    <div className="mt-8">
+                      <p className="font-bold">
+                        Bảo vệ khỏi đặt phòng do nhầm lẫn
+                      </p>
+                      <div className="mt-3 flex items-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateDraft(
+                              "accidentalBookingProtection",
+                              !draft.accidentalBookingProtection,
+                            )
+                          }
+                          className={`relative h-7 w-12 rounded-full transition ${
+                            draft.accidentalBookingProtection
+                              ? "bg-[#f60057]"
+                              : "bg-gray-400"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                              draft.accidentalBookingProtection
+                                ? "left-6"
+                                : "left-1"
+                            }`}
+                          />
+                        </button>
+                        <span>
+                          {draft.accidentalBookingProtection ? "Bật" : "Tắt"}
+                        </span>
+                      </div>
+                      <p className="mt-4 text-sm text-gray-600">
+                        Để tránh việc Quý vị tốn thời gian xử lý các đặt phòng
+                        do nhầm lẫn, chúng tôi tự động miễn phí hủy cho các
+                        khách hủy trong vòng 24 giờ kể từ thời điểm đặt.
+                      </p>
+                    </div>
+                  </Panel>
+                  <div className="mt-8 flex w-full max-w-[560px] gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setEditingRatePolicy(false)}
+                      className="inline-flex h-14 w-28 items-center justify-center gap-2 rounded-sm border border-[#f60057] font-bold text-[#f60057]"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingRatePolicy(false)}
+                      className="h-14 flex-1 rounded-sm bg-[#f60057] font-bold text-white hover:bg-[#d9004c]"
+                    >
+                      Lưu
+                    </button>
+                  </div>
+                </div>
+                {showRatePolicyHelp ? (
+                  <TipCard
+                    title="Tôi nên chọn chính sách nào?"
+                    onClose={() => setShowRatePolicyHelp(false)}
+                  >
+                    Dù chọn chính sách nào bây giờ, Quý vị đều có thể dễ dàng
+                    cập nhật sau khi hoàn thành đăng ký.
+                  </TipCard>
+                ) : null}
+              </div>
+            </Question>
+          );
+        }
+
         return (
           <Question title="Loại giá">
             <Panel>
@@ -1769,18 +2198,26 @@ export default function PropertyRegistrationWizard() {
                 <button
                   type="button"
                   className="rounded-sm border border-[#f60057] px-4 py-2 font-semibold text-[#f60057]"
+                  onClick={() => setEditingRatePolicy(true)}
                 >
                   Chỉnh sửa
                 </button>
               </div>
+              <p className="mt-5 text-sm leading-6 text-emerald-700">
+                Với chính sách hủy mặc định, Quý vị sẽ tăng khả năng nhận đặt
+                phòng lên thêm 91% so với chính sách hủy trước 30 ngày
+              </p>
               <ul className="mt-5 space-y-4">
                 <li className="flex gap-3">
-                  <Check className="h-7 w-7 rounded-full border p-1" /> Khách có
-                  thể hủy miễn phí cho tới 1 ngày trước khi đến
+                  <Check className="h-7 w-7 shrink-0 rounded-full border p-1" />{" "}
+                  Khách có thể hủy đặt phòng miễn phí cho tới{" "}
+                  {draft.cancellationFreeDays} ngày trước khi đến
                 </li>
                 <li className="flex gap-3">
-                  <Check className="h-7 w-7 rounded-full border p-1" /> Khách
-                  hủy trong vòng 24 giờ sẽ được miễn phí hủy
+                  <Check className="h-7 w-7 shrink-0 rounded-full border p-1" />{" "}
+                  {draft.accidentalBookingProtection
+                    ? "Khách hủy trong vòng 24 giờ sẽ được miễn phí hủy"
+                    : "Bảo vệ đặt phòng do nhầm lẫn đang tắt"}
                 </li>
               </ul>
               <Divider />
@@ -1789,7 +2226,7 @@ export default function PropertyRegistrationWizard() {
                 <button
                   type="button"
                   className="rounded-sm border border-[#f60057] px-4 py-2 font-semibold text-[#f60057]"
-                  onClick={() => setCurrentStep(18)}
+                  onClick={() => setCurrentStep(steps.indexOf("group-pricing"))}
                 >
                   Chỉnh sửa
                 </button>
@@ -1870,7 +2307,7 @@ export default function PropertyRegistrationWizard() {
                 trong nhiều kiểu tìm kiếm.
               </p>
               <ToggleLine
-                label="�� b?t"
+                label="Đã bật"
                 checked={draft.groupPricing}
                 onChange={(value) => updateDraft("groupPricing", value)}
               />
@@ -1915,18 +2352,18 @@ export default function PropertyRegistrationWizard() {
       case "legal":
         return (
           <Question title="Xác minh đối tác">
-            <Panel className="space-y-6">
-              <div className="rounded-md bg-rose-50 p-4 text-[15px] leading-relaxed text-gray-800">
-                �? tu�n th? c�c y�u c?u ph�p l� v� quy d?nh kh�c nhau, ch�ng t�i
+            <Panel className="max-w-[625px] space-y-5">
+              <p className="text-[16px] leading-relaxed text-gray-800">
+                Để tuân thủ các yêu cầu pháp lý và quy định khác nhau, chúng tôi
                 cần thu thập và xác minh một số thông tin về Quý vị và chỗ nghỉ.
-              </div>
+              </p>
 
               <div>
                 <label
                   className="text-sm font-bold block mb-2"
                   htmlFor="owner-type"
                 >
-                  Ch? ngh? du?c s? h?u b?i c� nh�n hay ph�p nh�n doanh nghi?p?
+                  Chỗ nghỉ được sở hữu bởi cá nhân hay pháp nhân doanh nghiệp?
                 </label>
                 <select
                   id="owner-type"
@@ -1934,16 +2371,17 @@ export default function PropertyRegistrationWizard() {
                   onChange={(e) =>
                     updateDraft(
                       "legalOwnerType",
-                      e.target.value as "individual" | "business",
+                      e.target.value as "" | "individual" | "business",
                     )
                   }
-                  className="h-11 w-full rounded-sm border border-gray-500 px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057] bg-white cursor-pointer"
+                  className="h-11 w-full rounded-sm border border-gray-500 bg-white px-3 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057] cursor-pointer"
                 >
+                  <option value="">Chọn một lựa chọn</option>
                   <option value="individual">
-                    T�i l� c� nh�n ri�ng l? t? di?u h�nh vi?c kinh doanh c?a m�nh
+                    Tôi là cá nhân riêng lẻ tự điều hành việc kinh doanh của mình
                   </option>
                   <option value="business">
-                    T�i l� d?i di?n cho ph�p nh�n doanh nghi?p
+                    Tôi là đại diện cho pháp nhân doanh nghiệp
                   </option>
                 </select>
               </div>
@@ -1955,7 +2393,7 @@ export default function PropertyRegistrationWizard() {
                       className="text-sm font-bold block mb-1"
                       htmlFor="business-name"
                     >
-                      T�n d?y d? c?a ph�p nh�n doanh nghi?p *
+                      Tên đầy đủ của pháp nhân doanh nghiệp *
                     </label>
                     <input
                       id="business-name"
@@ -1973,7 +2411,7 @@ export default function PropertyRegistrationWizard() {
                       className="text-sm font-bold block mb-1"
                       htmlFor="business-address"
                     >
-                      �?a ch? c?a ph�p nh�n doanh nghi?p *
+                      Địa chỉ của pháp nhân doanh nghiệp *
                     </label>
                     <input
                       id="business-address"
@@ -1992,7 +2430,7 @@ export default function PropertyRegistrationWizard() {
                         className="text-sm font-bold block mb-1"
                         htmlFor="business-postal"
                       >
-                        M� buu di?n *
+                        Mã bưu điện *
                       </label>
                       <input
                         id="business-postal"
@@ -2071,9 +2509,11 @@ export default function PropertyRegistrationWizard() {
                 </div>
               )}
 
+              {draft.legalOwnerType ? (
+              <>
               <div className="pt-4 border-t border-gray-100 space-y-4">
                 <p className="text-sm font-semibold text-gray-800 leading-relaxed">
-                  Vui l�ng cung c?p t�n d?y d? v� ng�y sinh c?a t?t c? c� nh�n,
+                  Vui lòng cung cấp tên đầy đủ và ngày sinh của tất cả cá nhân,
                   những người sở hữu từ 25% trở lên của chỗ nghỉ.
                 </p>
 
@@ -2084,7 +2524,7 @@ export default function PropertyRegistrationWizard() {
                   >
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        C� nh�n #{index + 1}
+                      Cá nhân #{index + 1}
                       </span>
                       {draft.owners.length > 1 ? (
                         <button
@@ -2202,6 +2642,8 @@ export default function PropertyRegistrationWizard() {
                   placeholder="Ví dụ: Tên khác hoặc chi tiết bổ sung..."
                 />
               </div>
+              </>
+              ) : null}
             </Panel>
           </Question>
         );
@@ -2288,7 +2730,7 @@ export default function PropertyRegistrationWizard() {
                         ) : null}
                       </span>
                       <span className="text-[15px] leading-relaxed text-gray-700">
-                        T�i cam doan r?ng d�y l� doanh nghi?p ch? ngh? h?p ph�p
+                        Tôi cam đoan rằng đây là doanh nghiệp chỗ nghỉ hợp pháp
                         với tất cả giấy phép cần thiết mà tôi có thể xuất trình
                         khi được yêu cầu chứng minh. StaySaga giữ quyền xác minh
                         và điều tra bất kỳ chi tiết nào được cung cấp trong quá
@@ -2317,7 +2759,7 @@ export default function PropertyRegistrationWizard() {
                         ) : null}
                       </span>
                       <span className="text-[15px] leading-relaxed text-gray-700">
-                        T�i d� d?c, ch?p nh?n v� d?ng � v?i{" "}
+                        Tôi đã đọc, chấp nhận và đồng ý với{" "}
                         <span className="text-[#f60057] underline">
                           Điều khoản chung
                         </span>
@@ -2373,7 +2815,7 @@ export default function PropertyRegistrationWizard() {
                       <span>
                         {draft.legalOwnerType === "business"
                           ? `Doanh nghiệp: ${draft.businessName || "Chưa nhập"}`
-                          : `C� nh�n: ${draft.owners.map((o) => `${o.lastName} ${o.firstName}`).filter(Boolean).join(", ") || "Chua nh?p"}`}
+                          : `Cá nhân: ${draft.owners.map((o) => `${o.lastName} ${o.firstName}`).filter(Boolean).join(", ") || "Chua nh?p"}`}
                       </span>
                     </div>
                   </div>
@@ -2410,8 +2852,10 @@ type AddressSuggestion = {
   fullAddress: string;
   city: string;
   district: string;
+  country?: string;
   lat: number;
   lon: number;
+  placeId?: string;
 };
 
 const DEFAULT_MAP_ADDRESS = "Việt Nam";
@@ -2426,16 +2870,137 @@ function normalizeAddressSearch(value: string) {
     .trim();
 }
 
-function getAddressSuggestions(value: string, city: string): AddressSuggestion[] {
-  const normalized = normalizeAddressSearch(value);
+function sanitizeText(val: string): string {
+  if (typeof val !== "string" || !val) return val;
+  return val
+    .replace(/(?:[\uFFFD?]+)?an\s+Kia/gi, "Đan Kia")
+    .replace(/dankia/gi, "Đan Kia")
+    .replace(/(?:[\uFFFD?]+)?L(?:[\uFFFD?]+|a)t/gi, "Đà Lạt")
+    .replace(/da\s+lat/gi, "Đà Lạt")
+    .replace(/L(?:[\uFFFD?]|a)?m\s*(?:[\uFFFD?]*|d)?(?:o|)?ng/gi, "Lâm Đồng")
+    .replace(/lam\s+dong/gi, "Lâm Đồng")
+    .replace(/Vi(?:[\uFFFD?]|e)?t\s+Nam/gi, "Việt Nam")
+    .replace(/viet\s+nam/gi, "Việt Nam")
+    .replace(/\uFFFD/g, "");
+}
+
+function getAddressSuggestions(value: string): AddressSuggestion[] {
+  const sanitizedValue = sanitizeText(value);
+  const normalized = normalizeAddressSearch(sanitizedValue);
   if (normalized.length < 2) return [];
 
-  if (
-    normalized.includes("dan kia") ||
-    normalized.includes("dankia") ||
-    normalized.startsWith("17")
-  ) {
-        return [
+  const homestaySuggestions: AddressSuggestion[] = [
+    {
+      title: "Gòn Home",
+      subtitle: "Phước Thành, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+      fullAddress: "Gòn Home, Phước Thành, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+      city: "Đà Lạt",
+      district: "Lang Biang",
+      lat: 12.0126,
+      lon: 108.4016,
+    },
+    {
+      title: "Gon Homestay",
+      subtitle: "1 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+      fullAddress: "Gon Homestay, 1 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+      city: "Đà Lạt",
+      district: "Phường 8",
+      lat: 11.9565,
+      lon: 108.4423,
+    },
+    {
+      title: "Gon Homestay",
+      subtitle: "17 Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+      fullAddress: "Gon Homestay, 17 Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+      city: "Đà Lạt",
+      district: "Phường 5",
+      lat: 11.9443,
+      lon: 108.4312,
+    },
+    {
+      title: "Gòn Homestay",
+      subtitle: "Bùi Thị Xuân, Phường 2 - Đà Lạt, Lâm Đồng, Việt Nam",
+      fullAddress: "Gòn Homestay, Bùi Thị Xuân, Phường 2 - Đà Lạt, Lâm Đồng, Việt Nam",
+      city: "Đà Lạt",
+      district: "Phường 2",
+      lat: 11.9492,
+      lon: 108.4398,
+    },
+  ];
+
+  if (normalized.includes("gon") || normalized.includes("gion") || normalized.includes("gon home")) {
+    return homestaySuggestions;
+  }
+
+  // 1. If user typed "hoàng diệu"
+  if (normalized.includes("hoang dieu") || normalized.includes("hoangdieu")) {
+    return [
+      {
+        title: "17 Hoàng Diệu",
+        subtitle: "Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 5",
+        lat: 11.9443,
+        lon: 108.4312,
+      },
+      {
+        title: "17 Hẻm Hoàng Diệu",
+        subtitle: "Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Hẻm Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 5",
+        lat: 11.9448,
+        lon: 108.4318,
+      },
+      {
+        title: "17/2 Hoàng Diệu",
+        subtitle: "Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17/2 Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 5",
+        lat: 11.9439,
+        lon: 108.4307,
+      },
+    ];
+  }
+
+  // 1.5. If user typed "phù đổng" or "phu dong"
+  if (normalized.includes("phu dong") || normalized.includes("phudong")) {
+    return [
+      {
+        title: "1 Phù Đổng Thiên Vương",
+        subtitle: "Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "1 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 8",
+        lat: 11.9565,
+        lon: 108.4423,
+      },
+      {
+        title: "17 Phù Đổng Thiên Vương",
+        subtitle: "Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 8",
+        lat: 11.9585,
+        lon: 108.4428,
+      },
+      {
+        title: "61 Phù Đổng Thiên Vương",
+        subtitle: "Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "61 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 8",
+        lat: 11.9610,
+        lon: 108.4432,
+      },
+    ];
+  }
+
+  // 2. If user typed "đan kia"
+  if (normalized.includes("dan kia") || normalized.includes("dankia")) {
+    return [
       {
         title: "17 Đan Kia",
         subtitle: "Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
@@ -2466,79 +3031,348 @@ function getAddressSuggestions(value: string, city: string): AddressSuggestion[]
     ];
   }
 
-  const displayCity = city || "Đà Lạt";
-  const compactValue = value.replace(/\s+/g, " ").trim();
+  // 3. If user typed just "17" (which starts with 17, but doesn't have "dan kia" or "hoang dieu" yet)
+  if (normalized.startsWith("17")) {
+    return [
+      {
+        title: "17 Đan Kia",
+        subtitle: "Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Đan Kia, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Lang Biang",
+        lat: 12.0126,
+        lon: 108.4016,
+      },
+      {
+        title: "17 Hoàng Diệu",
+        subtitle: "Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 5",
+        lat: 11.9443,
+        lon: 108.4312,
+      },
+      {
+        title: "17 Phù Đổng Thiên Vương",
+        subtitle: "Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 8",
+        lat: 11.9585,
+        lon: 108.4428,
+      },
+      {
+        title: "17 Bùi Thị Xuân",
+        subtitle: "Phường 2 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress: "17 Bùi Thị Xuân, Phường 2 - Đà Lạt, Lâm Đồng, Việt Nam",
+        city: "Đà Lạt",
+        district: "Phường 2",
+        lat: 11.9492,
+        lon: 108.4398,
+      },
+    ];
+  }
 
-  return [
-    {
-      title: compactValue,
-      subtitle: `${displayCity}, Việt Nam`,
-      fullAddress: `${compactValue}, ${displayCity}, Việt Nam`,
-      city: displayCity,
-      district: "",
-      lat: 11.9404,
-      lon: 108.4583,
-    },
-    {
-      title: `${compactValue} 1`,
-      subtitle: `${displayCity}, Việt Nam`,
-      fullAddress: `${compactValue} 1, ${displayCity}, Việt Nam`,
-      city: displayCity,
-      district: "",
-      lat: 11.943,
-      lon: 108.461,
-    },
-    {
-      title: `${compactValue} Residence`,
-      subtitle: `${displayCity}, Việt Nam`,
-      fullAddress: `${compactValue} Residence, ${displayCity}, Việt Nam`,
-      city: displayCity,
-      district: "",
-      lat: 11.937,
-      lon: 108.455,
-    },
-  ];
+  return [];
 }
 
-function getAddressTitle(address: string) {
-  return address.split(",")[0]?.trim() || address.trim();
+function resolveAddressCoords(address: string): { lat: number; lon: number } | null {
+  if (!address) return null;
+  const normalized = address
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim();
+
+  if (normalized.includes("17/2 hoang dieu")) {
+    return { lat: 11.9439, lon: 108.4307 };
+  }
+  if (normalized.includes("17/2a hoang dieu")) {
+    return { lat: 11.9439, lon: 108.4307 };
+  }
+  if (normalized.includes("17 hem hoang dieu")) {
+    return { lat: 11.9448, lon: 108.4318 };
+  }
+  if (normalized.includes("hoang dieu") || normalized.includes("hoangdieu")) {
+    return { lat: 11.9443, lon: 108.4312 };
+  }
+
+  if (normalized.includes("phu dong") || normalized.includes("phudong")) {
+    if (normalized.includes("17 phu dong")) {
+      return { lat: 11.9585, lon: 108.4428 };
+    }
+    if (normalized.includes("61 phu dong")) {
+      return { lat: 11.9610, lon: 108.4432 };
+    }
+    return { lat: 11.9565, lon: 108.4423 };
+  }
+
+  if (normalized.includes("17 hem dankia") || normalized.includes("17 hem dan kia")) {
+    return { lat: 12.0132, lon: 108.4022 };
+  }
+  if (normalized.includes("hem 19a dankia") || normalized.includes("hem 19a dan kia")) {
+    return { lat: 12.0119, lon: 108.4009 };
+  }
+  if (normalized.includes("dan kia") || normalized.includes("dankia")) {
+    return { lat: 12.0126, lon: 108.4016 };
+  }
+
+  if (normalized.includes("bui thi xuan") || normalized.includes("buithixuan")) {
+    return { lat: 11.9492, lon: 108.4398 };
+  }
+
+  return null;
 }
+
 
 function InteractiveMap({
-  mapAddress,
   selectedCoords,
   mapType,
-  onMapClick,
+  onCoordsChange,
 }: {
-  mapAddress: string;
   selectedCoords: { lat: number; lon: number } | null;
   mapType: "map" | "satellite";
-  onMapClick?: () => void;
+  onCoordsChange?: (coords: { lat: number; lon: number }) => void;
 }) {
-  const mapTarget = selectedCoords
-    ? `${selectedCoords.lat},${selectedCoords.lon}`
-    : mapAddress || DEFAULT_MAP_ADDRESS;
-  const zoom = selectedCoords || mapAddress !== DEFAULT_MAP_ADDRESS ? 16 : 5;
-  const mapUrl = `https://www.google.com/maps?q=${encodeURIComponent(
-    mapTarget,
-  )}&z=${zoom}&t=${mapType === "satellite" ? "k" : "m"}&output=embed`;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [leafletLoaded, setLeafletLoaded] = useState(false);
+
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const tileLayerRef = useRef<any>(null);
+
+  // Load Leaflet assets
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!document.getElementById("leaflet-css")) {
+      const link = document.createElement("link");
+      link.id = "leaflet-css";
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      document.head.appendChild(link);
+    }
+
+    if (!document.getElementById("leaflet-js")) {
+      const script = document.createElement("script");
+      script.id = "leaflet-js";
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      script.onload = () => {
+        setLeafletLoaded(true);
+      };
+      document.head.appendChild(script);
+    } else if ((window as any).L) {
+      setLeafletLoaded(true);
+    }
+  }, []);
+
+  // Initialize Map
+  useEffect(() => {
+    if (!leafletLoaded || !containerRef.current || typeof window === "undefined" || !(window as any).L) return;
+    const L = (window as any).L;
+
+    // Use selected coordinates if available, otherwise default to Đà Lạt
+    const initialLat = selectedCoords?.lat ?? 11.9404;
+    const initialLon = selectedCoords?.lon ?? 108.4383;
+    const initialZoom = selectedCoords ? 16 : 13;
+
+    // Clear container to avoid duplicate map instances
+    if (containerRef.current) {
+      containerRef.current.innerHTML = "";
+    }
+
+    // Destroy existing map if it exists
+    if (mapInstanceRef.current) {
+      try {
+        mapInstanceRef.current.remove();
+      } catch (e) {
+        console.warn("Error removing map instance:", e);
+      }
+      mapInstanceRef.current = null;
+      markerRef.current = null;
+      tileLayerRef.current = null;
+    }
+
+    // Create custom pin icon
+    const customPinIcon = L.divIcon({
+      html: `
+        <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+          <div style="position: absolute; width: 36px; height: 36px; background-color: #f60057; opacity: 0.2; border-radius: 50%; animation: pulse 2s infinite;"></div>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f60057" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3)); position: relative; z-index: 10;">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" fill="#f60057"></path>
+            <circle cx="12" cy="10" r="3" fill="#ffffff"></circle>
+          </svg>
+        </div>
+      `,
+      className: "bg-transparent",
+      iconSize: [36, 36],
+      iconAnchor: [18, 32],
+    });
+
+    const map = L.map(containerRef.current, {
+      zoomControl: false,
+      scrollWheelZoom: true,
+    }).setView([initialLat, initialLon], initialZoom);
+
+    L.control.zoom({
+      position: 'bottomright'
+    }).addTo(map);
+
+    mapInstanceRef.current = map;
+
+    // Google-style raster tiles keep the host address step closer to familiar map UX.
+    const tileUrl = mapType === "satellite"
+      ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+      : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+
+    const attribution = mapType === "satellite"
+      ? "&copy; Google"
+      : "&copy; Google";
+
+    const tileLayer = L.tileLayer(tileUrl, { attribution }).addTo(map);
+    tileLayerRef.current = tileLayer;
+    const resizeMap = () => {
+      map.invalidateSize({ animate: false, pan: false });
+    };
+    const resizeTimeout = window.setTimeout(resizeMap, 80);
+    const secondResizeTimeout = window.setTimeout(resizeMap, 350);
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+      resizeObserver = new ResizeObserver(resizeMap);
+      resizeObserver.observe(containerRef.current);
+    }
+
+    // Marker
+    const marker = L.marker([initialLat, initialLon], {
+      icon: customPinIcon,
+      draggable: true,
+    }).addTo(map);
+    markerRef.current = marker;
+
+    // Handle drag end
+    marker.on("dragend", () => {
+      const position = marker.getLatLng();
+      if (onCoordsChange) {
+        onCoordsChange({ lat: position.lat, lon: position.lng });
+      }
+    });
+
+    // Handle map click
+    map.on("click", (e: any) => {
+      const { lat, lng } = e.latlng;
+      marker.setLatLng([lat, lng]);
+      if (onCoordsChange) {
+        onCoordsChange({ lat, lon: lng });
+      }
+    });
+
+    // Inject CSS styles for animations
+    if (!document.getElementById("leaflet-custom-styles")) {
+      const style = document.createElement("style");
+      style.id = "leaflet-custom-styles";
+      style.innerHTML = `
+        .leaflet-div-icon.bg-transparent {
+          background: transparent !important;
+          border: none !important;
+        }
+        @keyframes pulse {
+          0% { transform: scale(0.8); opacity: 0.5; }
+          70% { transform: scale(1.5); opacity: 0; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      window.clearTimeout(resizeTimeout);
+      window.clearTimeout(secondResizeTimeout);
+      resizeObserver?.disconnect();
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.remove();
+        } catch (e) {
+          console.warn("Error cleaning up map instance:", e);
+        }
+        mapInstanceRef.current = null;
+        markerRef.current = null;
+        tileLayerRef.current = null;
+      }
+    };
+  }, [leafletLoaded]);
+
+  // Sync coords from props
+  useEffect(() => {
+    if (!mapInstanceRef.current || !markerRef.current || !selectedCoords || !leafletLoaded) return;
+    const { lat, lon } = selectedCoords;
+    const currentLatLng = markerRef.current.getLatLng();
+    
+    // Only update if coords actually changed significantly
+    if (Math.abs(currentLatLng.lat - lat) > 0.0001 || Math.abs(currentLatLng.lng - lon) > 0.0001) {
+      markerRef.current.setLatLng([lat, lon]);
+      mapInstanceRef.current.setView([lat, lon], 16);
+      mapInstanceRef.current.invalidateSize({ animate: false, pan: false });
+    }
+  }, [selectedCoords, leafletLoaded]);
+
+  // Sync mapType (Voyager vs Satellite)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !tileLayerRef.current || !leafletLoaded) return;
+    const L = (window as any).L;
+
+    const tileUrl = mapType === "satellite"
+      ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+      : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+
+    const attribution = mapType === "satellite"
+      ? "&copy; Google"
+      : "&copy; Google";
+
+    mapInstanceRef.current.removeLayer(tileLayerRef.current);
+    const newTileLayer = L.tileLayer(tileUrl, { attribution }).addTo(mapInstanceRef.current);
+    tileLayerRef.current = newTileLayer;
+    window.setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize({ animate: false, pan: false });
+    }, 80);
+  }, [mapType, leafletLoaded]);
 
   return (
-    <>
-      <iframe
-        key={mapUrl}
-        title="Bản đồ vị trí chỗ nghỉ"
-        src={mapUrl}
-        className="absolute inset-0 h-full w-full border-0"
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-      />
-      <div 
-        className="absolute inset-0 bg-gradient-to-r from-white/55 via-white/20 to-transparent cursor-pointer"
-        onClick={onMapClick} 
-      />
-    </>
+    <div className="absolute inset-0 h-full w-full select-none">
+      <div ref={containerRef} className="absolute inset-0 h-full w-full z-0 pointer-events-auto" />
+      
+      {!leafletLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 z-20">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#f60057] border-t-transparent"></div>
+            <span className="text-sm font-semibold text-gray-500">Đang tải bản đồ...</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
+}
+
+function parseCityAndDistrict(fullAddress: string): { city: string; district: string } {
+  if (!fullAddress) return { city: "", district: "" };
+  const parts = fullAddress.split(",").map(p => p.trim()).filter(Boolean);
+  
+  if (parts.length > 0 && /viet\s*nam|vietnam/i.test(parts[parts.length - 1])) {
+    parts.pop();
+  }
+  
+  let city = "";
+  let district = "";
+  
+  if (parts.length > 0) {
+    city = parts.pop() || "";
+  }
+  if (parts.length > 0) {
+    district = parts.pop() || "";
+  }
+  
+  return { city, district };
 }
 
 function AddressStep({
@@ -2547,6 +3381,7 @@ function AddressStep({
   touched,
   setTouched,
   updateDraft,
+  updateDraftFields,
   onBack,
   onNext,
 }: {
@@ -2557,11 +3392,12 @@ function AddressStep({
     value: (prev: Record<string, boolean>) => Record<string, boolean>,
   ) => void;
   updateDraft: <K extends keyof Draft>(key: K, value: Draft[K]) => void;
+  updateDraftFields: (fields: Partial<Draft>) => void;
   onBack: () => void;
   onNext: () => void;
 }) {
   const [mapType, setMapType] = useState<"map" | "satellite">("map");
-  const [mapAddress, setMapAddress] = useState(mapQuery || DEFAULT_MAP_ADDRESS);
+  const [, setMapAddress] = useState(mapQuery || DEFAULT_MAP_ADDRESS);
   const [searchInput, setSearchInput] = useState(draft.address);
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [selectedCoords, setSelectedCoords] = useState<{
@@ -2573,77 +3409,254 @@ function AddressStep({
       : null,
   );
 
-  const selectedAddress = draft.address.trim() || searchInput.trim();
-  const selectedTitle = getAddressTitle(selectedAddress);
-  const selectedSubtitle =
-    selectedAddress && selectedAddress !== selectedTitle
-      ? selectedAddress
-      : [draft.district, draft.city, draft.country].filter(Boolean).join(", ");
-  const showSelectedAddress = selectedAddress.length > 0;
+  const ignoreSearchRef = useRef(false);
+
+  // Sync state with draft updates (e.g. when draft is loaded or sanitized from localStorage)
+  useEffect(() => {
+    if (draft.address === searchInput) {
+      return;
+    }
+
+    ignoreSearchRef.current = true;
+    setSearchInput(draft.address);
+    setMapAddress(draft.address || mapQuery || DEFAULT_MAP_ADDRESS);
+
+    // Auto-resolve coordinates if they are not set but the address is typed/loaded
+    const resolved = resolveAddressCoords(draft.address);
+    if (resolved) {
+      const currentLat = parseFloat(draft.latitude || "0");
+      const currentLon = parseFloat(draft.longitude || "0");
+      if (Math.abs(currentLat - resolved.lat) > 0.0001 || Math.abs(currentLon - resolved.lon) > 0.0001) {
+        updateDraftFields({
+          latitude: String(resolved.lat),
+          longitude: String(resolved.lon)
+        });
+        setSelectedCoords({ lat: resolved.lat, lon: resolved.lon });
+        return;
+      }
+    } else {
+      if (!draft.address.trim() && (draft.latitude || draft.longitude)) {
+        updateDraftFields({
+          latitude: "",
+          longitude: ""
+        });
+        setSelectedCoords(null);
+        return;
+      }
+    }
+
+    setSelectedCoords(
+      draft.latitude && draft.longitude
+        ? { lat: parseFloat(draft.latitude), lon: parseFloat(draft.longitude) }
+        : null,
+    );
+  }, [draft.address, draft.latitude, draft.longitude, mapQuery, searchInput]);
+
+  // Autocomplete fetch effect from free Geocoding API proxy (Nominatim / Photon)
+  useEffect(() => {
+    if (ignoreSearchRef.current) {
+      ignoreSearchRef.current = false;
+      return;
+    }
+
+    if (searchInput.trim().length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      // 1. Get initial mock suggestions for instant matches
+      const mockSuggestions = getAddressSuggestions(searchInput);
+
+      try {
+        const query = searchInput.trim();
+
+        let apiSuggestions: AddressSuggestion[] = [];
+
+        const geocodeRes = await fetch(`/api/geocode/autocomplete?q=${encodeURIComponent(query)}`);
+        if (geocodeRes.ok) {
+          const data = await geocodeRes.json();
+          if (data && data.length > 0) {
+            apiSuggestions = data.map((item: any) => ({
+              title: item.title,
+              subtitle: item.subtitle,
+              fullAddress: item.fullAddress,
+              city: item.city || "",
+              district: item.district || "",
+              country: item.country || "",
+              lat: item.lat,
+              lon: item.lon,
+            }));
+          }
+        }
+
+        const merged = [...apiSuggestions];
+        mockSuggestions.forEach((item) => {
+          const exists = merged.some(
+            (m) => m.fullAddress.toLowerCase() === item.fullAddress.toLowerCase()
+          );
+          if (!exists) {
+            merged.push(item);
+          }
+        });
+
+        setSuggestions(merged.slice(0, 5));
+      } catch (err) {
+        console.error("Geocoding fetch error:", err);
+        setSuggestions(mockSuggestions);
+      }
+    }, 350);
+
+    return () => clearTimeout(handler);
+  }, [searchInput, draft.city, draft.latitude, draft.longitude]);
+
   const canContinue = draft.address.trim().length > 0;
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
-    updateDraft("address", value);
+    updateDraftFields({
+      address: value,
+      latitude: "",
+      longitude: "",
+      city: "",
+      district: ""
+    });
+    setSelectedCoords(null);
     setMapAddress(value || mapQuery || DEFAULT_MAP_ADDRESS);
-    setSuggestions(getAddressSuggestions(value, draft.city));
+    setSuggestions(getAddressSuggestions(value));
   };
 
   const handleSuggestionClick = (suggestion: AddressSuggestion) => {
+    ignoreSearchRef.current = true;
+    
+    const lat = suggestion.lat;
+    const lon = suggestion.lon;
+    let city = suggestion.city;
+    let district = suggestion.district;
+
+    // Last resort parser fallback for city/district
+    if (!city || !district) {
+      const parsed = parseCityAndDistrict(suggestion.fullAddress);
+      if (!city) city = parsed.city;
+      if (!district) district = parsed.district;
+    }
+
+    city = sanitizeText(city || "");
+    district = sanitizeText(district || "");
+
+    updateDraftFields({
+      address: suggestion.fullAddress,
+      city,
+      district,
+      country: sanitizeText(suggestion.country || draft.country || ""),
+      latitude: String(lat),
+      longitude: String(lon)
+    });
+
     setSearchInput(suggestion.fullAddress);
-    updateDraft("address", suggestion.fullAddress);
-    updateDraft("city", suggestion.city);
-    updateDraft("district", suggestion.district);
-    updateDraft("country", "Việt Nam");
-    updateDraft("latitude", String(suggestion.lat));
-    updateDraft("longitude", String(suggestion.lon));
     setMapAddress(suggestion.fullAddress);
-    setSelectedCoords({ lat: suggestion.lat, lon: suggestion.lon });
+    setSelectedCoords({ lat, lon });
     setSuggestions([]);
   };
 
   const handleClearAddress = () => {
+    ignoreSearchRef.current = true;
     setSearchInput("");
-    updateDraft("address", "");
-    updateDraft("latitude", "");
-    updateDraft("longitude", "");
+    updateDraftFields({
+      address: "",
+      latitude: "",
+      longitude: "",
+      city: "",
+      district: ""
+    });
     setSelectedCoords(null);
     setMapAddress(mapQuery || DEFAULT_MAP_ADDRESS);
     setSuggestions([]);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     setTouched((prev) => ({ ...prev, address: true }));
+    
+    // If they typed something but coordinates or city are missing, try to resolve it first
+    if (searchInput.trim() && (!draft.latitude || !draft.longitude || !draft.city)) {
+      try {
+        const res = await fetch(`/api/geocode/autocomplete?q=${encodeURIComponent(searchInput.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const first = data[0];
+            const city = sanitizeText(first.city || "");
+            const district = sanitizeText(first.district || "");
+            
+            updateDraftFields({
+              address: searchInput.trim(),
+              city,
+              district,
+              country: sanitizeText(first.country || draft.country || ""),
+              latitude: String(first.lat),
+              longitude: String(first.lon)
+            });
+            
+            setTimeout(() => {
+              onNext();
+            }, 100);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Geocoding on continue failed:", err);
+      }
+    }
+    
     if (canContinue) onNext();
   };
 
-  const openGoogleMaps = () => {
-    const target = selectedCoords
-      ? `${selectedCoords.lat},${selectedCoords.lon}`
-      : mapAddress || DEFAULT_MAP_ADDRESS;
-
-    window.open(
-      `https://www.google.com/maps?q=${encodeURIComponent(target)}&t=${
-        mapType === "satellite" ? "k" : "m"
-      }&z=17`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-  };
-
   return (
-    <section className="relative min-h-[calc(100vh-142px)] overflow-hidden bg-gray-100">
+    <section className="relative h-full w-full overflow-hidden bg-[#eef3f7]">
       <InteractiveMap
-        mapAddress={mapAddress || DEFAULT_MAP_ADDRESS}
         selectedCoords={selectedCoords}
         mapType={mapType}
-        onMapClick={openGoogleMaps}
+        onCoordsChange={async (coords) => {
+          setSelectedCoords(coords);
+          
+          const fieldsToUpdate: Partial<Draft> = {
+            latitude: String(coords.lat),
+            longitude: String(coords.lon),
+          };
+
+          // If current address is empty, reverse geocode to populate it
+          if (!draft.address.trim()) {
+            try {
+              const res = await fetch(`/api/geocode/reverse?lat=${coords.lat}&lon=${coords.lon}`);
+              if (res.ok) {
+                const data = await res.json();
+                if (data && data.address) {
+                  const city = sanitizeText(data.city || "");
+                  const district = sanitizeText(data.district || "");
+                  const fullAddress = data.address;
+                  
+                  fieldsToUpdate.address = fullAddress;
+                  fieldsToUpdate.city = city;
+                  fieldsToUpdate.district = district;
+                  fieldsToUpdate.country = sanitizeText(data.country || draft.country || "");
+                  
+                  setSearchInput(fullAddress);
+                  setMapAddress(fullAddress);
+                }
+              }
+            } catch (err) {
+              console.error("Reverse geocoding error:", err);
+            }
+          }
+          
+          updateDraftFields(fieldsToUpdate);
+        }}
       />
 
-      <div className="absolute right-8 top-7 z-20 flex overflow-hidden rounded-sm bg-white shadow-md ring-1 ring-black/10 pointer-events-auto">
+      <div className="absolute right-3 top-3 z-20 flex overflow-hidden rounded-sm bg-white text-sm shadow-md ring-1 ring-black/10 pointer-events-auto sm:right-6 sm:top-6 sm:text-lg">
         <button
           type="button"
-          className={`px-6 py-3 text-lg font-bold ${
+          className={`px-4 py-2 font-bold sm:px-6 sm:py-3 ${
             mapType === "map"
               ? "bg-white text-gray-950"
               : "bg-gray-100 text-gray-600"
@@ -2654,7 +3667,7 @@ function AddressStep({
         </button>
         <button
           type="button"
-          className={`border-l border-gray-200 px-6 py-3 text-lg font-bold ${
+          className={`border-l border-gray-200 px-4 py-2 font-bold sm:px-6 sm:py-3 ${
             mapType === "satellite"
               ? "bg-white text-gray-950"
               : "bg-gray-100 text-gray-600"
@@ -2665,82 +3678,72 @@ function AddressStep({
         </button>
       </div>
 
-      <div className="relative z-10 px-4 pb-8 pt-20 sm:px-6 lg:ml-[150px] pointer-events-none">
-        <h1 className="mb-8 max-w-[650px] text-[38px] font-bold leading-tight tracking-tight text-gray-950 pointer-events-auto">
+      <div className="absolute inset-x-0 bottom-0 z-10 max-h-[82dvh] overflow-y-auto px-3 pb-3 pt-10 pointer-events-none sm:bottom-0 sm:left-0 sm:right-auto sm:top-0 sm:h-full sm:max-h-none sm:w-[690px] sm:overflow-hidden sm:px-6 sm:pb-4 sm:pt-8 lg:ml-[190px]">
+        <h1 className="mb-3 max-w-[650px] text-[26px] font-bold leading-tight tracking-tight text-gray-950 pointer-events-auto sm:mb-4 sm:text-[34px]">
           Chỗ nghỉ của Quý vị ở đâu?
         </h1>
 
-        <div className="w-full max-w-[620px] rounded-md border border-gray-200 bg-white px-10 pb-8 pt-9 shadow-sm pointer-events-auto">
-          <div className="flex border-b border-gray-200">
-            <button
-              type="button"
-              className="border-b-2 border-[#f60057] px-5 py-3 font-medium text-[#f60057]"
-            >
-              Tìm kiếm nhanh
-            </button>
-            <button type="button" className="px-5 py-3 text-gray-900">
-              Biểu mẫu Địa chỉ
-            </button>
-          </div>
-
-          <label className="mt-6 block text-sm font-bold text-gray-950">
-            Địa chỉ
+        <div className="w-full overflow-y-auto border border-gray-200 bg-white px-4 pb-4 pt-4 shadow-sm pointer-events-auto sm:max-h-[calc(100%-126px)] sm:max-w-[625px] sm:px-5 sm:pb-4 sm:pt-4">
+          <label className="block text-base font-bold text-gray-950">
+            Tìm địa chỉ của Quý vị
           </label>
 
-          <div className="relative mt-3">
-            <div className="flex h-[62px] items-center gap-4 border-2 border-gray-950 bg-white px-4 focus-within:border-[#f60057] focus-within:ring-2 focus-within:ring-[#f60057]">
-              <Search className="h-6 w-6 shrink-0 text-gray-600" />
+          <div className="relative mt-2">
+            <div className="flex h-[42px] items-center gap-3 rounded-sm border border-gray-500 bg-white px-3 focus-within:border-[#f60057] focus-within:ring-2 focus-within:ring-rose-100">
+              <Search className="h-5 w-5 shrink-0 text-gray-500" />
               <input
                 value={searchInput}
                 onChange={(event) => handleSearchChange(event.target.value)}
-                onFocus={() =>
-                  setSuggestions(getAddressSuggestions(searchInput, draft.city))
-                }
+                onFocus={() => {
+                  if (searchInput.trim().length < 3) {
+                    setSuggestions(getAddressSuggestions(searchInput));
+                  }
+                }}
                 onBlur={() => {
                   setTouched((prev) => ({ ...prev, address: true }));
                 }}
-                className="h-full min-w-0 flex-1 bg-transparent text-lg text-gray-950 outline-none placeholder:text-gray-500"
-                placeholder="Bắt đầu nhập địa chỉ của Quý vị"
+                className="h-full min-w-0 flex-1 bg-transparent text-base text-gray-950 outline-none placeholder:text-gray-500"
+                placeholder="Nhập tên chỗ nghỉ, đường, khu vực"
               />
               {searchInput ? (
                 <button
                   type="button"
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={handleClearAddress}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-700 text-gray-800 hover:bg-gray-100"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-400 text-gray-700 hover:bg-gray-100"
                   aria-label="Xóa địa chỉ"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               ) : null}
             </div>
 
             {suggestions.length > 0 ? (
-              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 overflow-hidden rounded-md border border-gray-200 bg-white shadow-xl">
-                {suggestions.map((item) => (
+              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-[260px] overflow-y-auto rounded-sm border border-gray-300 bg-white shadow-xl sm:max-h-[330px]">
+                {suggestions.map((item, idx) => (
                   <button
-                    key={`${item.title}-${item.lat}-${item.lon}`}
+                    key={`${item.title}-${item.lat}-${item.lon}-${idx}`}
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => handleSuggestionClick(item)}
-                    className="flex w-full items-start gap-4 border-b border-gray-200 px-4 py-3 text-left last:border-b-0 hover:bg-rose-50"
+                    className="flex w-full items-start gap-3 border-b border-gray-100 px-3 py-3 text-left last:border-b-0 hover:bg-rose-50/70 transition-colors duration-150 sm:px-4 sm:py-4"
                   >
-                    <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700">
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-rose-50 text-[#f60057]">
                       <MapPin className="h-5 w-5" />
                     </span>
-                    <span className="min-w-0">
-                      <span className="block font-bold text-gray-950">
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold text-gray-950 text-[15px] leading-tight">
                         {item.title}
                       </span>
-                      <span className="block text-sm text-gray-600">
+                      <span className="mt-1 block text-sm leading-normal text-gray-600">
                         {item.subtitle}
                       </span>
                     </span>
                   </button>
                 ))}
-                <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600">
-                  Google Maps
-                  <Info className="h-4 w-4" />
+                <div className="flex items-center justify-end gap-2 border-t border-gray-100 bg-gray-50/50 px-4 py-2.5 text-xs font-semibold text-gray-500">
+                  <span>OpenStreetMap</span>
+                  <Info className="h-3.5 w-3.5" />
                 </div>
               </div>
             ) : null}
@@ -2752,33 +3755,78 @@ function AddressStep({
             </p>
           ) : null}
 
-          {showSelectedAddress ? (
-            <div className="mt-7">
-              <h2 className="text-xl font-bold text-gray-950">
-                {selectedTitle}
-              </h2>
-              <p className="mt-1 text-sm text-gray-600">
-                {selectedSubtitle || selectedAddress}
-              </p>
-              <button
-                type="button"
-                onClick={openGoogleMaps}
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-rose-50 px-4 py-2 font-bold text-[#f60057] hover:bg-rose-100"
-              >
-                Maps
-                <span aria-hidden>↗</span>
-              </button>
-              <p className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-                Google Maps <Info className="h-4 w-4" />
-              </p>
-              <p className="mt-7 border-t border-gray-200 pt-5 text-sm text-gray-800">
-                Nếu vị trí không chính xác, vui lòng điều chỉnh địa chỉ. Bấm vào bản đồ để mở Google Maps.
-              </p>
-            </div>
-          ) : null}
+          <div className="mt-3">
+            <label className="block text-base font-bold text-gray-950">
+              Số căn hộ hoặc tầng (không bắt buộc)
+            </label>
+            <input
+              value={draft.locationNote}
+              onChange={(event) => updateDraft("locationNote", event.target.value)}
+              className="mt-1.5 h-[42px] w-full rounded-sm border border-gray-500 px-3 text-base outline-none focus:border-[#f60057] focus:ring-2 focus:ring-rose-100"
+              placeholder="Căn hộ, tòa nhà, tầng, v.v."
+            />
+          </div>
+
+          <div className="mt-3">
+            <label className="block text-base font-bold text-gray-950">
+              Vùng/quốc gia
+            </label>
+            <input
+              list="country-suggestions"
+              value={draft.country}
+              onChange={(event) => updateDraft("country", event.target.value)}
+              className="mt-1.5 h-[42px] w-full rounded-sm border border-gray-500 bg-white px-3 text-base outline-none focus:border-[#f60057] focus:ring-2 focus:ring-rose-100"
+              placeholder="Quốc gia hoặc vùng"
+            />
+            <datalist id="country-suggestions">
+              <option value="Việt Nam" />
+              <option value="Indonesia" />
+              <option value="Thái Lan" />
+              <option value="Malaysia" />
+              <option value="Singapore" />
+              <option value="Japan" />
+              <option value="South Korea" />
+              <option value="France" />
+              <option value="United States" />
+              <option value="United Kingdom" />
+            </datalist>
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
+            <label className="block">
+              <span className="block text-base font-bold text-gray-950">Thành phố</span>
+              <input
+                value={draft.city}
+                onChange={(event) => updateDraft("city", event.target.value)}
+                className="mt-1.5 h-[42px] w-full rounded-sm border border-gray-500 px-3 text-base outline-none focus:border-[#f60057] focus:ring-2 focus:ring-rose-100"
+                placeholder="Thành phố"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-base font-bold text-gray-950">Mã bưu chính</span>
+              <input
+                value={draft.businessPostalCode}
+                onChange={(event) => updateDraft("businessPostalCode", event.target.value)}
+                className="mt-1.5 h-[42px] w-full rounded-sm border border-gray-500 px-3 text-base outline-none focus:border-[#f60057] focus:ring-2 focus:ring-rose-100"
+              />
+              <span className="mt-1.5 flex items-start gap-2 text-sm text-gray-800">
+                <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#b45309]" />
+                Quý vị có cần thêm mã bưu điện không?
+              </span>
+            </label>
+          </div>
+
+          <label className="mt-4 flex items-start gap-3 text-sm text-gray-950 sm:text-base">
+            <input
+              type="checkbox"
+              defaultChecked
+              className="mt-0.5 h-6 w-6 rounded border-gray-400 accent-[#f60057]"
+            />
+            <span>Cập nhật địa chỉ khi di chuyển ghim trên bản đồ.</span>
+          </label>
         </div>
 
-        <div className="mt-8 flex w-full max-w-[620px] gap-3 pointer-events-auto">
+        <div className="mt-3 flex w-full gap-3 pointer-events-auto sm:absolute sm:bottom-4 sm:left-6 sm:max-w-[625px] lg:left-0">
           <button
             type="button"
             onClick={onBack}
@@ -2827,7 +3875,14 @@ function ProgressHeader({
       "partner-profile",
     ],
     ["photos"],
-    ["booking", "price", "rates", "non-refundable", "group-pricing"],
+    [
+      "booking",
+      "price",
+      "availability",
+      "rates",
+      "non-refundable",
+      "group-pricing",
+    ],
     ["legal"],
     ["review"],
   ];
@@ -2928,6 +3983,8 @@ function BottomNav({
   pendingText,
   confirmMessage,
   onNotReady,
+  nextLabel = "Tiếp tục",
+  backLabel,
 }: {
   onBack: () => void;
   onNext: () => void;
@@ -2936,6 +3993,8 @@ function BottomNav({
   pendingText: string;
   confirmMessage: string;
   onNotReady?: () => void;
+  nextLabel?: string;
+  backLabel?: string;
 }) {
   return (
     <div className="mt-8 flex w-full max-w-[560px] flex-col gap-4">
@@ -2943,9 +4002,10 @@ function BottomNav({
         <button
           type="button"
           onClick={onBack}
-          className="h-14 w-20 rounded-sm border border-[#f60057] text-[#f60057] cursor-pointer"
+          className={`${backLabel ? "w-28" : "w-20"} inline-flex h-14 items-center justify-center gap-2 rounded-sm border border-[#f60057] font-bold text-[#f60057] cursor-pointer`}
         >
-          <ArrowLeft className="mx-auto h-5 w-5" />
+          <ArrowLeft className="h-5 w-5" />
+          {backLabel ? <span>{backLabel}</span> : null}
         </button>
         {isLast ? (
           <PendingSubmitButton
@@ -2963,7 +4023,7 @@ function BottomNav({
             disabled={!canContinue}
             className="h-14 flex-1 rounded-sm bg-[#f60057] font-bold text-white hover:bg-[#d9004c] disabled:bg-gray-300 disabled:text-gray-500 disabled:hover:bg-gray-300 cursor-pointer disabled:cursor-not-allowed"
           >
-            Tiếp tục
+            {nextLabel}
           </button>
         )}
       </div>
@@ -2999,6 +4059,38 @@ function HelpCard({
             <X className="h-5 w-5 shrink-0 text-gray-500" />
           </div>
           <div className="mt-5">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TipCard({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <div className="w-full max-w-[340px] rounded-md border border-gray-200 bg-white p-6">
+      <div className="flex gap-4">
+        <Lightbulb className="h-6 w-6 shrink-0 text-[#f60057]" />
+        <div className="flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-xl font-bold leading-snug">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="shrink-0 rounded-sm p-1 text-gray-700 hover:bg-gray-100"
+              aria-label="Đóng gợi ý"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="mt-5 text-[15px] leading-6">{children}</div>
         </div>
       </div>
     </div>
@@ -3297,6 +4389,14 @@ function bedSummary(room: Bedroom) {
   return parts.length ? parts.join(", ") : "0 giường";
 }
 
+function bedroomCapacity(room: Bedroom) {
+  return room.single + room.bunk + room.sofa + room.futon + (room.double + room.king + room.superKing) * 2;
+}
+
+function totalBedroomCapacity(rooms: Bedroom[]) {
+  return rooms.reduce((total, room) => total + bedroomCapacity(room), 0);
+}
+
 function HiddenFields({
   draft,
   validPhotos,
@@ -3437,7 +4537,45 @@ function HiddenFields({
       {draft.bookingMode === "instant" ? (
         <input name="instant_booking" value="on" readOnly />
       ) : null}
-      <input name="free_cancellation" value="on" readOnly />
+      {draft.cancellationFreeDays > 0 ? (
+        <input name="free_cancellation" value="on" readOnly />
+      ) : null}
+      <input
+        name="cancellation_policy"
+        value={`free_until_${draft.cancellationFreeDays}_days`}
+        readOnly
+      />
+      <input
+        name="payment_policy"
+        value={
+          draft.accidentalBookingProtection
+            ? "accidental_booking_protection"
+            : "standard"
+        }
+        readOnly
+      />
+      <input name="availability_start" value={draft.availabilityStart} readOnly />
+      <input
+        name="availability_open_mode"
+        value={draft.availabilityOpenMode}
+        readOnly
+      />
+      <input
+        name="availability_open_days"
+        value={draft.availabilityOpenDays}
+        readOnly
+      />
+      <input
+        name="sync_calendar"
+        value={draft.syncCalendar ? "on" : "off"}
+        readOnly
+      />
+      <input
+        name="allow_long_stays"
+        value={draft.allowLongStays ? "on" : "off"}
+        readOnly
+      />
+      <input name="max_stay_nights" value={draft.maxStayNights} readOnly />
       <input name="no_prepayment" value="on" readOnly />
       <input name="no_credit_card" value="on" readOnly />
       {draft.welcomeChildren ? (
