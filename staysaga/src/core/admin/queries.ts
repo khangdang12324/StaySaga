@@ -101,17 +101,20 @@ export async function getPendingAdminTasks() {
     { count: pendingHomestays },
     { count: negativeReviews },
     { count: supportTickets },
+    { count: pendingDeleteRequests },
   ] = await Promise.all([
     supabase.from("homestays").select("*", { count: "exact", head: true }).eq("status", "PENDING"),
     supabase.from("reviews").select("*", { count: "exact", head: true }).lte("rating", 3),
     // Fallback to 0 if support_tickets table doesn't exist
     supabase.from("support_tickets").select("*", { count: "exact", head: true }).then(res => res.error ? { count: 0 } : res),
+    supabase.from("homestays").select("*", { count: "exact", head: true }).eq("status", "DELETE_REQUESTED"),
   ]);
 
   return {
     pendingHomestays: pendingHomestays || 0,
     negativeReviews: negativeReviews || 0,
     supportTickets: supportTickets || 0,
+    pendingDeleteRequests: pendingDeleteRequests || 0,
   };
 }
 

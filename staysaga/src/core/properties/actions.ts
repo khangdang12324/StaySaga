@@ -486,7 +486,7 @@ export async function getPropertyBySlug(slug: string) {
   const { data, error } = await supabase
     .from("homestays")
     .select(
-      "*, owner:profiles(*), homestay_amenities(amenities(*)), homestay_images(*)",
+      "*, owner:profiles!homestays_owner_id_fkey(*), homestay_amenities(amenities(*)), homestay_images(*)",
     )
     .or(`slug.eq.${slug},id.eq.${slug}`)
     .eq("is_active", true)

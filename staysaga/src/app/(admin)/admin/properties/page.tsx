@@ -90,7 +90,7 @@ export default async function AdminPropertiesPage({ searchParams }: AdminPropert
   let query = supabaseAdmin
     .from("homestays")
     .select(
-      "id, name, city, price_per_night, is_active, status, delete_reason, rejection_reason, created_at, owner:profiles(full_name, email), homestay_images(url)",
+      "id, name, city, price_per_night, is_active, status, delete_reason, rejection_reason, created_at, owner:profiles!homestays_owner_id_fkey(full_name, email), homestay_images(url)",
     )
     .order("created_at", { ascending: false })
     .limit(50);
@@ -145,13 +145,13 @@ export default async function AdminPropertiesPage({ searchParams }: AdminPropert
           <input
             name="q"
             defaultValue={q}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-rose-500"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-rose-500 text-slate-950 bg-white"
             placeholder="Nhập tên chỗ nghỉ"
           />
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-bold text-slate-700">Thành phố</span>
-          <select name="city" defaultValue={city} className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-rose-500">
+          <select name="city" defaultValue={city} className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-rose-500 text-slate-950 bg-white">
             <option value="">Tất cả thành phố</option>
             {cities.map((item) => (
               <option key={item} value={item}>{item}</option>
@@ -160,7 +160,7 @@ export default async function AdminPropertiesPage({ searchParams }: AdminPropert
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-bold text-slate-700">Trạng thái</span>
-          <select name="propertyStatus" defaultValue={propertyStatus} className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-rose-500">
+          <select name="propertyStatus" defaultValue={propertyStatus} className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-rose-500 text-slate-950 bg-white">
             <option value="">Tất cả trạng thái</option>
             {Object.entries(PROPERTY_STATUS_LABELS).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
@@ -172,7 +172,7 @@ export default async function AdminPropertiesPage({ searchParams }: AdminPropert
           <input
             name="owner"
             defaultValue={owner}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-rose-500"
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-rose-500 text-slate-950 bg-white"
             placeholder="Tên hoặc email"
           />
         </label>

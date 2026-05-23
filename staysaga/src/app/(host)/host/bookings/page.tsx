@@ -7,15 +7,18 @@ import { Printer, Download, ChevronDown } from "lucide-react";
 
 const currency = new Intl.NumberFormat("vi-VN");
 
-// Helper to get date adjusted to Vietnam timezone (GMT+7)
 const getGmt7Date = (offsetDays = 0) => {
-  const date = new Date();
-  const utc = date.getTime() + date.getTimezoneOffset() * 60000;
-  const gmt7 = new Date(utc + 3600000 * 7);
-  if (offsetDays !== 0) {
-    gmt7.setDate(gmt7.getDate() + offsetDays);
-  }
-  return gmt7;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const part = (type: string) =>
+    Number(parts.find((item) => item.type === type)?.value || 0);
+  const date = new Date(part("year"), part("month") - 1, part("day"));
+  date.setDate(date.getDate() + offsetDays);
+  return date;
 };
 
 // Helper to format date in Vietnamese format

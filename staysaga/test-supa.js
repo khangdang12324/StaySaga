@@ -14,14 +14,12 @@ const supabase = createClient(
 );
 
 async function test() {
-  const { data, error } = await supabase.from('profiles').select('id, full_name, email, role, status, created_at').limit(1);
-  console.log("With specific columns:");
+  const { data, error } = await supabase
+    .from("homestays")
+    .select("id, name, city, price_per_night, is_active, status, delete_reason, rejection_reason, created_at, owner:profiles!homestays_owner_id_fkey(full_name, email), homestay_images(url)")
+    .eq("status", "DELETE_REQUESTED");
   console.log("Error:", error);
-  
-  const { data: data2, error: error2 } = await supabase.from('profiles').select('*').limit(1);
-  console.log("\nWith *:");
-  console.log("Error:", error2);
-  console.log("Data sample:", data2);
+  console.log("Data:", data);
 }
 
 test();

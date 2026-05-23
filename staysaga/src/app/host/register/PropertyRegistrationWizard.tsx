@@ -33,7 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { PendingSubmitButton } from "@/components/ui/PendingSubmitButton";
-import { createHostHomestay } from "@/core/host/actions";
+import { createHostHomestay, saveDatabaseDraftAction } from "@/core/host/actions";
 
 const DRAFT_KEY = "staysaga-host-register-v9";
 const DB_NAME = "staysaga-host-register";
@@ -49,6 +49,8 @@ type Owner = {
 };
 
 type Draft = {
+  id?: string;
+  currentStep?: number;
   propertyType: string;
   unitMode: "single" | "multiple";
   name: string;
@@ -446,6 +448,19 @@ async function restoreFiles() {
   return files;
 }
 
+async function clearStoredFiles() {
+  const db = await openFileDb();
+  if (!db) return;
+
+  await new Promise<void>((resolve) => {
+    const tx = db.transaction(FILE_STORE, "readwrite");
+    tx.objectStore(FILE_STORE).delete("photos");
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => resolve();
+  });
+  db.close();
+}
+
 function getStepValidation(
   step: WizardStep,
   draft: Draft,
@@ -547,8 +562,12 @@ function getFinalErrors(draft: Draft, photos: StoredPhoto[]) {
   return errors;
 }
 
-export default function PropertyRegistrationWizard() {
-  const [draft, setDraft] = useState<Draft>(() => createDefaultDraft());
+export default function PropertyRegistrationWizard({
+  initialDraft,
+}: {
+  initialDraft?: Draft | null;
+}) {
+  const [draft, setDraft] = useState<Draft>(() => initialDraft || createDefaultDraft());
   const [currentStep, setCurrentStep] = useState(0);
   const [activeBedroomId, setActiveBedroomId] = useState<string>("");
   const [photos, setPhotos] = useState<StoredPhoto[]>([]);
@@ -657,6 +676,35 @@ export default function PropertyRegistrationWizard() {
   };
 
   useEffect(() => {
+    if (initialDraft) {
+      setDraft(initialDraft);
+      setActiveBedroomId(initialDraft.bedrooms?.[0]?.id ?? "");
+      if (typeof initialDraft.currentStep === "number") {
+        setCurrentStep(initialDraft.currentStep);
+      }
+      setRestored(true);
+      return;
+    }
+
+    const startNew =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("new") === "1";
+
+    if (startNew) {
+      localStorage.removeItem(DRAFT_KEY);
+      void clearStoredFiles().then(() => {
+        const freshDraft = createDefaultDraft();
+        setDraft(freshDraft);
+        setPhotos([]);
+        setActiveBedroomId(freshDraft.bedrooms[0]?.id ?? "");
+        setCurrentStep(0);
+        setAttemptedSteps({});
+        setTouched({});
+        setRestored(true);
+      });
+      return;
+    }
+
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (raw) {
@@ -701,6 +749,9 @@ export default function PropertyRegistrationWizard() {
             : [{ id: makeId(), firstName: "", lastName: "", dateOfBirth: "" }],
         });
         setActiveBedroomId(parsed.bedrooms?.[0]?.id ?? "");
+        if (typeof parsed.currentStep === "number") {
+          setCurrentStep(parsed.currentStep);
+        }
       }
     } catch {
       setDraft(createDefaultDraft());
@@ -725,8 +776,27 @@ export default function PropertyRegistrationWizard() {
 
   useEffect(() => {
     if (!restored) return;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-  }, [draft, restored]);
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...draft, currentStep }));
+  }, [draft, restored, currentStep]);
+
+  useEffect(() => {
+    if (!restored) return;
+    if (!draft.name && !draft.city) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const draftWithStep = { ...draft, currentStep };
+        const result = await saveDatabaseDraftAction(JSON.stringify(draftWithStep));
+        if (result && 'id' in result && result.id && result.id !== draft.id) {
+          setDraft(prev => ({ ...prev, id: result.id }));
+        }
+      } catch (err) {
+        console.error("Failed to save database draft:", err);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [draft, restored, currentStep]);
 
   useEffect(() => {
     if (!restored) return;
@@ -4455,6 +4525,7 @@ function HiddenFields({
 
   return (
     <div className="hidden" aria-hidden="true">
+      {draft.id && <input name="id" value={draft.id} readOnly />}
       <input name="property_type" value={draft.propertyType} readOnly />
       <input name="name" value={draft.name} readOnly />
       <input name="title" value={draft.name} readOnly />

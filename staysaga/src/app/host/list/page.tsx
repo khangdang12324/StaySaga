@@ -33,7 +33,7 @@ export default async function ListYourPropertyPage() {
       "bạn";
     if (hasPartnerAccess) {
       const hostData = await getHostDashboardData();
-      listings = hostData.listings.slice(0, 2);
+      listings = hostData.listings;
     }
   }
 
@@ -154,7 +154,13 @@ export default async function ListYourPropertyPage() {
                               </p>
                             </div>
                             <Link
-                              href={listing ? hostHref : "/host/register"}
+                              href={
+                                listing
+                                  ? (listing.status === "APPROVED" && listing.is_active)
+                                    ? `/host/${listing.id}`
+                                    : `/host/properties/${listing.id}/edit`
+                                  : "/host/register"
+                              }
                               className="inline-flex items-center justify-center rounded-lg bg-[#f60057] px-4 py-2 text-sm font-semibold text-white hover:bg-[#f60057] shrink-0"
                             >
                               Tiếp tục

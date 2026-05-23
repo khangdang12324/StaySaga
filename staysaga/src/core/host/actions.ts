@@ -330,6 +330,13 @@ async function fetchHostListings(
     "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, homestay_images(id, url, storage_path)";
   const noStorageExtendedSelect =
     "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, homestay_images(id, url)";
+  
+  // Omit avg_rating (since avg_rating is not a column on homestays table)
+  const noRatingExtendedSelect =
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, homestay_images(id, url, storage_path)";
+  const noRatingNoStorageExtendedSelect =
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, homestay_images(id, url)";
+
   const noStorageBaseSelect =
     "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, created_at, homestay_images(id, url)";
   const noRelationBaseSelect =
@@ -338,6 +345,8 @@ async function fetchHostListings(
   for (const select of [
     extendedSelect,
     noStorageExtendedSelect,
+    noRatingExtendedSelect,
+    noRatingNoStorageExtendedSelect,
     baseSelect,
     noStorageBaseSelect,
     noRelationBaseSelect,
@@ -382,21 +391,23 @@ export async function getHostDashboardData(): Promise<HostDashboardData> {
       bookings?.filter((booking) => booking.status === "PENDING").length || 0;
   }
 
-  const normalizedListings = (listings || []).map((listing) => {
-    const row = listing as Partial<HostListing> & {
-      price_per_night?: number | string;
-      avg_rating?: number | string | null;
-      status?: string | null;
-    };
-    const status = isPropertyStatus(row.status || "") ? row.status : "APPROVED";
+  const normalizedListings = (listings || [])
+    .map((listing) => {
+      const row = listing as Partial<HostListing> & {
+        price_per_night?: number | string;
+        avg_rating?: number | string | null;
+        status?: string | null;
+      };
+      const status = isPropertyStatus(row.status || "") ? row.status : "APPROVED";
 
-    return {
-      ...row,
-      price_per_night: Number(row.price_per_night || 0),
-      avg_rating: Number(row.avg_rating || 0),
-      status,
-    };
-  }) as HostListing[];
+      return {
+        ...row,
+        price_per_night: Number(row.price_per_night || 0),
+        avg_rating: Number(row.avg_rating || 0),
+        status,
+      };
+    })
+    .filter((listing) => listing.status !== "DELETED") as HostListing[];
 
   const averageRating =
     normalizedListings.length > 0
@@ -462,6 +473,93 @@ async function attachAmenities(
   }
 }
 
+async function saveIncompleteHomestayDraft(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  formData: FormData,
+  name: string,
+  city: string,
+  price: number,
+) {
+  const draftPayload = {
+    owner_id: userId,
+    slug: createSlug(name),
+    name,
+    title: name,
+    description: getString(formData, "description") || null,
+    short_description: getString(formData, "short_description") || null,
+    detailed_description:
+      getString(formData, "detailed_description") ||
+      getString(formData, "description") ||
+      null,
+    property_type: getString(formData, "property_type") || "homestay",
+    address: getString(formData, "address") || null,
+    city,
+    district: getString(formData, "district") || null,
+    country: getString(formData, "country") || "Vietnam",
+    latitude: getOptionalNumber(formData, "latitude"),
+    longitude: getOptionalNumber(formData, "longitude"),
+    price_per_night: price,
+    base_price_per_night: price,
+    max_guests: Math.max(1, getNumber(formData, "max_guests", 2)),
+    bedrooms: Math.max(0, getNumber(formData, "bedrooms", 1)),
+    beds: Math.max(1, getNumber(formData, "beds", 1)),
+    bathrooms: Math.max(0, getNumber(formData, "bathrooms", 1)),
+    owner_name: getString(formData, "owner_name") || getString(formData, "host_name") || null,
+    contact_phone: getString(formData, "contact_phone") || null,
+    contact_email: getString(formData, "contact_email") || null,
+    registration_checklist: {
+      basic: Boolean(name && getString(formData, "description")),
+      location: Boolean(city && getString(formData, "address")),
+      images: false,
+      rooms: price > 0,
+      pricing: price > 0,
+      amenities: Boolean(getString(formData, "amenities")),
+      policies: true,
+    },
+    rejection_reason: "Cần ít nhất 1 ảnh đại diện trước khi gửi duyệt.",
+    is_active: false,
+    status: "DRAFT" as const,
+  };
+
+  const propertyId = getString(formData, "id");
+  const adminSupabase = await createAdminClient();
+
+  let result;
+  if (propertyId) {
+    const updateResult = await supabase
+      .from("homestays")
+      .update(draftPayload)
+      .eq("id", propertyId)
+      .eq("owner_id", userId)
+      .select("id")
+      .single();
+    result =
+      updateResult.error || !updateResult.data
+        ? await adminSupabase
+            .from("homestays")
+            .update(draftPayload)
+            .eq("id", propertyId)
+            .eq("owner_id", userId)
+            .select("id")
+            .single()
+        : updateResult;
+  } else {
+    const insertResult = await insertHomestayWithFallback(supabase, draftPayload);
+    result =
+      insertResult.error || !insertResult.data
+        ? await insertHomestayWithFallback(adminSupabase, draftPayload)
+        : insertResult;
+  }
+
+  if (result.error || !result.data) {
+    redirectToHostError("create_failed");
+  }
+
+  revalidatePath("/host");
+  revalidatePath("/host/list");
+}
+
 export async function createHostHomestay(formData: FormData) {
   const { supabase, user } = await getCurrentPartner();
   const name = getString(formData, "name");
@@ -484,6 +582,7 @@ export async function createHostHomestay(formData: FormData) {
         : [];
 
   if (filesToUpload.length < 1) {
+    await saveIncompleteHomestayDraft(supabase, user.id, formData, name, city, price);
     redirectToHostError("image_count");
   }
 
@@ -588,13 +687,43 @@ export async function createHostHomestay(formData: FormData) {
     status: "PENDING" as const,
   };
 
-  let { data, error } = await insertHomestayWithFallback(supabase, payload);
+  const propertyId = getString(formData, "id");
+  let data = null;
+  let error = null;
 
   const adminSupabase = await createAdminClient();
-  if (error || !data) {
-    const adminInsert = await insertHomestayWithFallback(adminSupabase, payload);
-    data = adminInsert.data;
-    error = adminInsert.error;
+  if (propertyId) {
+    const updateResult = await supabase
+      .from("homestays")
+      .update(payload)
+      .eq("id", propertyId)
+      .eq("owner_id", user.id)
+      .select("id")
+      .single();
+    if (updateResult.error || !updateResult.data) {
+      const adminUpdate = await adminSupabase
+        .from("homestays")
+        .update(payload)
+        .eq("id", propertyId)
+        .eq("owner_id", user.id)
+        .select("id")
+        .single();
+      data = adminUpdate.data;
+      error = adminUpdate.error;
+    } else {
+      data = updateResult.data;
+      error = updateResult.error;
+    }
+  } else {
+    const insertResult = await insertHomestayWithFallback(supabase, payload);
+    if (insertResult.error || !insertResult.data) {
+      const adminInsert = await insertHomestayWithFallback(adminSupabase, payload);
+      data = adminInsert.data;
+      error = adminInsert.error;
+    } else {
+      data = insertResult.data;
+      error = insertResult.error;
+    }
   }
 
   if (error || !data) {
@@ -662,6 +791,84 @@ export async function createDraftProperty(formData: FormData) {
 
   revalidatePath("/host");
   redirect(`/host/register?propertyId=${result.data.id}`);
+}
+
+export async function saveDatabaseDraftAction(draftJson: string) {
+  const { supabase, user } = await getCurrentPartner();
+  const draft = JSON.parse(draftJson);
+  
+  const name = draft.name || "Chỗ nghỉ chưa đặt tên";
+  const city = draft.city || "Việt Nam";
+  const price = Number(draft.price || 0);
+
+  const payload: any = {
+    owner_id: user.id,
+    slug: createSlug(name) + (draft.id ? "" : `-${Math.random().toString(36).substring(2, 6)}`),
+    name,
+    title: name,
+    description: draft.description || null,
+    property_type: draft.propertyType || "homestay",
+    address: draft.address || null,
+    city,
+    district: draft.district || null,
+    country: draft.country || "Vietnam",
+    price_per_night: price,
+    base_price_per_night: price,
+    max_guests: Math.max(1, Number(draft.maxGuests || 2)),
+    bedrooms: Math.max(0, draft.bedrooms?.length || 1),
+    beds: Math.max(1, draft.bedrooms?.reduce((sum: number, r: any) => sum + Number(r.double || 0) * 2 + Number(r.single || 0) + Number(r.sofa || 0), 0) || 1),
+    bathrooms: Math.max(0, Number(draft.bathrooms || 1)),
+    is_active: false,
+    status: "DRAFT" as const,
+    registration_checklist: {
+      currentStep: draft.currentStep || 0,
+      draftState: draft,
+      basic: Boolean(name && draft.description),
+      location: Boolean(city && draft.address),
+      images: false,
+      rooms: price > 0,
+      pricing: price > 0,
+      amenities: (draft.amenities?.length || 0) > 0,
+      policies: true,
+    },
+  };
+
+  if (draft.latitude) payload.latitude = Number(draft.latitude);
+  if (draft.longitude) payload.longitude = Number(draft.longitude);
+
+  const adminSupabase = await createAdminClient();
+  
+  let result;
+  if (draft.id) {
+    const { data, error } = await supabase
+      .from("homestays")
+      .update(payload)
+      .eq("id", draft.id)
+      .eq("owner_id", user.id)
+      .select("id")
+      .single();
+      
+    result = error || !data ? await adminSupabase
+      .from("homestays")
+      .update(payload)
+      .eq("id", draft.id)
+      .eq("owner_id", user.id)
+      .select("id")
+      .single() : { data, error };
+  } else {
+    result = await insertHomestayWithFallback(supabase, payload);
+    if (result.error || !result.data) {
+      result = await insertHomestayWithFallback(adminSupabase, payload);
+    }
+  }
+
+  if (result.error || !result.data) {
+    return { error: "Failed to save draft" };
+  }
+
+  revalidatePath("/host");
+  revalidatePath("/host/list");
+  return { id: result.data.id };
 }
 
 export async function updatePropertyType(formData: FormData) {

@@ -188,9 +188,13 @@ export default async function HostRevenuePage({
   }, 0);
   const averageLeadTime = activeBookingsCount > 0 ? Math.round(totalLeadTimeDays / activeBookingsCount) : 0;
 
-  // 2. Card 1: Genius Listings details
-  // Genius: Listings with avg_rating >= 4.9
-  const geniusListings = listings.filter((l) => Number(l.avg_rating || 0) >= 4.9);
+  // Genius should only count genuinely high-rated active listings.
+  const geniusListings = listings.filter(
+    (l) =>
+      l.status === "APPROVED" &&
+      l.is_active &&
+      Number(l.avg_rating || 0) >= 4.5,
+  );
   const geniusListingsCount = geniusListings.length;
   const geniusRatio = listings.length > 0 ? Math.round((geniusListingsCount / listings.length) * 100) : 0;
 
@@ -222,9 +226,8 @@ export default async function HostRevenuePage({
   }, 0);
   const geniusAverageLeadTime = geniusActiveBookingsCount > 0 ? Math.round(geniusTotalLeadTimeDays / geniusActiveBookingsCount) : 0;
 
-  // 3. Card 2: Giá theo quốc gia (Country Rate) details
-  // Country Rate: Listings at even indices (50% for realistic demo simulation matching screenshot)
-  const countryRateListings = listings.filter((_, idx) => idx % 2 === 0);
+  // Country-rate configuration is not stored yet, so do not infer it from row order.
+  const countryRateListings = listings.filter(() => false);
   const countryRateListingsCount = countryRateListings.length;
   const countryRateRatio = listings.length > 0 ? Math.round((countryRateListingsCount / listings.length) * 100) : 0;
 
@@ -300,7 +303,7 @@ export default async function HostRevenuePage({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xl font-black text-slate-900">Genius</span>
-                <span className="bg-[#003580] text-white text-[10px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase">
+                <span className="bg-[#f60057] text-white text-[10px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase">
                   Genius
                 </span>
               </div>
@@ -328,7 +331,7 @@ export default async function HostRevenuePage({
                 <div className="mt-6 flex flex-col items-center justify-center text-center p-4 bg-slate-50 border border-slate-100 rounded">
                   <Frown size={32} className="text-slate-400 mb-2" />
                   <p className="text-xs text-slate-500 leading-normal">
-                    Không có dữ liệu về Genius dựa trên tiêu chí tìm kiếm của Quý vị. Thử chọn ngày khác để xem giảm giá Genius đang thúc đẩy độ hiển thị và lượng đơn đặt như thế nào.
+                    Không có dữ liệu Genius trong khoảng thời gian này. Chỉ các chỗ nghỉ đang hoạt động và có đánh giá đủ cao mới được tính vào nhóm Genius.
                   </p>
                 </div>
               )}
@@ -363,7 +366,7 @@ export default async function HostRevenuePage({
                 <div className="mt-6 flex flex-col items-center justify-center text-center p-4 bg-slate-50 border border-slate-100 rounded">
                   <Frown size={32} className="text-slate-400 mb-2" />
                   <p className="text-xs text-slate-500 leading-normal">
-                    Không có dữ liệu về Giá theo quốc gia dựa trên tiêu chí tìm kiếm của Quý vị. Thử chọn ngày khác để xem Giá theo quốc gia đang thúc đẩy lượng đơn đặt như thế nào đối với các khu vực Quý vị nhắm vào.
+                    Chưa có chỗ nghỉ nào bật Giá theo quốc gia trong dữ liệu hiện tại, nên hệ thống không tính đóng góp giả cho chiến lược này.
                   </p>
                 </div>
               )}

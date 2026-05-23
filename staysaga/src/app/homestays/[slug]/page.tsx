@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import {
   ArrowRight,
   Bath,
@@ -76,12 +77,72 @@ export default async function HotelDetailPage({ params }: Props) {
     return priceFormatted;
   };
   const { slug } = await params;
-  let hotel = getHotelBySlug(slug);
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
 
-  // Fallback to ID lookup if slug doesn't match (for legacy or numeric IDs)
-  if (!hotel && !isNaN(Number(slug))) {
-    const { getHotelById } = await import("@/lib/hotel-parser");
-    hotel = getHotelById(Number(slug));
+  const supabase = await createClient();
+  let dbHomestay = null;
+
+  if (isUuid) {
+    const { data } = await supabase
+      .from("homestays")
+      .select("*, homestay_images(*), homestay_amenities(amenities(*))")
+      .or(`id.eq.${slug},slug.eq.${slug}`)
+      .maybeSingle();
+    dbHomestay = data;
+  } else {
+    const { data } = await supabase
+      .from("homestays")
+      .select("*, homestay_images(*), homestay_amenities(amenities(*))")
+      .eq("slug", slug)
+      .maybeSingle();
+    dbHomestay = data;
+  }
+
+  let hotel: any = null;
+
+  if (dbHomestay) {
+    const fallbackImage = `https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80`;
+    const image = dbHomestay.homestay_images?.[0]?.url || fallbackImage;
+    const gallery = dbHomestay.homestay_images?.map((img: any) => img.url) || [image];
+
+    hotel = {
+      id: dbHomestay.id,
+      slug: dbHomestay.slug,
+      title: dbHomestay.name,
+      city: dbHomestay.city,
+      description: dbHomestay.description || `${dbHomestay.name} tại ${dbHomestay.city} có không gian tiện nghi, phù hợp cho khách du lịch và gia đình.`,
+      imagePublicPath: image,
+      galleryImages: gallery,
+      mapQuery: `${dbHomestay.name}, ${dbHomestay.city}`,
+      reviews_count: 66,
+      displayRating: dbHomestay.avg_rating || 4.8,
+      price: dbHomestay.price_per_night,
+      priceFormatted: `VND ${Number(dbHomestay.price_per_night).toLocaleString("vi-VN")}`,
+      amenities: dbHomestay.homestay_amenities?.map((a: any) => a.amenities?.name) || [],
+      max_guests: dbHomestay.max_guests,
+      bedrooms: dbHomestay.bedrooms,
+      beds: dbHomestay.beds,
+      bathrooms: dbHomestay.bathrooms,
+      address: dbHomestay.address,
+    };
+  } else {
+    // Fallback to static mock hotels
+    const staticHotel = getHotelBySlug(slug);
+    if (staticHotel) {
+      hotel = {
+        ...staticHotel,
+        priceFormatted: staticHotel.priceFormatted || `VND ${staticHotel.price}`,
+      };
+    } else if (!isNaN(Number(slug))) {
+      const { getHotelById } = await import("@/lib/hotel-parser");
+      const staticHotelById = getHotelById(Number(slug));
+      if (staticHotelById) {
+        hotel = {
+          ...staticHotelById,
+          priceFormatted: staticHotelById.priceFormatted || `VND ${staticHotelById.price}`,
+        };
+      }
+    }
   }
 
   if (!hotel) {
@@ -211,13 +272,15 @@ export default async function HotelDetailPage({ params }: Props) {
             {/* Description */}
             <section id="overview" className="border-b border-zinc-100 pb-8">
                <p className="text-sm leading-7 text-zinc-700 whitespace-pre-line">
-                 Tọa lạc ở {hotel.city}, cách Quảng trường Lâm Viên 2.5 km và Hồ Xuân Hương 2.7 km, {hotel.title} cung cấp chỗ nghỉ có quầy bar và Wi-Fi miễn phí ở toàn bộ chỗ nghỉ cũng như chỗ đậu xe riêng miễn phí cho khách lái xe. Khách sạn 2 sao này có quầy lễ tân 24 giờ. Đây là chỗ nghỉ không hút thuốc và nằm cách Công viên Yersin 2.8 km.
-                 {"\n\n"}
-                 Khách sạn có trung tâm spa.
-                 {"\n\n"}
-                 {hotel.title} cách Sân golf Dalat Palace Golf Club 2.9 km và Vườn hoa Đà Lạt 3.7 km.
-                 {"\n\n"}
-                 Các cặp đôi đặc biệt thích địa điểm này — họ cho điểm 8,0 khi đánh giá chuyến đi hai người.
+                 {hotel.description || (
+                   `Tọa lạc ở ${hotel.city}, cách Quảng trường Lâm Viên 2.5 km và Hồ Xuân Hương 2.7 km, ${hotel.title} cung cấp chỗ nghỉ có quầy bar và Wi-Fi miễn phí ở toàn bộ chỗ nghỉ cũng như chỗ đậu xe riêng miễn phí cho khách lái xe. Khách sạn 2 sao này có quầy lễ tân 24 giờ. Đây là chỗ nghỉ không hút thuốc và nằm cách Công viên Yersin 2.8 km.
+
+Khách sạn có trung tâm spa.
+
+${hotel.title} cách Sân golf Dalat Palace Golf Club 2.9 km và Vườn hoa Đà Lạt 3.7 km.
+
+Các cặp đôi đặc biệt thích địa điểm này — họ cho điểm 8,0 khi đánh giá chuyến đi hai người.`
+                 )}
                </p>
                <div className="mt-6 flex items-center gap-2 text-xs text-zinc-500">
                   <Globe className="h-4 w-4" />

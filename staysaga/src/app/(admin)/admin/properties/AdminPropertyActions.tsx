@@ -56,7 +56,7 @@ export function AdminPropertyActions({
                 required
                 minLength={3}
                 placeholder="Lý do từ chối"
-                className="min-w-0 flex-1 border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#f60057]"
+                className="min-w-0 flex-1 border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#f60057] text-slate-950 bg-white"
               />
               <PendingSubmitButton className={danger} pendingText="Đang gửi...">
                 Gửi
@@ -127,7 +127,7 @@ export function AdminPropertyActions({
                 name="reason"
                 required
                 placeholder="Lý do từ chối"
-                className="min-w-0 flex-1 border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#f60057]"
+                className="min-w-0 flex-1 border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#f60057] text-slate-950 bg-white"
               />
               <PendingSubmitButton className={outline} pendingText="Đang gửi...">
                 Gửi

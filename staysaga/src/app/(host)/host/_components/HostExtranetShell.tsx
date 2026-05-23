@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
   Bell,
   ChevronDown,
@@ -52,6 +54,8 @@ export function HostExtranetShell({
   children,
   hideNav = false,
 }: HostExtranetShellProps) {
+
+
   return (
     <div className="min-h-screen bg-[#f3f3f3] text-[#1a1a1a]">
       <header className="bg-[#f60057] text-white">
@@ -64,7 +68,7 @@ export function HostExtranetShell({
             <span className="max-w-[260px] truncate font-semibold">
               {userName}
             </span>
-            <span className="rounded-sm bg-emerald-600 px-2 py-1 text-xs font-bold">
+            <span className="rounded-sm bg-white/15 px-2 py-1 text-xs font-bold ring-1 ring-white/25">
               Tài khoản chính
             </span>
           </div>
@@ -97,7 +101,7 @@ export function HostExtranetShell({
         </div>
 
         {!hideNav ? (
-          <nav className="mx-auto flex max-w-[1400px] items-end overflow-x-auto px-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <nav className="mx-auto flex max-w-[1400px] flex-wrap items-end overflow-visible px-6">
             {navItems.map((item) => (
               <Link
                 key={item.key}
@@ -111,13 +115,27 @@ export function HostExtranetShell({
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/host/list"
-              className="inline-flex items-center gap-1 whitespace-nowrap px-4 py-5 text-[15px] font-medium hover:bg-white/10"
-            >
-              Khác
-              <ChevronDown className="h-4 w-4" />
-            </Link>
+            <div className="group relative inline-flex items-center text-white">
+              <button
+                type="button"
+                className={`inline-flex items-center gap-1 whitespace-nowrap px-4 py-5 text-[15px] font-medium hover:bg-white/10 transition-colors ${
+                  active === "market-data" ? "bg-white/12 text-white" : "text-white"
+                }`}
+              >
+                Khác
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              <div className="invisible absolute right-0 top-full z-50 w-48 bg-white text-[#1a1a1a] shadow-lg border border-slate-200 py-1 rounded-sm opacity-0 transition group-hover:visible group-hover:opacity-100">
+                <Link
+                  href="/host/market-data"
+                  className={`block px-4 py-3 text-[14px] hover:bg-slate-50 font-semibold transition ${
+                    active === "market-data" ? "text-[#f60057]" : "text-slate-800"
+                  }`}
+                >
+                  Dữ liệu thị trường
+                </Link>
+              </div>
+            </div>
           </nav>
         ) : null}
       </header>

@@ -3,11 +3,30 @@ import { useState } from "react";
 import { ChevronsUpDown, Download } from "lucide-react";
 import toast from "react-hot-toast";
 
+function getCurrentFinancePeriod() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(new Date());
+  const part = (type: string) =>
+    Number(parts.find((item) => item.type === type)?.value || 0);
+
+  return {
+    year: String(part("year")),
+    month: `Tháng ${part("month")}`,
+  };
+}
+
 export function FinanceForm() {
-  const [year, setYear] = useState("2026");
-  const [month, setMonth] = useState("Tháng 4");
+  const currentPeriod = getCurrentFinancePeriod();
+  const [year, setYear] = useState(currentPeriod.year);
+  const [month, setMonth] = useState(currentPeriod.month);
   const [docType, setDocType] = useState("Tóm tắt các loại giấy tờ (XLS)");
   const [isLoading, setIsLoading] = useState(false);
+  const monthOptions = Array.from(
+    new Set([currentPeriod.month, "Tháng 5", "Tháng 4", "Tháng 3", "Tháng 2", "Tháng 1"]),
+  );
 
   const handleCreateFile = () => {
     setIsLoading(true);
@@ -61,11 +80,11 @@ export function FinanceForm() {
           disabled={isLoading}
           className="w-full appearance-none rounded border border-[#f60057] bg-white px-4 py-2.5 pr-10 font-medium text-[#f60057] focus:outline-none focus:ring-1 focus:ring-[#f60057] disabled:opacity-50 cursor-pointer text-sm"
         >
-          <option value="Tháng 5">Tháng 5</option>
-          <option value="Tháng 4">Tháng 4</option>
-          <option value="Tháng 3">Tháng 3</option>
-          <option value="Tháng 2">Tháng 2</option>
-          <option value="Tháng 1">Tháng 1</option>
+          {monthOptions.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
         </select>
         <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[#f60057]">
           <ChevronsUpDown size={15} />

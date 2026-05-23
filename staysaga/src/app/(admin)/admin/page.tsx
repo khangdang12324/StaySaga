@@ -217,6 +217,15 @@ export default async function AdminPage() {
                   </div>
                   <button className="text-sm font-bold text-rose-600 hover:text-rose-700">Phản hồi</button>
                 </div>
+                <div className="flex items-center justify-between rounded-lg border border-slate-100 p-3 hover:bg-slate-50 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-amber-600"></div>
+                    <p className="text-sm font-semibold text-slate-700">{tasks.pendingDeleteRequests} Yêu cầu hủy chỗ nghỉ / phòng đang chờ duyệt</p>
+                  </div>
+                  <Link href="/admin/properties?propertyStatus=DELETE_REQUESTED" className="text-sm font-bold text-rose-600 hover:text-rose-700">
+                    Xem xét
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

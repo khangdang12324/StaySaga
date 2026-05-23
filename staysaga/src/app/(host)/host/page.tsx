@@ -12,6 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { HostExtranetShell } from "./_components/HostExtranetShell";
+import { DeletePropertyButton } from "./_components/DeletePropertyButton";
 import { getHostDashboardData } from "@/core/host/actions";
 import {
   canAccessPartner,
@@ -77,15 +78,13 @@ export default async function HostDashboardPage({
     session.user.email ||
     "Tài khoản đối tác";
   const activeListings = listings.filter(
-    (item) => item.status === "APPROVED" && item.is_active,
+    (item) => item.status === "APPROVED",
   );
-  const inactiveListings = listings.filter(
-    (item) => item.status !== "APPROVED" || !item.is_active,
+  const notOnBookingListings = listings.filter(
+    (item) => item.status !== "APPROVED",
   );
-  const visibleListings = listings.slice(0, 2);
-  const visibleInactiveListings = (
-    inactiveListings.length ? inactiveListings : listings
-  ).slice(0, 2);
+  const visibleListings = activeListings;
+  const visibleInactiveListings = notOnBookingListings;
 
   return (
     <HostExtranetShell active="home" userName={userName}>
@@ -138,13 +137,13 @@ export default async function HostDashboardPage({
             <h2 className="text-2xl font-bold">
               Chỗ nghỉ chưa có trên StaySaga ({visibleInactiveListings.length})
             </h2>
-            <Link href="/host/list" className="font-medium text-[#f60057]">
-              Xem tất cả
+            <Link href="/host/list" className="font-medium text-gray-700">
+              Ẩn mục
             </Link>
           </div>
           <p className="mt-7">
             Phát triển kinh doanh bằng cách thêm các chỗ nghỉ này vào nền tảng
-            du lịch trực tuyến của StaySaga.
+            du lịch trực tuyến lớn nhất thế giới, StaySaga.
           </p>
           <div className="mt-6 overflow-x-auto border border-gray-300 bg-white">
             <table className="w-full min-w-[820px] text-left">
@@ -159,21 +158,37 @@ export default async function HostDashboardPage({
               <tbody>
                 {visibleInactiveListings.map(
                   (listing) => {
-                    const progress =
-                      listing.status === "PENDING"
-                        ? 90
-                        : listing.status === "REJECTED"
-                          ? 70
-                          : 55;
+                    const calculateProgress = (item: typeof listing) => {
+                      if (item.status === "APPROVED") return 100;
+                      if (item.status === "PENDING") return 95;
+                      
+                      let score = 0;
+                      if (item.name && item.name !== "Chỗ nghỉ chưa đặt tên") score += 10;
+                      if (item.description && item.description.trim()) score += 10;
+                      if (item.address && item.address.trim()) score += 10;
+                      if (item.city && item.city.trim()) score += 10;
+                      if (item.country && item.country.trim()) score += 10;
+                      if (item.price_per_night && Number(item.price_per_night) > 0) score += 10;
+                      if (item.max_guests && Number(item.max_guests) > 0) score += 10;
+                      if (item.bedrooms && Number(item.bedrooms) > 0) score += 10;
+                      if (item.beds && Number(item.beds) > 0) score += 10;
+                      if (item.homestay_images && item.homestay_images.length > 0) score += 10;
+                      
+                      return Math.min(90, Math.max(15, score));
+                    };
+                    const progress = calculateProgress(listing);
                     return (
                       <tr key={listing.id} className="border-b border-gray-200">
                         <td className="px-5 py-5">
                           <div className="flex items-center gap-4">
                             <span className="h-10 w-10 rounded-full bg-gray-700" />
                             <div>
-                              <p className="font-bold">
+                              <Link
+                                href={`/host/properties/${listing.id}/edit`}
+                                className="font-bold text-[#f60057] hover:underline"
+                              >
                                 {listing.name || "Chỗ nghỉ chưa đặt tên"}
-                              </p>
+                              </Link>
                               <p className="text-sm text-gray-500">
                                 {listing.address || listing.city || "Việt Nam"}
                               </p>
@@ -197,7 +212,7 @@ export default async function HostDashboardPage({
                         <td className="px-5 py-5">
                           <div className="flex items-center gap-8">
                             <Link
-                              href={`/host/${listing.id}`}
+                              href={`/host/properties/${listing.id}/edit`}
                               className="font-medium text-[#f60057] underline"
                             >
                               Tiếp tục đăng ký
@@ -214,15 +229,17 @@ export default async function HostDashboardPage({
                     );
                   },
                 )}
-                {listings.length === 0 ? (
+                {visibleInactiveListings.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-5 py-10 text-center">
-                      <p className="font-bold">Chưa có chỗ nghỉ nào.</p>
+                      <p className="font-bold">
+                        Không có chỗ nghỉ nào chưa có trên StaySaga.
+                      </p>
                       <Link
                         href="/host/register?new=1"
                         className="mt-4 inline-flex rounded-sm bg-[#f60057] px-5 py-3 font-bold text-white"
                       >
-                        Tạo chỗ nghỉ đầu tiên
+                        {listings.length > 0 ? "Tạo chỗ nghỉ mới" : "Tạo chỗ nghỉ đầu tiên"}
                       </Link>
                     </td>
                   </tr>
@@ -238,7 +255,7 @@ export default async function HostDashboardPage({
             <label className="font-bold">
               Lọc theo vị trí
               <select className="mt-2 block h-11 w-[250px] border border-gray-500 bg-white px-3 font-normal">
-                <option>{Math.min(activeListings.length || listings.length, 2)} chỗ nghỉ</option>
+                <option>{activeListings.length} chỗ nghỉ đang hoạt động</option>
                 <option>Việt Nam</option>
               </select>
             </label>
@@ -313,6 +330,7 @@ export default async function HostDashboardPage({
                   <th className="px-4 py-4">Rời đi trong 48 giờ tới</th>
                   <th className="px-4 py-4">Tin nhắn từ khách</th>
                   <th className="px-4 py-4">Tin nhắn từ StaySaga</th>
+                  <th className="px-4 py-4">Hủy phòng</th>
                 </tr>
               </thead>
               <tbody>
@@ -322,7 +340,12 @@ export default async function HostDashboardPage({
                     <tr key={listing.id} className="border-b border-gray-200">
                       <td className="px-4 py-5">{listing.id.slice(0, 8)}</td>
                       <td className="px-4 py-5">
-                        <p>{listing.name || "Chỗ nghỉ chưa đặt tên"}</p>
+                        <Link
+                          href={`/host/${listing.id}`}
+                          className="font-medium text-[#f60057] hover:underline"
+                        >
+                          {listing.name || "Chỗ nghỉ chưa đặt tên"}
+                        </Link>
                         <p className="text-sm text-gray-500">
                           {listing.address || listing.city || "Việt Nam"}
                         </p>
@@ -367,9 +390,22 @@ export default async function HostDashboardPage({
                           0
                         )}
                       </td>
+                      <td className="px-4 py-5 text-center">
+                        <DeletePropertyButton
+                          propertyId={listing.id}
+                          status={listing.status || "APPROVED"}
+                        />
+                      </td>
                     </tr>
                   );
                 })}
+                {visibleListings.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-12 text-center text-gray-600">
+                      Chưa có chỗ nghỉ nào đang hoạt động.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
