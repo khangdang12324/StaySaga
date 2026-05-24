@@ -57,7 +57,7 @@ export default async function HostRegisterPage({ searchParams }: HostRegisterPag
     }
   }
 
-  return <PropertyRegistrationWizard initialDraft={initialDraft} />;
+  return <PropertyRegistrationWizard initialDraft={initialDraft} userId={session.user.id} />;
 }
 
 function convertListingToDraft(listing: any): any {

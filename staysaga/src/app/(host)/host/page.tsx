@@ -77,11 +77,31 @@ export default async function HostDashboardPage({
     session.user.user_metadata?.full_name ||
     session.user.email ||
     "Tài khoản đối tác";
+  const getProgress = (item: typeof listings[number]) => {
+    let score = 0;
+    if (item.name && item.name !== "Chỗ nghỉ chưa đặt tên") score += 10;
+    if (item.description && item.description.trim()) score += 10;
+    if (item.address && item.address.trim()) score += 10;
+    if (item.city && item.city.trim()) score += 10;
+    if (item.country && item.country.trim()) score += 10;
+    if (item.price_per_night && Number(item.price_per_night) > 0) score += 10;
+    if (item.max_guests && Number(item.max_guests) > 0) score += 10;
+    if (item.bedrooms && Number(item.bedrooms) > 0) score += 10;
+    if (item.beds && Number(item.beds) > 0) score += 10;
+    if (item.homestay_images && item.homestay_images.length > 0) score += 10;
+
+    if (score === 100) {
+      if (item.status === "PENDING") return 95;
+      return 100;
+    }
+    return Math.min(90, Math.max(15, score));
+  };
+
   const activeListings = listings.filter(
-    (item) => item.status === "APPROVED",
+    (item) => item.status === "APPROVED" && getProgress(item) === 100,
   );
   const notOnBookingListings = listings.filter(
-    (item) => item.status !== "APPROVED",
+    (item) => item.status !== "APPROVED" || getProgress(item) < 100,
   );
   const visibleListings = activeListings;
   const visibleInactiveListings = notOnBookingListings;
@@ -158,25 +178,7 @@ export default async function HostDashboardPage({
               <tbody>
                 {visibleInactiveListings.map(
                   (listing) => {
-                    const calculateProgress = (item: typeof listing) => {
-                      if (item.status === "APPROVED") return 100;
-                      if (item.status === "PENDING") return 95;
-                      
-                      let score = 0;
-                      if (item.name && item.name !== "Chỗ nghỉ chưa đặt tên") score += 10;
-                      if (item.description && item.description.trim()) score += 10;
-                      if (item.address && item.address.trim()) score += 10;
-                      if (item.city && item.city.trim()) score += 10;
-                      if (item.country && item.country.trim()) score += 10;
-                      if (item.price_per_night && Number(item.price_per_night) > 0) score += 10;
-                      if (item.max_guests && Number(item.max_guests) > 0) score += 10;
-                      if (item.bedrooms && Number(item.bedrooms) > 0) score += 10;
-                      if (item.beds && Number(item.beds) > 0) score += 10;
-                      if (item.homestay_images && item.homestay_images.length > 0) score += 10;
-                      
-                      return Math.min(90, Math.max(15, score));
-                    };
-                    const progress = calculateProgress(listing);
+                    const progress = getProgress(listing);
                     return (
                       <tr key={listing.id} className="border-b border-gray-200">
                         <td className="px-5 py-5">

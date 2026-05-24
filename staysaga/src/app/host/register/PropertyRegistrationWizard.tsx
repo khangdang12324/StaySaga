@@ -35,7 +35,6 @@ import {
 import { PendingSubmitButton } from "@/components/ui/PendingSubmitButton";
 import { createHostHomestay, saveDatabaseDraftAction } from "@/core/host/actions";
 
-const DRAFT_KEY = "staysaga-host-register-v9";
 const DB_NAME = "staysaga-host-register";
 const FILE_STORE = "files";
 const MIN_PHOTOS = 5;
@@ -419,27 +418,27 @@ function openFileDb(): Promise<IDBDatabase | null> {
   });
 }
 
-async function saveFiles(files: File[]) {
+async function saveFiles(files: File[], userId: string) {
   const db = await openFileDb();
   if (!db) return;
 
   await new Promise<void>((resolve) => {
     const tx = db.transaction(FILE_STORE, "readwrite");
     const store = tx.objectStore(FILE_STORE);
-    store.put(files, "photos");
+    store.put(files, `photos-${userId}`);
     tx.oncomplete = () => resolve();
     tx.onerror = () => resolve();
   });
   db.close();
 }
 
-async function restoreFiles() {
+async function restoreFiles(userId: string) {
   const db = await openFileDb();
   if (!db) return [] as File[];
 
   const files = await new Promise<File[]>((resolve) => {
     const tx = db.transaction(FILE_STORE, "readonly");
-    const request = tx.objectStore(FILE_STORE).get("photos");
+    const request = tx.objectStore(FILE_STORE).get(`photos-${userId}`);
     request.onsuccess = () =>
       resolve(Array.isArray(request.result) ? request.result : []);
     request.onerror = () => resolve([]);
@@ -448,13 +447,13 @@ async function restoreFiles() {
   return files;
 }
 
-async function clearStoredFiles() {
+async function clearStoredFiles(userId: string) {
   const db = await openFileDb();
   if (!db) return;
 
   await new Promise<void>((resolve) => {
     const tx = db.transaction(FILE_STORE, "readwrite");
-    tx.objectStore(FILE_STORE).delete("photos");
+    tx.objectStore(FILE_STORE).delete(`photos-${userId}`);
     tx.oncomplete = () => resolve();
     tx.onerror = () => resolve();
   });
@@ -564,9 +563,12 @@ function getFinalErrors(draft: Draft, photos: StoredPhoto[]) {
 
 export default function PropertyRegistrationWizard({
   initialDraft,
+  userId,
 }: {
   initialDraft?: Draft | null;
+  userId: string;
 }) {
+  const DRAFT_KEY = `staysaga-host-register-v9-${userId}`;
   const [draft, setDraft] = useState<Draft>(() => initialDraft || createDefaultDraft());
   const [currentStep, setCurrentStep] = useState(0);
   const [activeBedroomId, setActiveBedroomId] = useState<string>("");
@@ -692,7 +694,7 @@ export default function PropertyRegistrationWizard({
 
     if (startNew) {
       localStorage.removeItem(DRAFT_KEY);
-      void clearStoredFiles().then(() => {
+      void clearStoredFiles(userId).then(() => {
         const freshDraft = createDefaultDraft();
         setDraft(freshDraft);
         setPhotos([]);
@@ -757,7 +759,7 @@ export default function PropertyRegistrationWizard({
       setDraft(createDefaultDraft());
     }
 
-    void restoreFiles().then((files) => {
+    void restoreFiles(userId).then((files) => {
       setPhotos(
         files.map((file) => ({
           id: makeId(),
@@ -800,8 +802,8 @@ export default function PropertyRegistrationWizard({
 
   useEffect(() => {
     if (!restored) return;
-    void saveFiles(photos.map((photo) => photo.file));
-  }, [photos, restored]);
+    void saveFiles(photos.map((photo) => photo.file), userId);
+  }, [photos, restored, userId]);
 
   const updateDraft = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }));

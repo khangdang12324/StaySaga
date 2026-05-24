@@ -60,43 +60,43 @@ export function HostExtranetShell({
     <div className="min-h-screen bg-[#f3f3f3] text-[#1a1a1a]">
       <header className="bg-[#f60057] text-white">
         <div className="mx-auto flex h-20 max-w-[1400px] items-center gap-5 px-6">
-          <Link href="/host" className="text-3xl font-bold tracking-tight">
+          <Link href="/host" className="text-3xl font-bold tracking-tight shrink-0">
             StaySaga
           </Link>
-          <div className="hidden h-8 w-px bg-white/40 lg:block" />
-          <div className="hidden min-w-0 items-center gap-3 lg:flex">
-            <span className="max-w-[260px] truncate font-semibold">
+          <div className="hidden h-8 w-px bg-white/40 lg:block shrink-0" />
+          <div className="hidden min-w-0 items-center gap-3 lg:flex shrink-0">
+            <span className="max-w-[120px] xl:max-w-[260px] truncate font-semibold">
               {userName}
             </span>
-            <span className="rounded-sm bg-white/15 px-2 py-1 text-xs font-bold ring-1 ring-white/25">
+            <span className="rounded-sm bg-white/15 px-2 py-1 text-xs font-bold ring-1 ring-white/25 whitespace-nowrap shrink-0">
               Tài khoản chính
             </span>
           </div>
-          <div className="ml-auto hidden h-11 w-full max-w-[520px] items-center rounded-sm bg-white/10 px-4 ring-1 ring-white/10 lg:flex">
-            <span className="flex-1 text-white/90">Tìm kiếm</span>
-            <Search className="h-5 w-5" />
+          <div className="ml-auto hidden h-11 w-full max-w-[320px] xl:max-w-[520px] min-w-[120px] items-center rounded-sm bg-white/10 px-4 ring-1 ring-white/10 lg:flex shrink">
+            <span className="flex-1 text-white/90 truncate mr-2">Tìm kiếm</span>
+            <Search className="h-5 w-5 shrink-0" />
           </div>
           <Link
             href="/host/list"
-            className="hidden h-11 w-11 items-center justify-center rounded-full bg-white/15 text-lg font-bold ring-1 ring-white/25 lg:flex"
+            className="hidden h-11 w-11 items-center justify-center rounded-full bg-white/15 text-lg font-bold ring-1 ring-white/25 lg:flex shrink-0"
           >
             ★
           </Link>
           <Link
             href="/settings"
-            className="hidden items-center gap-2 font-semibold lg:inline-flex"
+            className="hidden items-center gap-2 font-semibold lg:inline-flex whitespace-nowrap shrink-0"
           >
-            <Globe2 className="h-5 w-5" />
+            <Globe2 className="h-5 w-5 shrink-0" />
             Tiếng Việt
           </Link>
           <Link
             href="/help"
-            className="hidden items-center gap-2 font-semibold lg:inline-flex"
+            className="hidden items-center gap-2 font-semibold lg:inline-flex whitespace-nowrap shrink-0"
           >
-            <CircleHelp className="h-5 w-5" />
+            <CircleHelp className="h-5 w-5 shrink-0" />
             Trợ giúp
           </Link>
-          <Bell className="h-6 w-6" />
+          <Bell className="h-6 w-6 shrink-0" />
           <HostAccountMenu userName={userName} />
         </div>
 
