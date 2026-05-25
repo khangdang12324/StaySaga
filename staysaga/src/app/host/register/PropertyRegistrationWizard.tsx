@@ -353,6 +353,23 @@ const createDefaultDraft = (): Draft => ({
   termsConfirmed: false,
 });
 
+const mergeDraftWithDefault = (draft?: Draft | null): Draft => {
+  const base = createDefaultDraft();
+  if (!draft) return base;
+
+  return {
+    ...base,
+    ...draft,
+    bedrooms: draft.bedrooms?.length ? draft.bedrooms : base.bedrooms,
+    amenities: draft.amenities ?? base.amenities,
+    languages: draft.languages?.length ? draft.languages : base.languages,
+    extraLanguages: draft.extraLanguages ?? base.extraLanguages,
+    partnerProfile: draft.partnerProfile ?? base.partnerProfile,
+    owners: draft.owners?.length ? draft.owners : base.owners,
+    groupDiscounts: draft.groupDiscounts ?? base.groupDiscounts,
+  };
+};
+
 const stageForStep = (index: number) => {
   if (index <= 5) return 0; // category, units, confirm, name, address, channel
   if (index <= 12) return 1; // details, bedroom, amenities, services, languages, policies, partner-profile
@@ -563,13 +580,17 @@ function getFinalErrors(draft: Draft, photos: StoredPhoto[]) {
 
 export default function PropertyRegistrationWizard({
   initialDraft,
+  resumeStep,
   userId,
 }: {
   initialDraft?: Draft | null;
+  resumeStep?: string | null;
   userId: string;
 }) {
   const DRAFT_KEY = `staysaga-host-register-v9-${userId}`;
-  const [draft, setDraft] = useState<Draft>(() => initialDraft || createDefaultDraft());
+  const [draft, setDraft] = useState<Draft>(() =>
+    mergeDraftWithDefault(initialDraft),
+  );
   const [currentStep, setCurrentStep] = useState(0);
   const [activeBedroomId, setActiveBedroomId] = useState<string>("");
   const [photos, setPhotos] = useState<StoredPhoto[]>([]);
@@ -679,10 +700,17 @@ export default function PropertyRegistrationWizard({
 
   useEffect(() => {
     if (initialDraft) {
-      setDraft(initialDraft);
-      setActiveBedroomId(initialDraft.bedrooms?.[0]?.id ?? "");
-      if (typeof initialDraft.currentStep === "number") {
-        setCurrentStep(initialDraft.currentStep);
+      const mergedDraft = mergeDraftWithDefault(initialDraft);
+      const resumeStepIndex = resumeStep
+        ? steps.indexOf(resumeStep as WizardStep)
+        : -1;
+
+      setDraft(mergedDraft);
+      setActiveBedroomId(mergedDraft.bedrooms?.[0]?.id ?? "");
+      if (resumeStepIndex >= 0) {
+        setCurrentStep(resumeStepIndex);
+      } else if (typeof mergedDraft.currentStep === "number") {
+        setCurrentStep(mergedDraft.currentStep);
       }
       setRestored(true);
       return;

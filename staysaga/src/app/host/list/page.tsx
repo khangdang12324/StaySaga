@@ -5,6 +5,7 @@ import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/rol
 import { getHostDashboardData } from "@/core/host/actions";
 import { logout } from "@/core/auth/actions";
 import { ArrowRight, Bell, Check, CreditCard, Globe, Search, UserCircle, Shield } from "lucide-react";
+import { RealtimeSubscription } from "@/components/realtime/RealtimeSubscription";
 
 export default async function ListYourPropertyPage() {
   const supabase = await createClient();
@@ -320,6 +321,7 @@ export default async function ListYourPropertyPage() {
           </div>
         </section>
       </main>
+      <RealtimeSubscription table="homestays" filter={`owner_id=eq.${session.user.id}`} />
     </div>
   );
 }

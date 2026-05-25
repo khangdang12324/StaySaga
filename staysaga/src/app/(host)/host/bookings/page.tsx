@@ -4,6 +4,7 @@ import { getHostDashboardData } from "@/core/host/actions";
 import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import { Printer, Download, ChevronDown } from "lucide-react";
+import { RealtimeSubscription } from "@/components/realtime/RealtimeSubscription";
 
 const currency = new Intl.NumberFormat("vi-VN");
 
@@ -139,6 +140,7 @@ export default async function HostBookingsPage() {
           </table>
         </section>
       </main>
+      <RealtimeSubscription table="bookings" />
     </HostExtranetShell>
   );
 }

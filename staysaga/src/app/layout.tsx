@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Footer from "@/components/layout/Footer";
 import Navbar from "@/components/layout/Navbar";
+import ToastProvider from "@/components/providers/ToastProvider";
 
 export const metadata: Metadata = {
   title: "StaySaga Hotels | StaySaga Travel",
@@ -24,6 +25,7 @@ export default function RootLayout({
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />
+        <ToastProvider />
       </body>
     </html>
   );

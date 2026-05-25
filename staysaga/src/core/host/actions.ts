@@ -236,14 +236,13 @@ async function uploadImage(
   const imageErrorMessage = String(imageError?.message || "").toLowerCase();
   if (
     imageError &&
-    ["storage_path", "image_url", "is_cover", "sort_order", "category"].some((column) =>
+    ["storage_path", "image_url", "is_cover", "sort_order", "category", "alt"].some((column) =>
       imageErrorMessage.includes(column),
     )
   ) {
     const retry = await supabase.from("homestay_images").insert({
       homestay_id: homestayId,
       url: data.publicUrl,
-      alt: file.name,
     });
     imageError = retry.error;
   }
@@ -436,8 +435,20 @@ async function upsertRoomForProperty(
   });
 
   if (error) {
-    // Older Supabase databases may not have the rooms table yet. The migration
-    // adds it; until it is applied, the main homestay record should still save.
+    console.warn("Primary rooms insert failed, attempting basic fallback query. Error detail:", error.message);
+    const fallbackRoom: Record<string, any> = {
+      homestay_id: homestayId,
+      name: room.name,
+      max_guests: room.max_guests,
+      price_per_night: room.price_per_night,
+    };
+    if (room.status) {
+      fallbackRoom.status = room.status;
+    }
+    const { error: fallbackError } = await supabase.from("rooms").insert(fallbackRoom);
+    if (fallbackError) {
+      console.error("Fallback rooms insert also failed:", fallbackError);
+    }
     return;
   }
 }
@@ -1249,8 +1260,11 @@ export async function closeMyPropertyTemporarily(formData: FormData) {
   });
 
   revalidatePath("/host");
+  revalidatePath("/host/list");
   revalidatePath(`/host/${id}`);
   revalidatePath("/homestays");
+  revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   redirect(`/host/${id}?status=closed`);
 }
 
@@ -1276,8 +1290,11 @@ export async function reopenMyProperty(formData: FormData) {
   });
 
   revalidatePath("/host");
+  revalidatePath("/host/list");
   revalidatePath(`/host/${id}`);
   revalidatePath("/homestays");
+  revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   redirect(`/host/${id}?status=opened`);
 }
 
@@ -1308,9 +1325,42 @@ export async function requestDeleteMyProperty(formData: FormData) {
   });
 
   revalidatePath("/host");
+  revalidatePath("/host/list");
   revalidatePath(`/host/${id}`);
   revalidatePath("/homestays");
+  revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   redirect(`/host/${id}?status=delete_requested`);
+}
+
+export async function deleteHostRegistration(formData: FormData) {
+  const { user, role } = await getCurrentPartner();
+  const id = getString(formData, "id");
+  const confirmed = formData.get("confirm_delete_registration") === "on";
+
+  if (!id || !confirmed) {
+    redirectToHostError("delete_request_invalid");
+  }
+
+  const property = await getOwnedProperty(id, user.id, role);
+  if (
+    property.status === "DELETED" ||
+    (property.status === "APPROVED" && property.is_active)
+  ) {
+    redirectToHostError("blocked_property");
+  }
+
+  await updateOwnedPropertyStatus(id, {
+    status: "DELETED",
+    is_active: false,
+    delete_reason: "Host deleted unfinished registration",
+  });
+
+  revalidatePath("/host");
+  revalidatePath("/host/list");
+  revalidatePath("/admin/properties");
+  revalidatePath("/admin");
+  redirect("/host?status=registration_deleted");
 }
 
 export async function deleteHostHomestay(formData: FormData) {

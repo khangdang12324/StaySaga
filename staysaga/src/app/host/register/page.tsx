@@ -12,7 +12,7 @@ export const metadata = {
 };
 
 type HostRegisterPageProps = {
-  searchParams: Promise<{ propertyId?: string; new?: string }>;
+  searchParams: Promise<{ propertyId?: string; new?: string; step?: string }>;
 };
 
 export default async function HostRegisterPage({ searchParams }: HostRegisterPageProps) {
@@ -57,7 +57,13 @@ export default async function HostRegisterPage({ searchParams }: HostRegisterPag
     }
   }
 
-  return <PropertyRegistrationWizard initialDraft={initialDraft} userId={session.user.id} />;
+  return (
+    <PropertyRegistrationWizard
+      initialDraft={initialDraft}
+      resumeStep={params.step ?? null}
+      userId={session.user.id}
+    />
+  );
 }
 
 function convertListingToDraft(listing: any): any {

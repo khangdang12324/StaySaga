@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Sparkles,
   Users,
+  UserCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/core/auth/actions";
@@ -75,35 +76,29 @@ export function AdminShell({
 
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <p className="mb-2 px-3 text-xs font-bold uppercase tracking-wider text-slate-300">
-            Main Menu
+            Quản trị hệ thống
           </p>
-          <nav className="mb-8 space-y-1">
+          <nav className="space-y-1">
             <Link href="/admin" className={navClass("/admin")}>
               <LayoutDashboard className="h-4 w-4" /> Bảng điều khiển
             </Link>
+            <Link href="/admin/users" className={navClass("/admin/users")}>
+              <Users className="h-4 w-4" /> Người dùng
+            </Link>
+            <Link href="/admin/partners" className={navClass("/admin/partners")}>
+              <UserCheck className="h-4 w-4" /> Đối tác
+            </Link>
             <Link href="/admin/properties" className={navClass("/admin/properties")}>
-              <Building2 className="h-4 w-4" /> Quản lý chỗ nghỉ
+              <Building2 className="h-4 w-4" /> Chỗ nghỉ
             </Link>
             <Link href="/admin/bookings" className={navClass("/admin/bookings")}>
               <Calendar className="h-4 w-4" /> Đơn đặt phòng
             </Link>
             <Link href="/admin/reviews" className={navClass("/admin/reviews")}>
-              <MessageSquare className="h-4 w-4" /> Đánh giá của khách
+              <MessageSquare className="h-4 w-4" /> Đánh giá
             </Link>
-          </nav>
-
-          <p className="mb-2 px-3 text-xs font-bold uppercase tracking-wider text-slate-300">
-            Hệ thống
-          </p>
-          <nav className="space-y-1">
-            <Link href="/admin/users" className={navClass("/admin/users")}>
-              <Users className="h-4 w-4" /> Người dùng & Phân quyền
-            </Link>
-            <Link
-              href="/admin#customize"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-800 hover:text-white"
-            >
-              <Sparkles className="h-4 w-4 text-amber-300" /> Tùy chỉnh Website
+            <Link href="/admin/settings" className={navClass("/admin/settings")}>
+              <Sparkles className="h-4 w-4 text-amber-300" /> Cài đặt website
             </Link>
           </nav>
         </div>
@@ -118,13 +113,13 @@ export function AdminShell({
         </div>
       </aside>
 
-      <div className="flex w-full flex-col md:ml-64">
+      <div className="flex flex-1 flex-col md:pl-64 min-w-0">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <button className="text-slate-700 transition-colors hover:text-slate-950 md:hidden">
               <Menu className="h-6 w-6" />
             </button>
-            <h1 className="text-lg font-bold text-slate-900">Partner Central</h1>
+            <h1 className="text-lg font-bold text-slate-900">{title || "Trang quản trị StaySaga"}</h1>
           </div>
           <div className="flex items-center gap-5">
             <button className="relative text-slate-600 transition-colors hover:text-slate-900">

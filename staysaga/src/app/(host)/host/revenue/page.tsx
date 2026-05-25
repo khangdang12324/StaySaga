@@ -257,6 +257,7 @@ export default async function HostRevenuePage({
     const diff = Math.round((checkIn.getTime() - createdDate.getTime()) / (1000 * 3600 * 24));
     return sum + Math.max(0, diff);
   }, 0);
+  const countryRateAverageLeadTime = countryRateActiveBookingsCount > 0 ? Math.round(countryRateTotalLeadTimeDays / countryRateActiveBookingsCount) : 0;
   const bookingsStat = activeBookingsCount;
   const revenueStat = totalRevenue;
   const averageRevenueStat = averageRevenue;

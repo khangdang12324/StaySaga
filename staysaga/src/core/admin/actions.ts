@@ -24,6 +24,8 @@ const ALLOWED_BOOKING_STATUSES = new Set([
   "REJECTED",
   "CANCELLED",
   "COMPLETED",
+  "CHECKED_IN",
+  "NO_SHOW",
 ]);
 const ALLOWED_REVIEW_STATUSES = new Set(["VISIBLE", "HIDDEN"]);
 
@@ -91,6 +93,8 @@ export async function updateUserAccess(formData: FormData) {
   }
 
   revalidatePath("/admin/users");
+  revalidatePath("/admin");
+  revalidatePath("/admin/partners");
   redirect("/admin/users?status=updated");
 }
 
@@ -126,7 +130,9 @@ export async function updatePropertyStatus(formData: FormData) {
   }
 
   revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   revalidatePath("/host");
+  revalidatePath("/host/list");
   revalidatePath("/homestays");
   redirectToProperties("updated");
 }
@@ -143,7 +149,7 @@ export async function approveProperty(formData: FormData) {
     .from("homestays")
     .update({
       status: "APPROVED",
-      is_active: true,
+      is_active: false,
       verification_status: "APPROVED",
       rejection_reason: null,
       approved_at: new Date().toISOString(),
@@ -159,7 +165,9 @@ export async function approveProperty(formData: FormData) {
   }
 
   revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   revalidatePath("/host");
+  revalidatePath("/host/list");
   revalidatePath("/homestays");
   redirectToProperties("approved");
 }
@@ -191,7 +199,10 @@ export async function rejectProperty(formData: FormData) {
   }
 
   revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   revalidatePath("/host");
+  revalidatePath("/host/list");
+  revalidatePath("/homestays");
   redirectToProperties("rejected");
 }
 
@@ -224,7 +235,9 @@ export async function approveDeleteProperty(formData: FormData) {
   }
 
   revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   revalidatePath("/host");
+  revalidatePath("/host/list");
   revalidatePath("/homestays");
   redirectToProperties("deleted");
 }
@@ -254,7 +267,10 @@ export async function rejectDeleteProperty(formData: FormData) {
   }
 
   revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   revalidatePath("/host");
+  revalidatePath("/host/list");
+  revalidatePath("/homestays");
   redirectToProperties("delete_rejected");
 }
 
@@ -282,7 +298,9 @@ export async function suspendProperty(formData: FormData) {
   }
 
   revalidatePath("/admin/properties");
+  revalidatePath("/admin");
   revalidatePath("/host");
+  revalidatePath("/host/list");
   revalidatePath("/homestays");
   redirectToProperties("suspended");
 }
@@ -318,17 +336,40 @@ export async function updateBookingStatus(formData: FormData) {
   const { supabase } = await getAdminClient();
   const id = getString(formData, "id");
   const status = getString(formData, "status");
+  const reason = getString(formData, "reason");
 
   if (!id || !ALLOWED_BOOKING_STATUSES.has(status)) {
     redirect("/admin/bookings?error=invalid");
   }
 
-  const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
+  // Fetch current payment status to handle refund transitions
+  const { data: currentBk } = await supabase
+    .from("bookings")
+    .select("payment_status")
+    .eq("id", id)
+    .single();
+
+  const updateData: any = { status, updated_at: new Date().toISOString() };
+  
+  if (status === "CANCELLED") {
+    if (reason) {
+      updateData.cancel_reason = reason;
+    }
+    if (currentBk?.payment_status === "PAID") {
+      updateData.payment_status = "REFUNDED";
+    }
+  }
+
+  const { error } = await supabase.from("bookings").update(updateData).eq("id", id);
   if (error) {
     redirect("/admin/bookings?error=update_failed");
   }
 
   revalidatePath("/admin/bookings");
+  revalidatePath("/admin");
+  revalidatePath("/host/bookings");
+  revalidatePath("/my-bookings");
+  revalidatePath("/bookings");
   redirect("/admin/bookings?status=updated");
 }
 
@@ -347,5 +388,124 @@ export async function updateReviewStatus(formData: FormData) {
   }
 
   revalidatePath("/admin/reviews");
+  revalidatePath("/admin");
+  revalidatePath("/homestays");
   redirect("/admin/reviews?status=updated");
+}
+
+export async function updateUserRole(formData: FormData) {
+  const { supabase, user } = await getAdminClient();
+  const id = getString(formData, "id");
+  const role = getString(formData, "role") as AppRole;
+
+  if (!id || !ALLOWED_ROLES.has(role)) {
+    redirect("/admin/users?error=invalid");
+  }
+
+  if (id === user.id && role !== "ADMIN") {
+    redirect("/admin/users?error=self_lock");
+  }
+
+  const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
+  if (error) {
+    redirect("/admin/users?error=update_failed");
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
+  revalidatePath("/admin/partners");
+  redirect("/admin/users?status=updated");
+}
+
+export async function updateUserStatus(formData: FormData) {
+  const { supabase, user } = await getAdminClient();
+  const id = getString(formData, "id");
+  const status = getString(formData, "status") as ProfileStatus;
+
+  if (!id || !ALLOWED_PROFILE_STATUSES.has(status)) {
+    redirect("/admin/users?error=invalid");
+  }
+
+  if (id === user.id && status === "BLOCKED") {
+    redirect("/admin/users?error=self_lock");
+  }
+
+  const { error } = await supabase.from("profiles").update({ status }).eq("id", id);
+  if (error) {
+    redirect("/admin/users?error=update_failed");
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
+  revalidatePath("/admin/partners");
+  redirect("/admin/users?status=updated");
+}
+
+export async function updateWebsiteSettings(formData: FormData) {
+  const { supabase } = await getAdminClient();
+
+  const site_name = getString(formData, "site_name");
+  const hero_title = getString(formData, "hero_title");
+  const hero_subtitle = getString(formData, "hero_subtitle");
+  const featured_destinations = getString(formData, "featured_destinations");
+  const property_types = getString(formData, "property_types");
+  const default_amenities = getString(formData, "default_amenities");
+
+  const { data: currentHeroRow } = await supabase
+    .from("site_settings")
+    .select("key,value")
+    .in("key", ["hero_image", "hero_image_path"]);
+
+  const currentHeroImagePath =
+    currentHeroRow?.find((row) => row.key === "hero_image_path")?.value || "";
+
+  const payload: { key: string; value: string }[] = [
+    { key: "site_name", value: site_name },
+    { key: "hero_title", value: hero_title },
+    { key: "hero_subtitle", value: hero_subtitle },
+    { key: "featured_destinations", value: featured_destinations },
+    { key: "property_types", value: property_types },
+    { key: "default_amenities", value: default_amenities },
+  ];
+
+  // Handle hero image upload (optional)
+  const heroFile = formData.get("hero_image");
+  if (heroFile && heroFile instanceof File && heroFile.size > 0) {
+    const extension = heroFile.name.split(".").pop()?.toLowerCase() || "jpg";
+    const storagePath = `site-hero/${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("site-assets")
+      .upload(storagePath, heroFile, {
+        cacheControl: "3600",
+        contentType: heroFile.type,
+        upsert: true,
+      });
+
+    if (!uploadError) {
+      const { data } = supabase.storage
+        .from("site-assets")
+        .getPublicUrl(storagePath);
+      payload.push({ key: "hero_image", value: data.publicUrl });
+      payload.push({ key: "hero_image_path", value: storagePath });
+
+      if (currentHeroImagePath && currentHeroImagePath !== storagePath) {
+        await supabase.storage
+          .from("site-assets")
+          .remove([currentHeroImagePath]);
+      }
+    }
+  }
+
+  const { error } = await supabase.from("site_settings").upsert(payload, {
+    onConflict: "key",
+  });
+
+  if (error) {
+    redirect("/admin/settings?error=update_failed");
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/settings");
+  redirect("/admin/settings?status=updated");
 }

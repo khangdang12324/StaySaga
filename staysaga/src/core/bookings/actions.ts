@@ -152,6 +152,10 @@ export async function createBooking(formData: FormData) {
   // Tạm thời redirect thẳng tới trang Booking Success
   const bookingCode = bookingId || propertyId;
   revalidatePath("/bookings");
+  revalidatePath("/my-bookings");
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin");
+  revalidatePath("/host/bookings");
   redirect(`/bookings/success?bookingId=${bookingCode}&checkIn=${checkIn}`);
 }
 
@@ -201,6 +205,10 @@ export async function cancelBooking(formData: FormData) {
   }
 
   revalidatePath("/bookings");
+  revalidatePath("/my-bookings");
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin");
+  revalidatePath("/host/bookings");
   redirect("/bookings?status=cancelled");
 }
 
@@ -300,6 +308,10 @@ export async function rescheduleBooking(formData: FormData) {
   }
 
   revalidatePath("/bookings");
+  revalidatePath("/my-bookings");
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin");
+  revalidatePath("/host/bookings");
   redirect("/bookings?status=rescheduled");
 }
 
