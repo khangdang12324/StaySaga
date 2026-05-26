@@ -16,7 +16,7 @@ interface BookingWidgetProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: "Chờ xác nhận",
+  PENDING: "Đã xác nhận",
   CONFIRMED: "Đã xác nhận",
   COMPLETED: "Hoàn thành",
   CANCELLED: "Đã hủy",

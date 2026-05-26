@@ -12,7 +12,7 @@ export const metadata = {
 };
 
 type HostRegisterPageProps = {
-  searchParams: Promise<{ propertyId?: string; new?: string; step?: string }>;
+  searchParams: Promise<{ propertyId?: string; new?: string; step?: string; editStep?: string }>;
 };
 
 export default async function HostRegisterPage({ searchParams }: HostRegisterPageProps) {
@@ -31,37 +31,30 @@ export default async function HostRegisterPage({ searchParams }: HostRegisterPag
 
   const params = await searchParams;
   let initialDraft = null;
+  let initialImages: any[] = [];
 
   if (params.propertyId) {
-    const select = "*";
-    let { data: listing } = await supabase
+    const adminSupabase = await createAdminClient();
+    const select = "*, homestay_images(id, url, storage_path)";
+    const { data: listing } = await adminSupabase
       .from("homestays")
       .select(select)
       .eq("id", params.propertyId)
       .eq("owner_id", session.user.id)
       .single();
 
-    if (!listing) {
-      const adminSupabase = await createAdminClient();
-      const retry = await adminSupabase
-        .from("homestays")
-        .select(select)
-        .eq("id", params.propertyId)
-        .eq("owner_id", session.user.id)
-        .single();
-      listing = retry.data;
-    }
-
     if (listing) {
       initialDraft = convertListingToDraft(listing);
+      initialImages = listing.homestay_images || [];
     }
   }
 
   return (
     <PropertyRegistrationWizard
       initialDraft={initialDraft}
-      resumeStep={params.step ?? null}
+      resumeStep={params.editStep ?? params.step ?? null}
       userId={session.user.id}
+      initialImages={initialImages}
     />
   );
 }

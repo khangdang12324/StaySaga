@@ -33,12 +33,12 @@ import {
   X,
 } from "lucide-react";
 import { PendingSubmitButton } from "@/components/ui/PendingSubmitButton";
-import { createHostHomestay, saveDatabaseDraftAction } from "@/core/host/actions";
+import { createHostHomestay, saveDatabaseDraftAction, savePhotosStepAction, saveRegistrationStepAction, deleteHomestayImagesAction, updateImagesSortOrderAction } from "@/core/host/actions";
 
 const DB_NAME = "staysaga-host-register";
 const FILE_STORE = "files";
 const MIN_PHOTOS = 5;
-const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
 
 type Owner = {
   id: string;
@@ -131,7 +131,7 @@ type Bedroom = {
 
 type StoredPhoto = {
   id: string;
-  file: File;
+  file?: File;
   url: string;
   warning?: string;
 };
@@ -379,6 +379,35 @@ const stageForStep = (index: number) => {
   return 5; // review
 };
 
+function getStepKey(stepIndex: number): string {
+  const stepName = steps[stepIndex];
+  switch (stepName) {
+    case "category": return "propertyType";
+    case "units": return "unitMode";
+    case "confirm": return "confirm";
+    case "name": return "basicInfo";
+    case "address": return "address";
+    case "channel": return "channel";
+    case "details": return "details";
+    case "bedroom": return "rooms";
+    case "amenities": return "amenities";
+    case "services": return "services";
+    case "languages": return "languages";
+    case "policies": return "policies";
+    case "partner-profile": return "partnerProfile";
+    case "photos": return "photos";
+    case "booking": return "booking";
+    case "price": return "price";
+    case "availability": return "availability";
+    case "rates": return "rates";
+    case "non-refundable": return "nonRefundable";
+    case "group-pricing": return "groupPricing";
+    case "legal": return "verification";
+    case "review": return "review";
+    default: return String(stepName);
+  }
+}
+
 const formatVnd = (amount: number) =>
   new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -395,13 +424,13 @@ const totalBeds = (bedrooms: Bedroom[]) =>
   bedrooms.reduce(
     (sum, room) =>
       sum +
-      room.single +
-      room.double +
-      room.king +
-      room.superKing +
-      room.bunk +
-      room.sofa +
-      room.futon,
+      (Number(room.single) || 0) +
+      (Number(room.double) || 0) +
+      (Number(room.king) || 0) +
+      (Number(room.superKing) || 0) +
+      (Number(room.bunk) || 0) +
+      (Number(room.sofa) || 0) +
+      (Number(room.futon) || 0),
     0,
   );
 
@@ -411,11 +440,28 @@ const photoWarning = (file: File, existing: StoredPhoto[]) => {
   if (file.size < 20 * 1024) return "Ảnh quá nhỏ";
   if (
     existing.some(
-      (photo) => photo.file.name === file.name && photo.file.size === file.size,
+      (photo) => photo.file && photo.file.name === file.name && photo.file.size === file.size,
     )
   )
     return "Ảnh bị trùng";
   return undefined;
+};
+
+const checkImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || !window.URL) {
+      resolve({ width: 0, height: 0 });
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height });
+    };
+    img.onerror = () => {
+      resolve({ width: 0, height: 0 });
+    };
+    img.src = URL.createObjectURL(file);
+  });
 };
 
 function openFileDb(): Promise<IDBDatabase | null> {
@@ -582,10 +628,12 @@ export default function PropertyRegistrationWizard({
   initialDraft,
   resumeStep,
   userId,
+  initialImages = [],
 }: {
   initialDraft?: Draft | null;
   resumeStep?: string | null;
   userId: string;
+  initialImages?: { id: string; url: string; storage_path: string | null }[];
 }) {
   const DRAFT_KEY = `staysaga-host-register-v9-${userId}`;
   const [draft, setDraft] = useState<Draft>(() =>
@@ -599,7 +647,11 @@ export default function PropertyRegistrationWizard({
   );
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [restored, setRestored] = useState(false);
+  const [lastLoadedId, setLastLoadedId] = useState<string | undefined>(undefined);
+  const isInitializingRef = useRef(false);
   const [dragActive, setDragActive] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   
   // New States for Confirmation / Warning modals
   const [showLeaveModal, setShowLeaveModal] = useState(false);
@@ -675,6 +727,7 @@ export default function PropertyRegistrationWizard({
     const targetIdx = steps.indexOf(targetStep as WizardStep);
     if (targetIdx !== -1) {
       if (targetIdx <= currentStep) {
+        setDraft((prev) => ({ ...prev, currentStep: targetIdx }));
         setCurrentStep(targetIdx);
         window.scrollTo({ top: 0, behavior: "smooth" });
         return;
@@ -686,6 +739,7 @@ export default function PropertyRegistrationWizard({
 
   const handleConfirmLeave = () => {
     if (targetStepIndex !== null) {
+      setDraft((prev) => ({ ...prev, currentStep: targetStepIndex }));
       setCurrentStep(targetStepIndex);
     }
     setShowLeaveModal(false);
@@ -699,21 +753,28 @@ export default function PropertyRegistrationWizard({
   };
 
   useEffect(() => {
-    if (initialDraft) {
-      const mergedDraft = mergeDraftWithDefault(initialDraft);
-      const resumeStepIndex = resumeStep
-        ? steps.indexOf(resumeStep as WizardStep)
-        : -1;
-
-      setDraft(mergedDraft);
-      setActiveBedroomId(mergedDraft.bedrooms?.[0]?.id ?? "");
-      if (resumeStepIndex >= 0) {
-        setCurrentStep(resumeStepIndex);
-      } else if (typeof mergedDraft.currentStep === "number") {
-        setCurrentStep(mergedDraft.currentStep);
-      }
-      setRestored(true);
+    const currentId = initialDraft?.id || "new";
+    if (isInitializingRef.current || (restored && lastLoadedId === currentId)) {
       return;
+    }
+    isInitializingRef.current = true;
+
+    // 1. Determine DB draft and DB current step
+    const dbDraft = initialDraft ? mergeDraftWithDefault(initialDraft) : null;
+    const dbCurrentStep = dbDraft && typeof dbDraft.currentStep === "number" ? dbDraft.currentStep : 0;
+
+    let finalDraft = dbDraft || createDefaultDraft();
+    let finalCurrentStep = dbCurrentStep;
+
+    // 2. Load localStorage draft
+    let localDraft: Draft | null = null;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        localDraft = JSON.parse(raw) as Draft;
+      }
+    } catch (e) {
+      console.error("[register-resume] Failed to parse local draft:", e);
     }
 
     const startNew =
@@ -730,74 +791,133 @@ export default function PropertyRegistrationWizard({
         setCurrentStep(0);
         setAttemptedSteps({});
         setTouched({});
+        setLastLoadedId("new");
         setRestored(true);
+        isInitializingRef.current = false;
       });
       return;
     }
 
-    try {
-      const raw = localStorage.getItem(DRAFT_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Draft;
+    // 3. Merge local draft if it is newer and belongs to the same property
+    if (localDraft && dbDraft && dbDraft.id === localDraft.id) {
+      const dbUpdatedAt = (initialDraft as any)?.registration_checklist?.updatedAt || "";
+      const localUpdatedAt = (localDraft as any).updatedAt || "";
+      const isLocalNewer = !dbUpdatedAt || (localUpdatedAt && new Date(localUpdatedAt) > new Date(dbUpdatedAt));
 
-        // Auto-sanitize draft if it loaded corrupted strings
-        if (parsed.address) {
-          const hasCorrupted = parsed.address.includes("an Kia") || parsed.address.includes("?") || parsed.address.includes("\uFFFD");
-          if (hasCorrupted && parsed.address.includes("17")) {
-            parsed.address = "17 Đan Kia, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam";
-            parsed.city = "Đà Lạt";
-            parsed.district = "Lang Biang";
-            parsed.latitude = "12.0126";
-            parsed.longitude = "108.4016";
-          }
-        }
-
-        if (parsed.address) parsed.address = sanitizeText(parsed.address);
-        if (parsed.city) parsed.city = sanitizeText(parsed.city);
-        if (parsed.district) parsed.district = sanitizeText(parsed.district);
-        if (parsed.country) parsed.country = sanitizeText(parsed.country);
-        if (parsed.name) parsed.name = sanitizeText(parsed.name);
-        if (parsed.description) parsed.description = sanitizeText(parsed.description);
-        if (parsed.businessName) parsed.businessName = sanitizeText(parsed.businessName);
-        if (parsed.businessAddress) parsed.businessAddress = sanitizeText(parsed.businessAddress);
-        if (parsed.businessCity) parsed.businessCity = sanitizeText(parsed.businessCity);
-        if (parsed.businessCountry) parsed.businessCountry = sanitizeText(parsed.businessCountry);
-        if (Array.isArray(parsed.owners)) {
-          parsed.owners = parsed.owners.map(owner => ({
-            ...owner,
-            firstName: sanitizeText(owner.firstName || ""),
-            lastName: sanitizeText(owner.lastName || ""),
-          }));
-        }
-
-        setDraft({
-          ...createDefaultDraft(),
-          ...parsed,
-          bedrooms: parsed.bedrooms?.length ? parsed.bedrooms : [makeBedroom()],
-          owners: parsed.owners?.length
-            ? parsed.owners
-            : [{ id: makeId(), firstName: "", lastName: "", dateOfBirth: "" }],
-        });
-        setActiveBedroomId(parsed.bedrooms?.[0]?.id ?? "");
-        if (typeof parsed.currentStep === "number") {
-          setCurrentStep(parsed.currentStep);
-        }
+      if (isLocalNewer) {
+        finalDraft = {
+          ...dbDraft,
+          ...localDraft,
+          id: dbDraft.id, // preserve DB ID
+        };
+        const localCurrentStep = typeof localDraft.currentStep === "number" ? localDraft.currentStep : 0;
+        finalCurrentStep = Math.max(dbCurrentStep, localCurrentStep);
       }
-    } catch {
-      setDraft(createDefaultDraft());
+    } else if (localDraft && !dbDraft) {
+      finalDraft = {
+        ...createDefaultDraft(),
+        ...localDraft,
+      };
+      if (typeof localDraft.currentStep === "number") {
+        finalCurrentStep = localDraft.currentStep;
+      }
     }
 
+    // Sanitize finalDraft fields
+    if (finalDraft.address) finalDraft.address = sanitizeText(finalDraft.address);
+    if (finalDraft.city) finalDraft.city = sanitizeText(finalDraft.city);
+    if (finalDraft.district) finalDraft.district = sanitizeText(finalDraft.district);
+    if (finalDraft.country) finalDraft.country = sanitizeText(finalDraft.country);
+    if (finalDraft.name) finalDraft.name = sanitizeText(finalDraft.name);
+    if (finalDraft.description) finalDraft.description = sanitizeText(finalDraft.description);
+    if (finalDraft.businessName) finalDraft.businessName = sanitizeText(finalDraft.businessName);
+    if (finalDraft.businessAddress) finalDraft.businessAddress = sanitizeText(finalDraft.businessAddress);
+    if (finalDraft.businessCity) finalDraft.businessCity = sanitizeText(finalDraft.businessCity);
+    if (finalDraft.businessCountry) finalDraft.businessCountry = sanitizeText(finalDraft.businessCountry);
+    if (Array.isArray(finalDraft.owners)) {
+      finalDraft.owners = finalDraft.owners.map(owner => ({
+        ...owner,
+        firstName: sanitizeText(owner.firstName || ""),
+        lastName: sanitizeText(owner.lastName || ""),
+      }));
+    }
+
+    // 4. Overriding step from URL search parameters if editStep or step is present
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlStep = searchParams.get("editStep") || searchParams.get("step");
+    if (urlStep) {
+      const urlStepIndex = steps.indexOf(urlStep as WizardStep);
+      if (urlStepIndex >= 0) {
+        finalCurrentStep = urlStepIndex;
+      }
+    }
+
+    // 5. Update state
+    setDraft(finalDraft);
+    setActiveBedroomId(finalDraft.bedrooms?.[0]?.id ?? "");
+    setCurrentStep(finalCurrentStep);
+
+    // Development only logs
+    if (process.env.NODE_ENV === "development") {
+      console.log("[register-resume]", {
+        propertyId: finalDraft.id,
+        dbCurrentStep,
+        urlStep,
+        localCurrentStep: localDraft?.currentStep,
+        finalCurrentStep,
+        checklist: (initialDraft as any)?.registration_checklist,
+      });
+    }
+
+    // 6. Restore local files from IndexedDB or initialImages
     void restoreFiles(userId).then((files) => {
-      setPhotos(
-        files.map((file) => ({
-          id: makeId(),
-          file,
-          url: URL.createObjectURL(file),
-        })),
-      );
+      if (files.length > 0) {
+        setPhotos(
+          files.map((file) => ({
+            id: makeId(),
+            file,
+            url: URL.createObjectURL(file),
+          })),
+        );
+      } else if (initialImages && initialImages.length > 0) {
+        setPhotos(
+          initialImages.map((img) => ({
+            id: img.id,
+            url: img.url,
+          }) as any)
+        );
+      }
+      setLastLoadedId(currentId);
       setRestored(true);
+      isInitializingRef.current = false;
     });
-  }, []);
+  }, [initialDraft, userId, initialImages]);
+
+  useEffect(() => {
+    if (!restored) return;
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    let changed = false;
+
+    // 1. If draft has an id, ensure propertyId query param is set and 'new' is removed
+    if (draft.id && url.searchParams.get("propertyId") !== draft.id) {
+      url.searchParams.set("propertyId", draft.id);
+      url.searchParams.delete("new");
+      changed = true;
+    }
+
+    // 2. Always remove step/editStep parameters if they exist in the URL
+    if (url.searchParams.has("step") || url.searchParams.has("editStep")) {
+      url.searchParams.delete("step");
+      url.searchParams.delete("editStep");
+      changed = true;
+    }
+
+    if (changed) {
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    }
+  }, [draft.id, currentStep, restored]);
 
   useEffect(() => {
     if (!activeBedroomId && draft.bedrooms[0])
@@ -806,7 +926,10 @@ export default function PropertyRegistrationWizard({
 
   useEffect(() => {
     if (!restored) return;
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...draft, currentStep }));
+    localStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({ ...draft, currentStep, updatedAt: new Date().toISOString() }),
+    );
   }, [draft, restored, currentStep]);
 
   useEffect(() => {
@@ -830,7 +953,7 @@ export default function PropertyRegistrationWizard({
 
   useEffect(() => {
     if (!restored) return;
-    void saveFiles(photos.map((photo) => photo.file), userId);
+    void saveFiles(photos.map((photo) => photo.file).filter(Boolean) as File[], userId);
   }, [photos, restored, userId]);
 
   const updateDraft = <K extends keyof Draft>(key: K, value: Draft[K]) => {
@@ -856,6 +979,7 @@ export default function PropertyRegistrationWizard({
       return {
         ...prev,
         maxGuests: Math.max(prev.maxGuests, capacity || 1),
+        currentStep: 6,
       };
     });
     setCurrentStep(6);
@@ -902,32 +1026,185 @@ export default function PropertyRegistrationWizard({
     addPhotos(Array.from(event.dataTransfer.files ?? []));
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     setAttemptedSteps((prev) => ({ ...prev, [currentStep]: true }));
     if (!canContinue) return;
-    if (current === "details") {
-      setCurrentStep(8);
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      let nextStepVal = currentStep + 1;
+      if (current === "details") {
+        nextStepVal = 8;
+      }
+
+      // 1. Force save database draft if we don't have draft.id yet
+      let currentId = draft.id;
+      if (!currentId) {
+        const draftWithStep = { ...draft, currentStep };
+        const result = await saveDatabaseDraftAction(JSON.stringify(draftWithStep));
+        if (result && 'id' in result && result.id) {
+          currentId = result.id;
+          setDraft((prev) => ({ ...prev, id: result.id }));
+        } else {
+          throw new Error("Không thể khởi tạo bản nháp chỗ nghỉ trên hệ thống.");
+        }
+      }
+
+      const activeId = currentId as string;
+
+      // 2. Step-specific actions
+      if (current === "photos") {
+        const validPhotos = photos.filter((photo) => !photo.warning);
+
+        if (validPhotos.length === 0) {
+          throw new Error("Vui lòng tải lên ít nhất 5 ảnh để tiếp tục.");
+        }
+
+        // Delete removed photos
+        const currentIds = validPhotos.map((p) => p.id);
+        const deletedIds = (initialImages || [])
+          .map((img) => img.id)
+          .filter((id) => !currentIds.includes(id));
+        if (deletedIds.length > 0) {
+          const delRes = await deleteHomestayImagesAction(activeId, deletedIds);
+          if (delRes && 'error' in delRes && delRes.error) {
+            throw new Error(String(delRes.error));
+          }
+        }
+
+        const localFiles = validPhotos.filter((photo) => photo.file);
+
+        if (localFiles.length > 0) {
+          // Client-side dimensions check
+          for (const photo of localFiles) {
+            if (photo.file) {
+              const dims = await checkImageDimensions(photo.file);
+              if (dims.width > 0 && (dims.width < 800 || dims.height < 600)) {
+                throw new Error(`Ảnh "${photo.file.name}" quá nhỏ (${dims.width}x${dims.height}). Tối thiểu phải là 800x600 pixels.`);
+              }
+            }
+          }
+
+          // Upload each local file one-by-one
+          const updatedPhotos = [...photos];
+          for (let i = 0; i < localFiles.length; i++) {
+            const photo = localFiles[i];
+            if (photo.file) {
+              const fd = new FormData();
+              fd.append("property_id", activeId);
+              fd.append("image", photo.file);
+              
+              const sortOrder = validPhotos.findIndex(p => p.id === photo.id);
+              fd.append("sort_order", String(sortOrder >= 0 ? sortOrder : i));
+              fd.append("category", sortOrder === 0 ? "cover" : "gallery");
+
+              const uploadResult = await savePhotosStepAction(fd);
+              if (uploadResult && 'error' in uploadResult && uploadResult.error) {
+                throw new Error(String(uploadResult.error));
+              }
+              if (uploadResult && uploadResult.id && uploadResult.url) {
+                const idx = updatedPhotos.findIndex(p => p.id === photo.id);
+                if (idx >= 0) {
+                  updatedPhotos[idx] = {
+                    id: uploadResult.id,
+                    url: uploadResult.url,
+                  };
+                }
+              }
+            }
+          }
+          setPhotos(updatedPhotos);
+
+          // Update sort order for all remaining images
+          const remainingIds = updatedPhotos.map(p => p.id);
+          const sortRes = await updateImagesSortOrderAction(activeId, remainingIds);
+          if (sortRes && 'error' in sortRes && sortRes.error) {
+            console.error("Failed to update sort order:", sortRes.error);
+          }
+        } else {
+          // If no local files are being uploaded, check if we already have images in the DB
+          const dbImagesCount = validPhotos.length;
+          if (dbImagesCount === 0) {
+            throw new Error("Ảnh chưa được lưu lên hệ thống, vui lòng tải lại ảnh.");
+          }
+          
+          // Re-sort existing images if order changed
+          const remainingIds = validPhotos.map(p => p.id);
+          const sortRes = await updateImagesSortOrderAction(activeId, remainingIds);
+          if (sortRes && 'error' in sortRes && sortRes.error) {
+            console.error("Failed to update sort order:", sortRes.error);
+          }
+        }
+      }
+
+      // 3. Save the step progress and next step index to Supabase
+      const stepKey = getStepKey(currentStep);
+      const draftPatch = {
+        ...draft,
+        id: activeId,
+        currentStep: nextStepVal,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const result = await saveRegistrationStepAction({
+        propertyId: activeId,
+        stepIndex: currentStep,
+        nextStepIndex: nextStepVal,
+        stepKey,
+        draftPatch,
+      });
+
+      if (result && 'error' in result && result.error) {
+        throw new Error(String(result.error));
+      }
+
+      // Development only logs
+      if (process.env.NODE_ENV === "development") {
+        console.log("[register-save-step]", {
+          propertyId: currentId,
+          stepIndex: currentStep,
+          nextStepIndex: nextStepVal,
+          stepKey,
+          resultCurrentStep: nextStepVal,
+        });
+      }
+
+      // 4. Advance step
+      setDraft((prev) => ({ ...prev, currentStep: nextStepVal }));
+      setCurrentStep(nextStepVal);
       window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+
+    } catch (err: any) {
+      console.error("[Wizard] Failed to go to next step:", err);
+      let errMsg = err?.message || "Đã xảy ra lỗi khi lưu tiến độ.";
+      if (errMsg.includes("Failed to parse body") || errMsg.includes("Unexpected end of form")) {
+        errMsg = "Không thể tải ảnh lên. Vui lòng thử ảnh nhỏ hơn hoặc tải lại trang.";
+      }
+      setSaveError(errMsg);
+    } finally {
+      setIsSaving(false);
     }
-    setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goBack = () => {
     if (current === "amenities") {
+      setDraft((prev) => ({ ...prev, currentStep: 6 }));
       setCurrentStep(6);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    setCurrentStep((step) => Math.max(step - 1, 0));
+    const prevStepVal = Math.max(currentStep - 1, 0);
+    setDraft((prev) => ({ ...prev, currentStep: prevStepVal }));
+    setCurrentStep(prevStepVal);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const addBedroom = () => {
     const bedroom = makeBedroom({ single: 0 });
     setShowAllBedOptions(false);
-    setDraft((prev) => ({ ...prev, bedrooms: [...prev.bedrooms, bedroom] }));
+    setDraft((prev) => ({ ...prev, bedrooms: [...prev.bedrooms, bedroom], currentStep: 7 }));
     setActiveBedroomId(bedroom.id);
     setCurrentStep(7);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -936,6 +1213,7 @@ export default function PropertyRegistrationWizard({
   const selectBedroom = (id: string) => {
     setShowAllBedOptions(false);
     setActiveBedroomId(id);
+    setDraft((prev) => ({ ...prev, currentStep: 7 }));
     setCurrentStep(7);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -1028,6 +1306,11 @@ export default function PropertyRegistrationWizard({
               : "mx-auto w-full max-w-[1200px] px-4 py-8 lg:ml-[110px] flex-1"
           }
         >
+          {current !== "address" && saveError && (
+            <div className="mb-6 w-full max-w-[560px] border border-rose-300 bg-rose-50 px-4 py-3 font-semibold text-rose-700 rounded-sm">
+              ⚠️ {saveError}
+            </div>
+          )}
           {current === "category" ? (
             <section className="max-w-[1180px] py-6">
               <h1 className="max-w-[900px] text-[34px] font-bold leading-tight tracking-tight text-gray-950">
@@ -1083,6 +1366,8 @@ export default function PropertyRegistrationWizard({
               updateDraftFields={updateDraftFields}
               onBack={goBack}
               onNext={goNext}
+              isSaving={isSaving}
+              saveError={saveError}
             />
           ) : (
             <div className="grid max-w-[980px] grid-cols-1 gap-7 lg:grid-cols-[560px_340px]">
@@ -1101,12 +1386,12 @@ export default function PropertyRegistrationWizard({
                     onNext={current === "bedroom" ? saveBedroom : goNext}
                     isLast={current === "review"}
                     canContinue={
-                      current === "review" ? finalErrors.length === 0 : canContinue
+                      (current === "review" ? finalErrors.length === 0 : canContinue) && !isSaving
                     }
                     pendingText="Đang gửi duyệt..."
                     confirmMessage="Sau khi gửi duyệt, quản trị viên StaySaga sẽ kiểm tra thông tin chỗ nghỉ trước khi hiển thị công khai."
                     onNotReady={() => setShowNotReadyModal(true)}
-                    nextLabel={current === "bedroom" ? "Lưu" : "Tiếp tục"}
+                    nextLabel={isSaving ? "Đang lưu..." : (current === "bedroom" ? "Lưu" : "Tiếp tục")}
                     backLabel={current === "bedroom" ? "Hủy" : undefined}
                   />
                 ) : null}
@@ -1260,9 +1545,10 @@ export default function PropertyRegistrationWizard({
               <button
                 type="button"
                 onClick={goNext}
-                className="mt-4 w-full rounded-sm bg-[#f60057] py-4 font-bold text-white"
+                disabled={isSaving}
+                className="mt-4 w-full rounded-sm bg-[#f60057] py-4 font-bold text-white disabled:bg-gray-300 disabled:text-gray-500 cursor-pointer disabled:cursor-not-allowed"
               >
-                Tiếp tục
+                {isSaving ? "Đang lưu..." : "Tiếp tục"}
               </button>
               <button
                 type="button"
@@ -1809,7 +2095,7 @@ export default function PropertyRegistrationWizard({
                         </button>
                         <img
                           src={photo.url}
-                          alt={photo.file.name}
+                          alt={photo.file?.name || "Ảnh chỗ nghỉ"}
                           className="h-48 w-full object-cover"
                         />
                         {photo.warning ? (
@@ -3484,6 +3770,8 @@ function AddressStep({
   updateDraftFields,
   onBack,
   onNext,
+  isSaving = false,
+  saveError = null,
 }: {
   draft: Draft;
   mapQuery: string;
@@ -3495,6 +3783,8 @@ function AddressStep({
   updateDraftFields: (fields: Partial<Draft>) => void;
   onBack: () => void;
   onNext: () => void;
+  isSaving?: boolean;
+  saveError?: string | null;
 }) {
   const [mapType, setMapType] = useState<"map" | "satellite">("map");
   const [, setMapAddress] = useState(mapQuery || DEFAULT_MAP_ADDRESS);
@@ -3784,6 +4074,17 @@ function AddressStep({
         </h1>
 
         <div className="w-full overflow-y-auto border border-gray-200 bg-white px-4 pb-4 pt-4 shadow-sm pointer-events-auto sm:max-h-[calc(100%-126px)] sm:max-w-[625px] sm:px-5 sm:pb-4 sm:pt-4">
+          {saveError && (
+            <div className="mb-4 border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 rounded-sm">
+              ⚠️ {saveError}
+            </div>
+          )}
+          {isSaving && (
+            <div className="mb-3 text-sm text-gray-600 font-semibold flex items-center gap-2">
+              <span className="animate-spin inline-block h-4 w-4 border-2 border-[#f60057] border-t-transparent rounded-full" />
+              Đang lưu tiến độ...
+            </div>
+          )}
           <label className="block text-base font-bold text-gray-950">
             Tìm địa chỉ của Quý vị
           </label>
@@ -3937,14 +4238,14 @@ function AddressStep({
           <button
             type="button"
             onClick={handleContinue}
-            disabled={!canContinue}
+            disabled={!canContinue || isSaving}
             className={`h-14 flex-1 rounded-sm font-bold text-white ${
-              canContinue
+              canContinue && !isSaving
                 ? "bg-[#f60057] hover:bg-[#d9004c]"
                 : "cursor-not-allowed bg-gray-300 text-gray-500"
             }`}
           >
-            Tiếp tục
+            {isSaving ? "Đang lưu..." : "Tiếp tục"}
           </button>
         </div>
       </div>

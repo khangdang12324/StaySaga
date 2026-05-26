@@ -33,6 +33,7 @@ import SafeImage from "@/components/ui/SafeImage";
 import { getHotelBySlug, getAllHotels } from "@/lib/hotel-parser";
 import { resolveHotelGallery } from "@/lib/hotel-images";
 import { cn } from "@/lib/utils";
+import RoomBookingControl from "./RoomBookingControl";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -174,7 +175,7 @@ export default async function HotelDetailPage({ params }: Props) {
     <div className="min-h-screen bg-white text-zinc-950">
       <main className="mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 lg:px-8">
         {/* Breadcrumbs */}
-        <nav className="mb-4 flex flex-wrap items-center gap-2 text-[13px] text-sky-600">
+        <nav className="mb-4 flex flex-wrap items-center gap-2 text-[13px] text-rose-600">
           <Link href="/" className="hover:underline">Home</Link>
           <ChevronRight className="h-3 w-3 text-zinc-400" />
           <Link href="/destinations" className="hover:underline">Vietnam</Link>
@@ -212,7 +213,7 @@ export default async function HotelDetailPage({ params }: Props) {
             <div className="mb-2 flex items-center gap-2">
               <div className="flex">
                 {[1, 2].map((i) => (
-                  <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  <Star key={i} className="h-3 w-3 fill-rose-500 text-rose-500" />
                 ))}
               </div>
             </div>
@@ -301,8 +302,8 @@ Các cặp đôi đặc biệt thích địa điểm này — họ cho điểm 8
                    { icon: Clock3, label: "Lễ tân 24 giờ" },
                    { icon: Coffee, label: "Quầy bar" },
                  ].map((item) => (
-                   <div key={item.label} className="flex items-center gap-2.5 text-sm font-medium text-green-700">
-                     <item.icon className="h-5 w-5 text-green-600" />
+                   <div key={item.label} className="flex items-center gap-2.5 text-sm font-medium text-rose-700">
+                     <item.icon className="h-5 w-5 text-rose-600" />
                      {item.label}
                    </div>
                  ))}
@@ -348,31 +349,21 @@ Các cặp đôi đặc biệt thích địa điểm này — họ cho điểm 8
                            <div className="text-[11px] text-rose-500 line-through">{formatPrice(room.original)}</div>
                            <div className="text-xl font-bold text-zinc-900">{formatPrice(room.price)}</div>
                            <div className="text-[10px] text-zinc-500">Đã bao gồm thuế và phí</div>
-                           <div className="mt-1 inline-block rounded bg-green-600 px-1 py-0.5 text-[10px] font-bold text-white uppercase">Tiết kiệm {room.savings}</div>
+                           <div className="mt-1 inline-block rounded bg-rose-600 px-1 py-0.5 text-[10px] font-bold text-white uppercase">Tiết kiệm {room.savings}</div>
                          </td>
                          <td className="px-4 py-6 align-top space-y-3">
                            <div className="text-[13px] font-medium text-zinc-700">Phí hủy: Toàn bộ tiền phòng</div>
-                           <div className="text-[13px] font-bold text-green-700">Không cần thanh toán trước - thanh toán tại chỗ nghỉ</div>
-                           <div className="text-[13px] font-medium text-green-700">Không cần thẻ tín dụng</div>
+                           <div className="text-[13px] font-bold text-rose-700">Không cần thanh toán trước - thanh toán tại chỗ nghỉ</div>
+                           <div className="text-[13px] font-medium text-rose-700">Không cần thẻ tín dụng</div>
                            {room.left && (
                               <div className="text-[11px] font-bold text-rose-600">• Chúng tôi còn {room.left} căn</div>
                            )}
                          </td>
                          <td className="px-4 py-6 align-top">
-                            <div className="flex flex-col gap-4">
-                              <select className="w-full rounded border border-zinc-300 p-1.5 focus:ring-1 focus:ring-rose-500">
-                                <option>0</option>
-                                <option>1</option>
-                                <option>2</option>
-                              </select>
-                              <Link 
-                                href={`/checkout/${hotel.slug || hotel.id}?checkIn=${defaultCheckInParam}&checkOut=${defaultCheckOutParam}&guests=2`}
-                                className="w-full text-center rounded bg-rose-600 px-4 py-3 text-[15px] font-bold text-white hover:bg-rose-700 transition-colors shadow-sm"
-                              >
-                                Tôi sẽ đặt
-                              </Link>
-                              <div className="text-[10px] text-zinc-500 text-center">Chỉ mất 2 phút. Không cần thẻ tín dụng.</div>
-                            </div>
+                            <RoomBookingControl
+                              href={`/checkout/${hotel.slug || hotel.id}?checkIn=${defaultCheckInParam}&checkOut=${defaultCheckOutParam}&guests=2`}
+                              maxRooms={room.left || 2}
+                            />
                          </td>
                        </tr>
                      ))}

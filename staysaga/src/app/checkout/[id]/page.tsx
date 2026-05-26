@@ -4,7 +4,6 @@ import {
   CreditCard,
   Shield,
   Check,
-  Lock,
   Calendar,
   MapPin,
   Users,
@@ -16,6 +15,7 @@ import {
   Wifi,
   CarFront,
   Clock3,
+  Hotel,
 } from "lucide-react";
 import Link from "next/link";
 import { getPropertyBySlug } from "@/core/properties/actions";
@@ -27,6 +27,7 @@ import { createClient } from "@/lib/supabase/server";
 import SafeImage from "@/components/ui/SafeImage";
 import { getLocationImage } from "@/lib/images/location-images";
 import { cn } from "@/lib/utils";
+import CheckoutSubmitButton from "./CheckoutSubmitButton";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -52,6 +53,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     ? parseInt(resolvedSearchParams.guests)
     : 1;
   const stepParam = resolvedSearchParams.step;
+  const bookingError = resolvedSearchParams.bookingError;
   const firstName = resolvedSearchParams.firstName || "";
   const lastName = resolvedSearchParams.lastName || "";
   const email = resolvedSearchParams.email || session.user.email || "";
@@ -91,6 +93,19 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     property.image ||
     (property as any).images?.[0]?.url ||
     getLocationImage(property.location || (property as any).city);
+  const canPayAtProperty = Boolean(
+    (property as any).no_prepayment ||
+      String((property as any).prepayment_policy || "")
+        .toLowerCase()
+        .includes("không cần thanh toán trước"),
+  );
+  const bookingErrorMessages: Record<string, string> = {
+    auth: "Bạn cần đăng nhập để đặt phòng.",
+    unavailable: "Chỗ nghỉ này hiện không thể đặt.",
+    invalid_date: "Ngày nhận phòng không hợp lệ.",
+    guest_required: "Vui lòng nhập đầy đủ thông tin khách.",
+    create_failed: "Không thể tạo đơn đặt phòng, vui lòng thử lại.",
+  };
 
   const steps = [
     { id: 1, label: "Bạn chọn", active: false, done: true },
@@ -213,10 +228,21 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                 </div>
              </div>
 
+             {canPayAtProperty && (
+               <div className="bg-white rounded-lg border border-zinc-200 p-4">
+                  <h4 className="font-bold text-sm mb-4">Lịch thanh toán của bạn</h4>
+                  <p className="text-[13px] leading-6 text-green-700">Không cần thanh toán hôm nay. Bạn sẽ trả khi đến nghỉ.</p>
+               </div>
+             )}
+
              {/* Cancellation Info */}
              <div className="bg-white rounded-lg border border-zinc-200 p-4">
                 <h4 className="font-bold text-sm mb-2">Chi phí hủy là bao nhiêu?</h4>
-                <p className="text-[13px] text-zinc-600">Nếu hủy, bạn sẽ phải thanh toán VND {totalAmount.toLocaleString("vi-VN")}</p>
+                <p className={cn("text-[13px]", canPayAtProperty ? "text-green-700" : "text-zinc-600")}>
+                  {canPayAtProperty
+                    ? "Miễn phí hủy bất kỳ lúc nào"
+                    : `Nếu hủy, bạn sẽ phải thanh toán VND ${totalAmount.toLocaleString("vi-VN")}`}
+                </p>
              </div>
           </aside>
 
@@ -236,8 +262,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
              )}
 
               <form
-                action={activeStep === "finish" ? finishBooking : `/checkout/${resolvedParams.id}`}
-                method={activeStep === "finish" ? "POST" : "GET"}
+                {...(activeStep === "finish"
+                  ? { action: finishBooking }
+                  : { action: `/checkout/${resolvedParams.id}`, method: "GET" })}
                 className="space-y-6"
               >
                 <input type="hidden" name="checkIn" value={checkIn} />
@@ -246,7 +273,7 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                  <input type="hidden" name="step" value="finish" />
                  <input type="hidden" name="propertyId" value={String(property.id || resolvedParams.id)} />
                  <input type="hidden" name="slug" value={resolvedParams.id} />
-                 <input type="hidden" name="paymentMethod" value="pay_at_property" />
+                 <input type="hidden" name="roomId" value={resolvedSearchParams.roomId || ""} />
 
                 {activeStep !== "finish" ? (
                  <>
@@ -285,7 +312,16 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                          <label className="text-sm font-bold">Số điện thoại*</label>
                          <div className="flex gap-2">
                             <div className="w-24 border border-zinc-300 rounded px-2 py-2 text-sm flex items-center justify-between text-zinc-600 bg-zinc-50">+84</div>
-                            <input name="phone" className="flex-1 border border-zinc-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-rose-600 outline-none" defaultValue={phone} placeholder="0918 254 910" required />
+                            <input
+                              name="phone"
+                              type="tel"
+                              inputMode="tel"
+                              autoComplete="off"
+                              className="flex-1 border border-zinc-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-rose-600 outline-none"
+                              defaultValue={phone}
+                              placeholder="Nhập số điện thoại"
+                              required
+                            />
                          </div>
                          <p className="text-[11px] text-zinc-500">Để xác minh đơn đặt và để chỗ nghỉ liên lạc khi cần</p>
                       </div>
@@ -356,6 +392,18 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                          <option value="14:00 - 15:00">14:00 - 15:00</option>
                          <option value="15:00 - 16:00">15:00 - 16:00</option>
                          <option value="16:00 - 17:00">16:00 - 17:00</option>
+                         <option value="17:00 - 18:00">17:00 - 18:00</option>
+                         <option value="18:00 - 19:00">18:00 - 19:00</option>
+                         <option value="19:00 - 20:00">19:00 - 20:00</option>
+                         <option value="20:00 - 21:00">20:00 - 21:00</option>
+                         <option value="21:00 - 22:00">21:00 - 22:00</option>
+                         <option value="22:00 - 23:00">22:00 - 23:00</option>
+                         <option value="23:00 - 00:00">23:00 - 00:00</option>
+                         <option value="00:00 - 01:00">00:00 - 01:00</option>
+                         <option value="01:00 - 02:00">01:00 - 02:00</option>
+                         <option value="02:00 - 06:00">02:00 - 06:00</option>
+                         <option value="06:00 - 10:00">06:00 - 10:00</option>
+                         <option value="Tôi chưa biết">Tôi chưa biết</option>
                       </select>
                       <p className="text-[11px] text-zinc-500">Thời gian theo múi giờ của Đà Lạt</p>
                    </div>
@@ -374,30 +422,137 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                   <input type="hidden" name="email" value={email} />
                   <input type="hidden" name="phone" value={phone} />
                   <input type="hidden" name="country" value={country} />
+                  <input type="hidden" name="paymentMethod" value={canPayAtProperty ? "pay_at_property" : "visa"} />
                   
                   {/* Step 3: Hoàn tất đặt phòng */}
-                  <div className="bg-white rounded-lg border border-zinc-200 p-6 shadow-sm flex items-start gap-4">
-                     <div className="flex-1">
-                        <h2 className="text-lg font-bold mb-2">Không yêu cầu thông tin thanh toán</h2>
-                        <p className="text-[13px] text-zinc-600">Thanh toán của bạn sẽ do <span className="font-bold">{property.title}</span> xử lý, nên bạn không cần nhập thông tin thanh toán cho đơn đặt này.</p>
-                     </div>
-                     <div className="w-16 h-16 shrink-0">
-                        <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200 shadow-sm flex items-center justify-center">
-                           <CreditCard className="w-8 h-8 text-yellow-600" />
+                  {canPayAtProperty ? (
+                    <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+                      <div className="flex items-start gap-5">
+                        <div className="flex-1">
+                          <h2 className="mb-3 text-xl font-bold">Không yêu cầu thông tin thanh toán</h2>
+                          <p className="text-[15px] leading-7 text-zinc-800">
+                            Thanh toán của bạn sẽ do <span className="font-bold">{property.title}</span> xử lý, nên bạn không cần nhập thông tin thanh toán cho đơn đặt này.
+                          </p>
                         </div>
-                     </div>
+                        <div className="hidden rounded-lg bg-rose-50 p-4 sm:block">
+                          <CreditCard className="h-10 w-10 text-rose-600" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                  <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+                    <h2 className="mb-5 text-xl font-bold">Bạn muốn thanh toán bằng cách nào?</h2>
+                    <div className={cn(
+                      "grid gap-4",
+                      canPayAtProperty ? "sm:grid-cols-2" : "sm:grid-cols-1",
+                    )}>
+                      <label className="group relative cursor-pointer rounded-lg border-2 border-zinc-200 bg-white p-4 shadow-sm transition hover:border-rose-300 hover:shadow-md has-[:checked]:border-rose-600">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="visa"
+                          defaultChecked
+                          className="peer absolute left-4 top-4 h-5 w-5 accent-rose-600"
+                        />
+                        <div className="flex min-h-28 flex-col items-center justify-center gap-3 px-4 pt-4">
+                          <span className="text-4xl font-black italic tracking-tight text-[#1a1f71]">VISA</span>
+                          <span className="text-sm font-semibold text-zinc-700">Thanh toán bằng thẻ Visa</span>
+                        </div>
+                      </label>
+
+                      {canPayAtProperty && (
+                        <label className="group relative cursor-pointer rounded-lg border-2 border-zinc-200 bg-white p-4 shadow-sm transition hover:border-rose-300 hover:shadow-md has-[:checked]:border-rose-600">
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="pay_at_property"
+                            className="peer absolute left-4 top-4 h-5 w-5 accent-rose-600"
+                          />
+                          <div className="flex min-h-28 flex-col items-center justify-center gap-3 px-4 pt-4 text-center">
+                            <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
+                              <Hotel className="h-9 w-9 text-rose-600" />
+                            </div>
+                            <span className="text-sm font-semibold text-zinc-700">Thanh toán tại khách sạn</span>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+
+                    {!canPayAtProperty && (
+                      <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+                        Chỗ nghỉ này yêu cầu thanh toán trước, vì vậy hiện chỉ hỗ trợ thanh toán bằng Visa.
+                      </p>
+                    )}
+
+                    <div className="mt-6 rounded-lg bg-zinc-50 p-4">
+                      <h3 className="mb-3 text-base font-bold">Thông tin thẻ</h3>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-2 md:col-span-2">
+                          <label className="text-sm font-bold">Tên chủ thẻ *</label>
+                          <input
+                            name="cardHolder"
+                            defaultValue={`${firstName} ${lastName}`.trim()}
+                            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-rose-600"
+                          />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <label className="text-sm font-bold">Số thẻ *</label>
+                          <div className="flex items-center gap-2 rounded border border-zinc-300 bg-white px-3 py-2">
+                            <CreditCard className="h-5 w-5 text-zinc-500" />
+                            <input
+                              name="cardNumber"
+                              inputMode="numeric"
+                              autoComplete="cc-number"
+                              placeholder="•••• •••• •••• ••••"
+                              className="w-full text-sm outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold">Ngày hết hạn *</label>
+                          <input
+                            name="cardExpiry"
+                            inputMode="numeric"
+                            autoComplete="cc-exp"
+                            placeholder="MM / YY"
+                            className="w-full rounded border border-zinc-300 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-rose-600"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold">CVC *</label>
+                          <div className="flex items-center gap-2 rounded border border-zinc-300 bg-white px-3 py-2">
+                            <CreditCard className="h-5 w-5 text-zinc-500" />
+                            <input
+                              name="cardCvc"
+                              inputMode="numeric"
+                              autoComplete="cc-csc"
+                              className="w-full text-sm outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {canPayAtProperty && (
+                        <p className="mt-3 text-[12px] text-zinc-500">
+                          Nếu chọn thanh toán tại khách sạn, bạn không cần nhập thông tin thẻ.
+                        </p>
+                      )}
+                    </div>
                   </div>
+                  )}
 
                   <div className="space-y-4">
                      <p className="text-[13px] text-zinc-700 leading-relaxed">
                         Đặt phòng của bạn là đặt phòng trực tiếp với <span className="font-bold">{property.title}</span> và bằng việc hoàn tất đặt phòng này, bạn đồng ý với <a href="#" className="text-rose-600 font-bold hover:underline">điều kiện đặt phòng</a>, <a href="#" className="text-rose-600 font-bold hover:underline">điều khoản chung</a> và <a href="#" className="text-rose-600 font-bold hover:underline">chính sách bảo mật</a>.
                      </p>
 
+                     {bookingError && bookingErrorMessages[bookingError] ? (
+                       <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-semibold text-red-700">
+                         {bookingErrorMessages[bookingError]}
+                       </p>
+                     ) : null}
+
                      <div className="flex justify-end pt-2">
-                        <button type="submit" className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-8 py-3 rounded text-[15px] shadow-sm hover:shadow-md transition-all active:scale-[0.98] flex items-center gap-2">
-                           <Lock className="w-4 h-4" />
-                           Hoàn tất đặt chỗ
-                        </button>
+                        <CheckoutSubmitButton />
                      </div>
 
                      <div className="flex justify-end">

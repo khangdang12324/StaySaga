@@ -225,7 +225,12 @@ export default function Navbar() {
 
   const t = (vi: string, en: string) => (lang === "EN" ? en : vi);
 
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/host")) {
+  if (
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/host") ||
+    pathname?.startsWith("/bookings") ||
+    pathname?.startsWith("/messages")
+  ) {
     return null;
   }
 
@@ -256,7 +261,7 @@ export default function Navbar() {
         transition={{ duration: 0.5 }}
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out",
-          "bg-gradient-to-r from-pink-600 to-rose-500 text-white py-4 shadow-lg",
+          "bg-gradient-to-r from-rose-700 via-rose-600 to-red-500 text-white py-4 shadow-lg",
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -452,7 +457,7 @@ export default function Navbar() {
                         className="w-7 h-7 rounded-full object-cover border border-zinc-200"
                       />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-[#febb02] text-rose-900 flex items-center justify-center font-bold text-xs">
+                      <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs">
                         {userName[0].toUpperCase()}
                       </div>
                     )}

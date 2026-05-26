@@ -38,7 +38,24 @@ export type HostListing = {
   deleted_at?: string | null;
   deleted_by?: string | null;
   suspended_reason?: string | null;
+  property_type?: string | null;
+  owner_name?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
   created_at: string;
+  registration_checklist?: {
+    currentStep?: number;
+    completedSteps?: Record<string, boolean>;
+    updatedAt?: string;
+    draftState?: any;
+    images?: boolean;
+    basic?: boolean;
+    location?: boolean;
+    rooms?: boolean;
+    pricing?: boolean;
+    amenities?: boolean;
+    policies?: boolean;
+  } | null;
   homestay_images?: {
     id: string;
     url: string;
@@ -223,29 +240,12 @@ async function uploadImage(
   const imagePayload = {
     homestay_id: homestayId,
     url: data.publicUrl,
-    image_url: data.publicUrl,
     storage_path: storagePath,
-    alt: file.name,
-    is_cover: sortOrder === 0,
+    is_primary: sortOrder === 0,
     sort_order: sortOrder,
-    category,
   };
 
   let { error: imageError } = await supabase.from("homestay_images").insert(imagePayload);
-
-  const imageErrorMessage = String(imageError?.message || "").toLowerCase();
-  if (
-    imageError &&
-    ["storage_path", "image_url", "is_cover", "sort_order", "category", "alt"].some((column) =>
-      imageErrorMessage.includes(column),
-    )
-  ) {
-    const retry = await supabase.from("homestay_images").insert({
-      homestay_id: homestayId,
-      url: data.publicUrl,
-    });
-    imageError = retry.error;
-  }
 
   if (imageError) {
     await supabase.storage.from(IMAGE_BUCKET).remove([storagePath]);
@@ -324,22 +324,22 @@ async function fetchHostListings(
   userId: string,
 ): Promise<HostListing[]> {
   const baseSelect =
-    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, created_at, homestay_images(id, url, storage_path)";
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, created_at, registration_checklist, homestay_images(id, url, storage_path)";
   const extendedSelect =
-    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, homestay_images(id, url, storage_path)";
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, registration_checklist, homestay_images(id, url, storage_path)";
   const noStorageExtendedSelect =
-    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, homestay_images(id, url)";
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, avg_rating, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, registration_checklist, homestay_images(id, url)";
   
   // Omit avg_rating (since avg_rating is not a column on homestays table)
   const noRatingExtendedSelect =
-    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, homestay_images(id, url, storage_path)";
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, registration_checklist, homestay_images(id, url, storage_path)";
   const noRatingNoStorageExtendedSelect =
-    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, homestay_images(id, url)";
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, status, rejection_reason, delete_reason, delete_requested_at, delete_requested_by, deleted_at, deleted_by, suspended_reason, created_at, registration_checklist, homestay_images(id, url)";
 
   const noStorageBaseSelect =
-    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, created_at, homestay_images(id, url)";
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, created_at, registration_checklist, homestay_images(id, url)";
   const noRelationBaseSelect =
-    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, created_at";
+    "id, slug, name, description, address, city, country, price_per_night, max_guests, bedrooms, beds, bathrooms, is_active, created_at, registration_checklist";
 
   for (const select of [
     extendedSelect,
@@ -365,11 +365,8 @@ async function fetchHostListings(
 export async function getHostDashboardData(): Promise<HostDashboardData> {
   const { supabase, user } = await getCurrentPartner();
 
-  let listings = await fetchHostListings(supabase, user.id);
-  if (listings.length === 0) {
-    const adminSupabase = await createAdminClient();
-    listings = await fetchHostListings(adminSupabase, user.id);
-  }
+  const adminSupabase = await createAdminClient();
+  const listings = await fetchHostListings(adminSupabase, user.id);
 
   const listingIds = (listings || []).map((listing) => listing.id);
   let totalRevenue = 0;
@@ -812,6 +809,28 @@ export async function saveDatabaseDraftAction(draftJson: string) {
   const city = draft.city || "Việt Nam";
   const price = Number(draft.price || 0);
 
+  const adminSupabase = await createAdminClient();
+
+  // Read existing checklist to preserve images flag and max currentStep
+  let existingChecklistObj: Record<string, any> = {};
+  let existingImages = false;
+  let existingSavedStep = 0;
+  let existingCompletedSteps: Record<string, boolean> = {};
+  if (draft.id) {
+    const { data: existing } = await adminSupabase
+      .from("homestays")
+      .select("registration_checklist")
+      .eq("id", draft.id)
+      .maybeSingle();
+    const ec = existing?.registration_checklist as Record<string, unknown> | null;
+    if (ec) {
+      existingChecklistObj = ec;
+      existingImages = ec.images === true;
+      existingSavedStep = Number(ec.currentStep || 0);
+      existingCompletedSteps = (ec.completedSteps as Record<string, boolean>) || {};
+    }
+  }
+
   const payload: any = {
     owner_id: user.id,
     slug: createSlug(name) + (draft.id ? "" : `-${Math.random().toString(36).substring(2, 6)}`),
@@ -832,14 +851,20 @@ export async function saveDatabaseDraftAction(draftJson: string) {
     is_active: false,
     status: "DRAFT" as const,
     registration_checklist: {
-      currentStep: draft.currentStep || 0,
+      ...existingChecklistObj,
+      currentStep: Math.max(draft.currentStep || 0, existingSavedStep),
       draftState: draft,
-      basic: Boolean(name && draft.description),
-      location: Boolean(city && draft.address),
-      images: false,
-      rooms: price > 0,
-      pricing: price > 0,
-      amenities: (draft.amenities?.length || 0) > 0,
+      completedSteps: {
+        ...existingCompletedSteps,
+      },
+      updatedAt: new Date().toISOString(),
+      basic: Boolean(name && draft.description) || existingCompletedSteps.basicInfo === true || existingChecklistObj.basic === true,
+      location: Boolean(city && draft.address) || existingCompletedSteps.address === true || existingChecklistObj.location === true,
+      // Preserve images:true once set by savePhotosStepAction
+      images: existingImages || (draft.currentStep || 0) > 13 || existingCompletedSteps.photos === true || existingChecklistObj.images === true,
+      rooms: price > 0 || existingCompletedSteps.rooms === true || existingChecklistObj.rooms === true,
+      pricing: price > 0 || existingCompletedSteps.price === true || existingChecklistObj.pricing === true,
+      amenities: (draft.amenities?.length || 0) > 0 || existingCompletedSteps.amenities === true || existingChecklistObj.amenities === true,
       policies: true,
     },
   };
@@ -847,8 +872,7 @@ export async function saveDatabaseDraftAction(draftJson: string) {
   if (draft.latitude) payload.latitude = Number(draft.latitude);
   if (draft.longitude) payload.longitude = Number(draft.longitude);
 
-  const adminSupabase = await createAdminClient();
-  
+
   let result;
   if (draft.id) {
     const { data, error } = await supabase
@@ -880,6 +904,353 @@ export async function saveDatabaseDraftAction(draftJson: string) {
   revalidatePath("/host");
   revalidatePath("/host/list");
   return { id: result.data.id };
+}
+
+/**
+ * Called by the wizard when the user successfully passes the photos step.
+ * Uploads all provided image Files to Supabase Storage and marks
+ * registration_checklist.images = true so the dashboard shows the correct
+ * progress % and resume step.
+ */
+function getImageDimensions(buffer: Buffer): { width: number; height: number } | null {
+  try {
+    // PNG
+    if (buffer.readUInt32BE(0) === 0x89504E47 && buffer.readUInt32BE(4) === 0x0D0A1A0A) {
+      const width = buffer.readUInt32BE(16);
+      const height = buffer.readUInt32BE(20);
+      return { width, height };
+    }
+
+    // JPEG
+    if (buffer.readUInt16BE(0) === 0xFFD8) {
+      let offset = 2;
+      while (offset < buffer.length) {
+        const marker = buffer.readUInt16BE(offset);
+        offset += 2;
+        const isSOF = (marker >= 0xFFC0 && marker <= 0xFFC3) || 
+                      (marker >= 0xFFC5 && marker <= 0xFFC7) || 
+                      (marker >= 0xFFC9 && marker <= 0xFFCB) || 
+                      (marker >= 0xFFCD && marker <= 0xFFCF);
+        if (isSOF) {
+          offset += 2; // skip length
+          offset += 1; // skip data precision
+          const height = buffer.readUInt16BE(offset);
+          offset += 2;
+          const width = buffer.readUInt16BE(offset);
+          return { width, height };
+        } else {
+          if (offset + 2 > buffer.length) break;
+          const length = buffer.readUInt16BE(offset);
+          offset += length;
+        }
+      }
+    }
+
+    // WEBP
+    if (buffer.readUInt32BE(0) === 0x52494646 && buffer.readUInt32BE(8) === 0x57454250) {
+      const type = buffer.toString("ascii", 12, 16);
+      if (type === "VP8 ") {
+        const width = buffer.readUInt16LE(26) & 0x3FFF;
+        const height = buffer.readUInt16LE(28) & 0x3FFF;
+        return { width, height };
+      } else if (type === "VP8L") {
+        const val = buffer.readUInt32LE(21);
+        const width = (val & 0x3FFF) + 1;
+        const height = ((val >> 14) & 0x3FFF) + 1;
+        return { width, height };
+      } else if (type === "VP8X") {
+        const width = buffer.readUIntLE(24, 3) + 1;
+        const height = buffer.readUIntLE(27, 3) + 1;
+        return { width, height };
+      }
+    }
+  } catch (e) {
+    console.error("Error reading image dimensions from buffer", e);
+  }
+  return null;
+}
+
+/**
+ * Called by the wizard when uploading a single photo.
+ * Validates file type, size, and dimensions, then uploads to storage and inserts to DB.
+ */
+export async function savePhotosStepAction(formData: FormData) {
+  try {
+    const { supabase, user } = await getCurrentPartner();
+    const propertyId = formData.get("property_id") as string | null;
+    const file = formData.get("image") as File | null;
+    const sortOrder = Number(formData.get("sort_order") || 0);
+    const category = (formData.get("category") as string) || "gallery";
+
+    if (!propertyId) {
+      return { error: "Không tìm thấy mã chỗ nghỉ." };
+    }
+    if (!file || file.size === 0) {
+      return { error: "Không có file ảnh được gửi lên." };
+    }
+
+    // 1. Validate Mime Type
+    const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedMimeTypes.includes(file.type)) {
+      return { error: "Định dạng ảnh không hợp lệ. Chỉ chấp nhận các định dạng JPG, JPEG, PNG, WEBP." };
+    }
+
+    // 2. Validate Size (max 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return { error: "Dung lượng ảnh vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn." };
+    }
+
+    // 3. Validate Dimensions (min 800x600)
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const dims = getImageDimensions(buffer);
+    if (dims) {
+      if (dims.width < 800 || dims.height < 600) {
+        return { error: `Kích thước ảnh quá nhỏ (${dims.width}x${dims.height}). Tối thiểu phải là 800x600 pixels.` };
+      }
+    }
+
+    const adminSupabase = await createAdminClient();
+    
+    // Check if bucket exists
+    const { data: bucketData, error: bucketError } = await adminSupabase.storage.getBucket(IMAGE_BUCKET);
+    if (bucketError || !bucketData) {
+      // Try to create the bucket
+      const { error: createBucketError } = await adminSupabase.storage.createBucket(IMAGE_BUCKET, {
+        public: true,
+        fileSizeLimit: MAX_SIZE,
+        allowedMimeTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+      });
+      if (createBucketError) {
+        console.error("[Storage Bucket Error]", createBucketError);
+        return { error: "Bucket ảnh chưa được tạo." };
+      }
+    }
+
+    // Upload to Supabase Storage
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const storagePath = `${user.id}/${propertyId}/${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await adminSupabase.storage
+      .from(IMAGE_BUCKET)
+      .upload(storagePath, file, {
+        cacheControl: "3600",
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("[Storage Upload Error]", uploadError);
+      const msg = String(uploadError.message).toLowerCase();
+      if (uploadError.statusCode === "42501" || msg.includes("permission") || msg.includes("policy")) {
+        return { error: "Bạn không có quyền tải ảnh." };
+      }
+      return { error: `Không thể tải ảnh lên hệ thống lưu trữ: ${uploadError.message}` };
+    }
+
+    const { data } = adminSupabase.storage
+      .from(IMAGE_BUCKET)
+      .getPublicUrl(storagePath);
+
+    const imagePayload = {
+      homestay_id: propertyId,
+      url: data.publicUrl,
+      storage_path: storagePath,
+      is_primary: sortOrder === 0,
+      sort_order: sortOrder,
+    };
+
+    const { data: insertedData, error: imageError } = await adminSupabase
+      .from("homestay_images")
+      .insert(imagePayload)
+      .select("id, url, storage_path")
+      .single();
+
+    if (imageError) {
+      console.error("[Database Insert Error]", imageError);
+      // Clean up uploaded image if DB insert failed
+      await adminSupabase.storage.from(IMAGE_BUCKET).remove([storagePath]);
+      
+      const msg = String(imageError.message).toLowerCase();
+      if (imageError.code === "42501" || msg.includes("row-level security") || msg.includes("permission") || msg.includes("policy")) {
+        return { error: "Bạn không có quyền tải ảnh." };
+      }
+      return { error: `Không thể lưu thông tin ảnh vào cơ sở dữ liệu: ${imageError.message}` };
+    }
+
+    return { 
+      ok: true, 
+      id: insertedData.id, 
+      url: insertedData.url, 
+      storage_path: insertedData.storage_path 
+    };
+  } catch (error: any) {
+    console.error("[savePhotosStepAction Error]", error);
+    return { error: error.message || "Đã xảy ra lỗi khi tải ảnh lên." };
+  }
+}
+
+/**
+ * Called by the wizard when clicking "Tiếp theo" on photos step to delete any removed photos from DB and storage.
+ */
+export async function deleteHomestayImagesAction(propertyId: string, imageIds: string[]) {
+  try {
+    const { user, role } = await getCurrentPartner();
+    const adminSupabase = await createAdminClient();
+    
+    // Verify ownership
+    const { data: homestay } = await adminSupabase
+      .from("homestays")
+      .select("owner_id")
+      .eq("id", propertyId)
+      .maybeSingle();
+
+    if (!homestay || (role !== "ADMIN" && homestay.owner_id !== user.id)) {
+      return { error: "Không có quyền chỉnh sửa chỗ nghỉ này." };
+    }
+
+    // Fetch storage paths
+    const { data: images } = await adminSupabase
+      .from("homestay_images")
+      .select("id, storage_path")
+      .eq("homestay_id", propertyId)
+      .in("id", imageIds);
+
+    if (images && images.length > 0) {
+      const paths = images.map((img) => img.storage_path).filter(Boolean) as string[];
+      if (paths.length > 0) {
+        await adminSupabase.storage.from(IMAGE_BUCKET).remove(paths);
+      }
+      await adminSupabase
+        .from("homestay_images")
+        .delete()
+        .eq("homestay_id", propertyId)
+        .in("id", imageIds);
+    }
+    return { ok: true };
+  } catch (err: any) {
+    console.error("[deleteHomestayImagesAction] Error:", err);
+    return { error: err.message || "Không thể xóa ảnh cũ." };
+  }
+}
+
+/**
+ * Updates sort orders and cover flags for all remaining photos in this homestay.
+ */
+export async function updateImagesSortOrderAction(propertyId: string, imageIdsInOrder: string[]) {
+  try {
+    const { user, role } = await getCurrentPartner();
+    const adminSupabase = await createAdminClient();
+
+    // Verify ownership
+    const { data: homestay } = await adminSupabase
+      .from("homestays")
+      .select("owner_id")
+      .eq("id", propertyId)
+      .maybeSingle();
+
+    if (!homestay || (role !== "ADMIN" && homestay.owner_id !== user.id)) {
+      return { error: "Không có quyền chỉnh sửa." };
+    }
+
+    // Update each image's sort_order and is_primary
+    for (let i = 0; i < imageIdsInOrder.length; i++) {
+      const imgId = imageIdsInOrder[i];
+      await adminSupabase
+        .from("homestay_images")
+        .update({
+          sort_order: i,
+          is_primary: i === 0,
+        })
+        .eq("id", imgId)
+        .eq("homestay_id", propertyId);
+    }
+    return { ok: true };
+  } catch (err: any) {
+    console.error("[updateImagesSortOrderAction] Error:", err);
+    return { error: err.message || "Không thể sắp xếp lại ảnh." };
+  }
+}
+
+export async function saveRegistrationStepAction({
+  propertyId,
+  stepIndex,
+  nextStepIndex,
+  stepKey,
+  draftPatch,
+}: {
+  propertyId: string;
+  stepIndex: number;
+  nextStepIndex: number;
+  stepKey: string;
+  draftPatch?: Record<string, any>;
+}) {
+  const { supabase, user, role } = await getCurrentPartner();
+  
+  const adminSupabase = await createAdminClient();
+  const { data: homestay, error: fetchErr } = await adminSupabase
+    .from("homestays")
+    .select("owner_id, registration_checklist")
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  if (fetchErr || !homestay) {
+    return { error: "Không tìm thấy chỗ nghỉ." };
+  }
+
+  if (role !== "ADMIN" && homestay.owner_id !== user.id) {
+    return { error: "Bạn không có quyền chỉnh sửa chỗ nghỉ này." };
+  }
+
+  const oldChecklist = (homestay.registration_checklist as Record<string, any>) || {};
+  const oldCompletedSteps = oldChecklist.completedSteps || {};
+  const oldCurrentStep = typeof oldChecklist.currentStep === "number" ? oldChecklist.currentStep : 0;
+
+  const completedSteps = {
+    ...oldCompletedSteps,
+    [stepKey]: true,
+  };
+
+  let draftState = oldChecklist.draftState || {};
+  if (draftPatch) {
+    draftState = {
+      ...draftState,
+      ...draftPatch,
+    };
+  }
+
+  const newCurrentStep = Math.max(oldCurrentStep, nextStepIndex);
+
+  const newChecklist = {
+    ...oldChecklist,
+    currentStep: newCurrentStep,
+    completedSteps,
+    draftState,
+    updatedAt: new Date().toISOString(),
+    basic: completedSteps.basicInfo === true || oldChecklist.basic === true,
+    location: completedSteps.address === true || oldChecklist.location === true,
+    images: completedSteps.photos === true || oldChecklist.images === true,
+    rooms: completedSteps.rooms === true || oldChecklist.rooms === true,
+    pricing: completedSteps.price === true || oldChecklist.pricing === true,
+    amenities: completedSteps.amenities === true || oldChecklist.amenities === true,
+    policies: completedSteps.policies === true || oldChecklist.policies === true,
+  };
+
+  const { error: updateErr } = await adminSupabase
+    .from("homestays")
+    .update({
+      registration_checklist: newChecklist,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", propertyId);
+
+  if (updateErr) {
+    return { error: "Lưu tiến độ thất bại: " + updateErr.message };
+  }
+
+  revalidatePath("/host");
+  revalidatePath("/host/list");
+  return { ok: true, registration_checklist: newChecklist };
 }
 
 export async function updatePropertyType(formData: FormData) {
@@ -1007,10 +1378,10 @@ export async function setCoverImage(formData: FormData) {
   await getOwnedProperty(propertyId, user.id, role);
 
   const adminSupabase = await createAdminClient();
-  await adminSupabase.from("homestay_images").update({ is_cover: false }).eq("homestay_id", propertyId);
+  await adminSupabase.from("homestay_images").update({ is_primary: false }).eq("homestay_id", propertyId);
   const { error } = await adminSupabase
     .from("homestay_images")
-    .update({ is_cover: true, sort_order: 0 })
+    .update({ is_primary: true, sort_order: 0 })
     .eq("id", imageId)
     .eq("homestay_id", propertyId);
 

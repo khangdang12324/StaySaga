@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -25,6 +25,7 @@ import SafeImage from "@/components/ui/SafeImage";
 import { fallbackHotelNames, locationHotelNames } from "@/data/location-hotel-names";
 import { getAllHotels, getAvailableCities, resolveToCanonicalSlug, type Hotel, supportedCities } from "@/lib/hotel-parser";
 import { resolveHotelImage } from "@/lib/hotel-images";
+import HomestaysLoading from "./loading";
 
 const getCleanHotelTitle = (hotel: Hotel) => hotel.title;
 
@@ -52,6 +53,14 @@ const sortHotels = (hotels: Hotel[], filters: FilterState, selectedCity?: string
 };
 
 export default function HomestaysPage() {
+  return (
+    <Suspense fallback={<HomestaysLoading />}>
+      <HomestaysPageContent />
+    </Suspense>
+  );
+}
+
+function HomestaysPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const locationParam = searchParams.get("location")?.trim() || "";
@@ -186,7 +195,7 @@ export default function HomestaysPage() {
 
 function StaySagaHeader() {
   return (
-    <header className="bg-rose-600 text-white">
+    <header className="bg-gradient-to-r from-rose-700 via-rose-600 to-red-500 text-white">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <div className="text-2xl font-black tracking-tight">StaySaga</div>
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -221,7 +230,7 @@ function SearchBar({
   return (
     <form
       onSubmit={onSubmit}
-      className="-mt-1 grid overflow-hidden rounded-md border-4 border-yellow-400 bg-yellow-400 shadow-lg md:grid-cols-[1.2fr_1fr_1fr_1.35fr_auto]"
+      className="-mt-1 grid overflow-hidden rounded-md border-4 border-rose-500 bg-rose-500 shadow-lg md:grid-cols-[1.2fr_1fr_1fr_1.35fr_auto]"
     >
       <SearchField icon={<MapPin className="h-5 w-5" />} label="Điểm đến">
         <input
@@ -259,7 +268,7 @@ function SearchField({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex min-h-16 items-center gap-3 border-b-4 border-yellow-400 bg-white px-4 py-3 md:border-b-0 md:border-r-4">
+    <label className="flex min-h-16 items-center gap-3 border-b-4 border-rose-500 bg-white px-4 py-3 md:border-b-0 md:border-r-4">
       <span className="text-gray-500">{icon}</span>
       <span className="min-w-0">
         <span className="block text-xs font-semibold text-gray-500">{label}</span>
@@ -283,8 +292,8 @@ function SearchResultCard({ hotel, selectedCity }: { hotel: Hotel; selectedCity?
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       {facets.featured ? (
-        <div className="mb-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-gray-800">
-          <span className="font-bold text-yellow-800">Nổi bật</span>
+        <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-gray-800">
+          <span className="font-bold text-rose-700">Nổi bật</span>
           <span className="ml-2">
             Chỗ nghỉ này phù hợp với tiêu chí của bạn và có thể được xếp hạng cao hơn trong kết quả tìm kiếm.
           </span>
@@ -324,10 +333,10 @@ function SearchResultCard({ hotel, selectedCity }: { hotel: Hotel; selectedCity?
 
           <div className="mt-4 space-y-1 text-sm">
             {facets.bookingPolicies.includes("free-cancellation") ? (
-              <p className="font-semibold text-green-700">Miễn phí hủy</p>
+              <p className="font-semibold text-rose-700">Miễn phí hủy</p>
             ) : null}
             {facets.bookingPolicies.includes("no-prepayment") ? (
-              <p className="font-semibold text-green-700">Không cần thanh toán trước</p>
+              <p className="font-semibold text-rose-700">Không cần thanh toán trước</p>
             ) : null}
             {hotel.remaining_rooms ? (
               <p className="font-semibold text-red-700">Chỉ còn {hotel.remaining_rooms} phòng trên StaySaga</p>

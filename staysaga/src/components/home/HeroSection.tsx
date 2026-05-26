@@ -12,13 +12,17 @@ type HeroSectionProps = {
 
 export default function HeroSection({
   title = "Khám phá những điểm lưu trú tuyệt vời nhất",
-  subtitle = "Đặt phòng nhanh, rõ ràng và đẹp mắt theo phong cách Booking/Agoda, nhưng tối ưu cho trải nghiệm Việt Nam.",
+  subtitle = "Đặt phòng nhanh, rõ ràng và đẹp mắt theo phong cách hiện đại dành cho trải nghiệm Việt Nam.",
   heroImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2062&auto=format&fit=crop",
 }: HeroSectionProps) {
+  const displaySubtitle =
+    subtitle?.includes("Booking") || subtitle?.includes("Agoda")
+      ? "Đặt phòng nhanh, rõ ràng và đẹp mắt theo phong cách hiện đại dành cho trải nghiệm Việt Nam."
+      : subtitle;
+
   return (
     <div
-      className="relative h-screen flex items-center justify-center bg-white"
-      style={{ minHeight: 600 }}
+      className="relative z-20 flex min-h-[calc(100vh-88px)] items-center justify-center overflow-visible bg-gray-950 py-10 sm:py-12 lg:py-14"
     >
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
@@ -27,23 +31,24 @@ export default function HeroSection({
           alt="Hotel room"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-linear-to-b from-white/45 via-white/20 to-white/80" />
-        <div className="absolute inset-0 bg-linear-to-t from-rose-50/50 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/50 to-black/20" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-black/20" />
       </div>
 
       {/* Content */}
-      <div className="relative z-20 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center mt-12 md:mt-16">
+      <div className="relative z-20 mx-auto flex w-full max-w-7xl flex-col items-center px-4 text-center sm:px-6 lg:px-8">
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-3xl sm:text-4xl md:text-7xl lg:text-8xl font-black text-gray-950 mb-4 md:mb-6 tracking-tight leading-tight drop-shadow-[0_6px_24px_rgba(15,23,42,0.08)]"
+          className="max-w-[860px] text-4xl font-extrabold leading-[1.08] tracking-tight text-white drop-shadow-[0_6px_22px_rgba(0,0,0,0.45)] sm:text-5xl md:text-6xl"
         >
           {title}
         </motion.h1>
 
-        <p className="max-w-3xl text-sm sm:text-base md:text-lg text-gray-700 mb-6 md:mb-8">
-          {subtitle}
+        <p className="mt-5 max-w-3xl text-base leading-7 text-white/85 drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)] sm:text-lg">
+          {displaySubtitle}
         </p>
 
         {/* CÔNG CỤ TÌM KIẾM NÂNG CAO */}
@@ -51,14 +56,12 @@ export default function HeroSection({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-          className="w-full relative z-30 mt-2"
+          className="relative z-30 mt-8 w-full"
         >
           <AdvancedSearchBar />
         </motion.div>
       </div>
 
-      {/* Decorative Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-white to-transparent z-10 pointer-events-none" />
     </div>
   );
 }

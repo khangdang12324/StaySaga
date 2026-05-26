@@ -28,24 +28,14 @@ export default async function EditHostPropertyPage({ params }: EditHostPropertyP
   }
 
   const { id } = await params;
+  const adminSupabase = await createAdminClient();
   const select = "*, homestay_images(id, url, storage_path)";
-  let { data: listing } = await supabase
+  const { data: listing } = await adminSupabase
     .from("homestays")
     .select(select)
     .eq("id", id)
     .eq("owner_id", session.user.id)
     .single();
-
-  if (!listing) {
-    const adminSupabase = await createAdminClient();
-    const retry = await adminSupabase
-      .from("homestays")
-      .select(select)
-      .eq("id", id)
-      .eq("owner_id", session.user.id)
-      .single();
-    listing = retry.data;
-  }
 
   if (!listing) {
     notFound();

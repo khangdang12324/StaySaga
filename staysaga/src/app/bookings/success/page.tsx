@@ -1,10 +1,12 @@
-import { Check, Printer, Smartphone, Info, MapPin, ExternalLink, Calendar, CheckCircle2, Copy, HelpCircle } from "lucide-react";
+import { Check, Smartphone, Info, Calendar, Copy, HelpCircle, Mail, Phone, X, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { differenceInDays, format } from "date-fns";
 import SafeImage from "@/components/ui/SafeImage";
 import { getLocationImage } from "@/lib/images/location-images";
+import PrintConfirmationButton from "./PrintConfirmationButton";
+import MockBookingCookieSync from "./MockBookingCookieSync";
 
 export default async function BookingSuccessPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>;
@@ -57,9 +59,117 @@ export default async function BookingSuccessPage(props: {
   const displayCode = bookingId ? bookingId.toString().slice(-10).replace(/\D/g, '').padEnd(10, '0') : "6884160358";
   const pinCode = "7142";
   const mainImage = booking?.homestay?.homestay_images?.[0]?.url || booking?.homestay?.image || getLocationImage(city);
+  const dateLabel = `${format(startDate, "dd/MM/yyyy")} - ${format(endDate, "dd/MM/yyyy")}`;
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] text-[#1a1a1a] pb-20">
+      <MockBookingCookieSync bookingId={bookingId || ""} checkIn={checkIn || ""} />
+      <style>{`
+        #booking-print-document {
+          display: none;
+        }
+
+        @media print {
+          @page {
+            size: A4;
+            margin: 14mm;
+          }
+
+          body {
+            background: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          body * {
+            visibility: hidden !important;
+          }
+
+          #booking-print-document,
+          #booking-print-document * {
+            visibility: visible !important;
+          }
+
+          #booking-print-document {
+            display: block !important;
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            color: #111827;
+            font-family: Arial, Helvetica, sans-serif;
+          }
+
+          .print-card {
+            break-inside: avoid;
+          }
+        }
+      `}</style>
+
+      <section id="booking-print-document" aria-hidden="true">
+        <div style={{ borderBottom: "6px solid #e11d48", paddingBottom: 18, marginBottom: 22 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 24, alignItems: "flex-start" }}>
+            <div>
+              <div style={{ color: "#e11d48", fontSize: 28, fontWeight: 800, letterSpacing: -1 }}>StaySaga</div>
+              <div style={{ marginTop: 8, color: "#047857", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>
+                Đã xác nhận
+              </div>
+              <h1 style={{ margin: "6px 0 0", fontSize: 28, lineHeight: 1.15 }}>
+                Xác nhận đặt phòng
+              </h1>
+            </div>
+            <div style={{ border: "1px solid #fecdd3", background: "#fff1f2", borderRadius: 12, padding: 14, minWidth: 220 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700 }}>Mã xác nhận</div>
+              <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{displayCode}</div>
+              <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700, marginTop: 12 }}>Mã PIN</div>
+              <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>{pinCode}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="print-card" style={{ border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", marginBottom: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "180px 1fr" }}>
+            <img src={mainImage} alt={hotelName} style={{ width: 180, height: 140, objectFit: "cover" }} />
+            <div style={{ padding: 18 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700, textTransform: "uppercase" }}>
+                Chỗ nghỉ
+              </div>
+              <h2 style={{ margin: "4px 0 8px", fontSize: 22 }}>{hotelName}</h2>
+              <div style={{ color: "#4b5563", fontSize: 14 }}>{city}, Việt Nam</div>
+              <div style={{ marginTop: 12, color: "#111827", fontSize: 14 }}>
+                Email khách: <strong>{userEmail}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+          {[
+            ["Ngày lưu trú", dateLabel],
+            ["Số đêm", `${nights} đêm`],
+            ["Tổng giá", formatCurrency(Number(totalPrice))],
+          ].map(([label, value]) => (
+            <div key={label} className="print-card" style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 14 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700 }}>{label}</div>
+              <div style={{ marginTop: 6, fontSize: 17, fontWeight: 800 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="print-card" style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 18, marginBottom: 18 }}>
+          <h3 style={{ margin: 0, fontSize: 18 }}>Thông tin quan trọng</h3>
+          <ul style={{ margin: "12px 0 0", paddingLeft: 20, color: "#374151", fontSize: 14, lineHeight: 1.7 }}>
+            <li>Đơn đặt phòng đã được xác nhận và gửi tới email của khách.</li>
+            <li>Vui lòng xuất trình mã xác nhận khi làm thủ tục nhận phòng.</li>
+            <li>StaySaga không yêu cầu cung cấp thông tin thanh toán qua điện thoại, email hoặc chat.</li>
+          </ul>
+        </div>
+
+        <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 12, color: "#6b7280", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
+          <span>staySaga.vn</span>
+          <span>Ngày in: {format(new Date(), "dd/MM/yyyy HH:mm")}</span>
+        </div>
+      </section>
+
       {/* Rose Header */}
       <header className="bg-rose-600 pt-3 pb-3 shadow-sm">
          <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
@@ -127,10 +237,7 @@ export default async function BookingSuccessPage(props: {
                       <Smartphone className="w-4 h-4" />
                       {t("Lưu xác nhận vào điện thoại", "Save to phone")}
                    </button>
-                   <button className="border border-rose-600 text-rose-600 hover:bg-rose-50 font-bold px-4 py-2 rounded text-sm flex items-center gap-2 transition-all">
-                      <Printer className="w-4 h-4" />
-                      {t("In xác nhận đặt phòng", "Print confirmation")}
-                   </button>
+                   <PrintConfirmationButton label={t("In xác nhận đặt phòng", "Print confirmation")} />
                 </div>
              </div>
 
@@ -165,25 +272,186 @@ export default async function BookingSuccessPage(props: {
                          </div>
                       </div>
                       <div className="mt-4 flex justify-end">
-                         <Link href="/bookings" className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded text-sm transition-all">
+                         <Link href={`/bookings/${bookingId}`} className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded text-sm transition-all">
                             {t("Xem hoặc cập nhật chi tiết", "View or update details")}
-                         </Link>
+                          </Link>
                       </div>
                    </div>
                 </div>
              </div>
 
-             {/* Directions */}
-             <div className="bg-white border border-zinc-200 rounded p-4 shadow-sm">
-                <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><MapPin className="w-5 h-5 text-zinc-500" /> {t("Đi đến chỗ nghỉ", "Get directions")}</h3>
-                <p className="text-[13px] text-zinc-600">{t("Từ Sân bay", "From")} Liên Khương (DLI): 28 {t("phút", "mins")} (31 km)</p>
+             {/* Contact Property Section */}
+             <div className="bg-white border border-zinc-200 rounded p-6 shadow-sm mt-6">
+                <h2 className="text-xl font-bold mb-1 text-zinc-900">{t("Liên hệ với chỗ nghỉ", "Contact the property")}</h2>
+                <p className="text-sm text-zinc-550 mb-6">
+                   {t("Bạn có thắc mắc hoặc cần thu xếp một số thứ cho kỳ nghỉ?", "Have a question or need to arrange something for your stay?")}
+                </p>
+                <div className="space-y-6">
+                   <div className="flex gap-4 items-start">
+                      <Mail className="w-5 h-5 text-zinc-500 mt-1 shrink-0" />
+                      <div>
+                         <h4 className="font-bold text-sm text-zinc-900">{t("Gửi email cho chỗ nghỉ", "Email the property")}</h4>
+                         <p className="text-[13px] text-zinc-600 mb-1 leading-normal">
+                            {t("Hãy email cho chỗ nghỉ và họ sẽ trả lời sớm nhất có thể", "Email the property and they will respond as soon as possible")}
+                         </p>
+                         <a href={`mailto:${booking?.homestay?.owner?.email || "owner@staysaga.com"}`} className="text-blue-600 hover:underline font-semibold text-sm">
+                            {t("Gửi email", "Send email")}
+                         </a>
+                      </div>
+                   </div>
+                   <div className="flex gap-4 items-start">
+                      <Phone className="w-5 h-5 text-zinc-500 mt-1 shrink-0" />
+                      <div>
+                         <h4 className="font-bold text-sm text-zinc-900">{t("Lựa chọn khác", "Other options")}</h4>
+                         <a href={`tel:${booking?.homestay?.owner?.phone || "+842836225811"}`} className="text-blue-600 hover:underline font-semibold text-sm">
+                            {t("Gọi điện", "Call")} {booking?.homestay?.owner?.phone || "+842836225811"}
+                         </a>
+                      </div>
+                   </div>
+                </div>
              </div>
+
+             <section id="booking-details" className="scroll-mt-8 space-y-8 border-t border-zinc-200 pt-8">
+                <div>
+                   <h2 className="text-2xl font-bold text-rose-600 mb-4">{hotelName}<span className="ml-2 text-amber-400 text-base">★★★</span><span className="ml-2 rounded bg-rose-600 px-2 py-1 text-sm text-white">Genius</span></h2>
+                   <div className="grid gap-6 md:grid-cols-[1fr_160px]">
+                      <div className="space-y-6">
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="border-r border-zinc-200 pr-6">
+                               <div className="flex items-start gap-3">
+                                  <Calendar className="mt-1 h-5 w-5 text-zinc-700" />
+                                  <div>
+                                     <p className="font-bold">Nhận phòng</p>
+                                     <p className="text-lg font-bold">{format(startDate, "EEE, dd MMM yyyy")}</p>
+                                     <p className="text-sm text-zinc-600">14:00 - 00:00</p>
+                                     <a href="#" className="mt-2 inline-block font-bold text-rose-600 hover:underline">Thay đổi ngày tháng</a>
+                                  </div>
+                               </div>
+                            </div>
+                            <div>
+                               <p className="font-bold">Trả phòng</p>
+                               <p className="text-lg font-bold">{format(endDate, "EEE, dd MMM yyyy")}</p>
+                               <p className="text-sm text-zinc-600">00:00 - 12:00</p>
+                            </div>
+                         </div>
+
+                         <div className="space-y-4">
+                            <div>
+                               <p className="font-bold">Chi tiết đặt phòng</p>
+                               <p>{booking?.guests || 2} người lớn - {nights} đêm, 1 Phòng</p>
+                               <a href="#" className="font-bold text-rose-600 hover:underline">Thêm lựa chọn chỗ nghỉ cho khách</a>
+                            </div>
+                            <div>
+                               <p className="font-bold">Địa chỉ</p>
+                               <p>{booking?.homestay?.address || booking?.homestay?.city || city}, Việt Nam</p>
+                               <a href="#" className="font-bold text-rose-600 hover:underline">Hiển thị đường đi</a>
+                            </div>
+                         </div>
+                      </div>
+                      <div className="relative h-36 overflow-hidden rounded-lg">
+                         <SafeImage src={mainImage} fill className="object-cover" />
+                      </div>
+                   </div>
+                </div>
+
+                <div>
+                   <h2 className="mb-4 text-2xl font-bold">Chi tiết phòng</h2>
+                   <div className="mb-5 flex items-center gap-4">
+                      <div className="relative h-20 w-20 overflow-hidden rounded">
+                         <SafeImage src={mainImage} fill className="object-cover" />
+                      </div>
+                      <div>
+                         <h3 className="text-lg font-bold">Phòng Superior Giường Đôi</h3>
+                         <a href="#" className="font-bold text-rose-600 hover:underline">Thay đổi loại phòng</a>
+                      </div>
+                   </div>
+                   <dl className="grid grid-cols-1 gap-x-8 gap-y-5 text-[15px] sm:grid-cols-[220px_1fr]">
+                      <dt className="font-bold">Tên khách</dt>
+                      <dd>{session?.user?.user_metadata?.full_name || userEmail} <a href="#" className="ml-3 font-bold text-rose-600 hover:underline">Thay đổi tên khách</a></dd>
+                      <dt className="font-bold">Sức chứa tối đa</dt>
+                      <dd>2 người lớn</dd>
+                      <dt className="font-bold">Bữa ăn</dt>
+                      <dd>Giá của phòng này không bao gồm bữa ăn nào.</dd>
+                      <dt className="font-bold">Tùy chọn hút thuốc</dt>
+                      <dd>Phòng không hút thuốc</dd>
+                      <dt className="font-bold">Tiện nghi</dt>
+                      <dd>Phòng tắm riêng, đồ vệ sinh cá nhân miễn phí, vòi sen, điều hòa không khí, bàn làm việc, TV màn hình phẳng, máy sấy tóc, khăn tắm, tủ hoặc phòng để quần áo, khu vực phòng ăn.</dd>
+                      <dt className="font-bold">Trẻ em và giường</dt>
+                      <dd><span className="font-bold">Chính sách trẻ em</span><br />Phù hợp cho tất cả trẻ em.<br /><br /><span className="font-bold">Chính sách nôi và giường phụ</span><br />Không cung cấp nôi/cũi và giường phụ.</dd>
+                      <dt className="font-bold">Trả trước</dt>
+                      <dd>Không cần thanh toán trước.</dd>
+                      <dt className="font-bold">Phí hủy phòng</dt>
+                      <dd><span className="font-bold text-green-700">Miễn phí hủy</span><br />từ {format(startDate, "dd MMM yyyy HH:mm")}: VND 0<br /><span className="mt-2 block text-sm text-zinc-600">Thời hạn hủy được tính theo giờ địa phương của chỗ nghỉ.</span></dd>
+                   </dl>
+                </div>
+
+                <div className="overflow-hidden rounded border border-rose-100 bg-white">
+                   <div className="flex justify-between p-5">
+                      <span>1 Phòng<br />10 % Thuế GTGT</span>
+                      <span className="text-right">VND {(Number(totalPrice) * 0.91).toLocaleString("vi-VN")}<br />VND {(Number(totalPrice) * 0.09).toLocaleString("vi-VN")}</span>
+                   </div>
+                   <div className="flex justify-between border-t border-rose-100 bg-rose-50 p-5">
+                      <span className="text-xl text-rose-700">Giá<br /><span className="text-sm text-zinc-700">(dành cho {booking?.guests || 2} khách)</span></span>
+                      <span className="text-2xl text-rose-700">{formatCurrency(Number(totalPrice))}</span>
+                   </div>
+                   <div className="space-y-4 border-t border-rose-100 p-5 text-[15px]">
+                      <p><span className="font-bold">Giá cuối cùng được hiển thị là số tiền bạn sẽ thanh toán cho chỗ nghỉ.</span><br />StaySaga không thu phí khách cho bất kỳ đặt phòng, phí hành chính hay bất kỳ chi phí nào khác.</p>
+                      <p><span className="font-bold">Thông tin thanh toán</span><br />{hotelName} xử lý tất cả thanh toán. Chỗ nghỉ này chấp nhận Visa, Mastercard hoặc thanh toán khi đến theo chính sách chỗ nghỉ.</p>
+                      <p><span className="font-bold">Thông tin bổ sung</span><br />Các khoản phí phụ thu không được tính trong giá tổng cộng này. Nếu bạn hủy hoặc không đến nhận phòng, chỗ nghỉ vẫn có thể thu phí theo quy định.</p>
+                   </div>
+                </div>
+
+                <div>
+                   <h2 className="mb-4 text-2xl font-bold">Những câu hỏi thường gặp</h2>
+                   <div className="grid rounded border border-zinc-200 bg-white md:grid-cols-[260px_1fr]">
+                      <div className="border-b border-zinc-200 md:border-b-0 md:border-r">
+                         {["Hủy phòng", "Thanh toán", "Chi tiết đặt phòng", "Trao đổi với khách", "Các loại phòng", "Giá cả", "Thẻ tín dụng", "Chính sách chỗ nghỉ"].map((item, index) => (
+                           <div key={item} className={index === 0 ? "border-b-2 border-rose-600 p-4 font-bold text-rose-600" : "p-4 font-bold"}>
+                              {item}
+                           </div>
+                         ))}
+                      </div>
+                      <div>
+                         {[
+                           "Tôi có thể hủy đặt phòng của mình không?",
+                           "Nếu tôi cần hủy đặt phòng, tôi có phải trả phí không?",
+                           "Tôi có thể hủy hoặc đổi ngày cho đặt phòng không hoàn tiền không?",
+                           "Làm sao tôi biết được đặt phòng của mình đã được hủy?",
+                         ].map((question, index) => (
+                           <details key={question} className="border-b border-zinc-200 p-4" open={index === 0}>
+                              <summary className="cursor-pointer text-lg font-bold">{question}</summary>
+                              {index === 0 && <p className="mt-4 text-zinc-700">Có. Phí hủy đặt phòng được quyết định bởi chỗ nghỉ và hiển thị trong chính sách hủy đặt phòng của bạn.</p>}
+                           </details>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="border-t border-zinc-200 pt-6">
+                   <h2 className="mb-5 text-2xl font-bold">Hành động nhanh</h2>
+                   <div className="grid gap-10 sm:grid-cols-2">
+                      <div className="space-y-3">
+                         <h3 className="font-bold">Quản lý đơn đặt</h3>
+                         <a href="#" className="block font-bold text-rose-600 hover:underline">Thay đổi ngày tháng</a>
+                         <a href="#" className="block font-bold text-rose-600 hover:underline">Hẹn giờ nhận phòng</a>
+                         <a href="#" className="block font-bold text-rose-600 hover:underline">Thêm phòng khác</a>
+                      </div>
+                      <div className="space-y-3">
+                         <h3 className="font-bold">Quản lý phòng</h3>
+                         <a href="#" className="block font-bold text-rose-600 hover:underline">Sửa tên hoặc số lượng khách</a>
+                         <a href="#" className="block font-bold text-rose-600 hover:underline">Thay đổi loại phòng</a>
+                         <a href="#" className="block font-bold text-rose-600 hover:underline">Thiết lập tùy chọn hút thuốc</a>
+                      </div>
+                   </div>
+                </div>
+             </section>
+
           </div>
 
           {/* Right Column */}
-          <div className="space-y-4 mt-6 lg:mt-0">
+          <div className="mt-6 space-y-4 lg:sticky lg:top-6 lg:self-start lg:mt-0">
              {/* Confirmation Box */}
-             <div className="bg-rose-50 border-t-4 border-t-rose-600 border-l border-r border-b border-rose-200 rounded-b p-4 shadow-sm">
+              <div className="rounded border border-green-600 bg-green-50 p-4 shadow-sm">
                 <div className="flex justify-between items-center mb-2">
                    <span className="text-[13px] font-bold text-zinc-700">{t("Mã xác nhận:", "Confirmation number:")}</span>
                    <span className="text-[15px] font-bold flex items-center gap-2">{displayCode} <Copy className="w-4 h-4 text-rose-600 cursor-pointer" /></span>
@@ -194,8 +462,7 @@ export default async function BookingSuccessPage(props: {
                 </div>
              </div>
 
-             {/* App Promo */}
-             <div className="bg-white border border-zinc-200 rounded p-4 shadow-sm relative overflow-hidden">
+              <div className="hidden">
                 <h3 className="font-bold text-[15px] mb-3">{t("Quản lý chuyến đi với ứng dụng", "Manage trips with the app")}</h3>
                 <ul className="space-y-2 mb-4 text-[13px] text-zinc-700 relative z-10">
                    <li className="flex items-center gap-2"><Check className="w-4 h-4 text-green-600" /> {t("Chỉnh sửa đơn đặt trên từng cây số", "Edit bookings on the go")}</li>
@@ -207,8 +474,21 @@ export default async function BookingSuccessPage(props: {
                 </button>
              </div>
 
-             {/* Ads Promo */}
-             <div className="bg-white border border-zinc-200 rounded p-4 shadow-sm">
+               <div className="overflow-hidden rounded border border-rose-100 bg-rose-50 shadow-sm">
+                  <div className="space-y-4 p-5">
+                     <h3 className="text-2xl font-bold">Quản lý đơn đặt</h3>
+                     <Link href={`/bookings/${bookingId}`} className="flex items-center gap-3 font-bold text-rose-600 hover:underline"><X className="h-4 w-4" /> Hủy đặt phòng</Link>
+                     <Link href={`/bookings/${bookingId}`} className="flex items-center gap-3 font-bold text-rose-600 hover:underline"><Calendar className="h-4 w-4" /> Thay đổi ngày tháng</Link>
+                     <Link href={`/bookings/${bookingId}`} className="flex items-center gap-3 font-bold text-rose-600 hover:underline"><MoreHorizontal className="h-4 w-4" /> Hiển thị tất cả hành động</Link>
+                  </div>
+                  <div className="space-y-3 border-t border-rose-100 p-5">
+                     <h3 className="text-2xl font-bold">Liên hệ chỗ nghỉ</h3>
+                     <p className="font-semibold text-zinc-600">Điện thoại +84 28 3622 5811</p>
+                     <Link href={`/messages?bookingId=${bookingId}`} className="block font-bold text-rose-600 hover:underline">Nhắn tin</Link>
+                     <a href={`mailto:${booking?.homestay?.owner?.email || "owner@staysaga.com"}`} className="block font-bold text-rose-600 hover:underline">Gửi email</a>
+                  </div>
+               </div>
+              <div className="hidden">
                 <div className="flex items-start gap-2">
                    <Info className="w-5 h-5 text-zinc-500 shrink-0 mt-0.5" />
                    <div>

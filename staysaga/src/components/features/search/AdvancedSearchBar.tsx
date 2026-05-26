@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { getLocationImage } from "@/lib/images/location-images";
+import SafeImage from "@/components/ui/SafeImage";
 
 /* ===== DATA ===== */
 const DESTINATIONS = [
@@ -20,56 +21,91 @@ const DESTINATIONS = [
     name: "TP. Hồ Chí Minh",
     count: 2845,
     image: getLocationImage("TP. Hồ Chí Minh"),
+    description: "Ẩm thực, mua sắm, nhịp sống đô thị",
   },
   {
     name: "Hà Nội",
     count: 1920,
     image: getLocationImage("Hà Nội"),
+    description: "Phố cổ, văn hóa, cuối tuần lãng mạn",
   },
   {
     name: "Đà Lạt",
     count: 1356,
     image: getLocationImage("Đà Lạt"),
+    description: "Khí hậu mát, villa, nghỉ dưỡng",
   },
   {
     name: "Nha Trang",
     count: 1124,
     image: getLocationImage("Nha Trang"),
+    description: "Biển xanh, resort, gia đình",
   },
   {
     name: "Đà Nẵng",
     count: 1580,
     image: getLocationImage("Đà Nẵng"),
+    description: "Biển, cầu đêm, khách sạn trung tâm",
   },
   {
     name: "Huế",
     count: 860,
     image: getLocationImage("Huế"),
+    description: "Di sản, ẩm thực, nghỉ chậm",
   },
   {
     name: "Cần Thơ",
     count: 740,
     image: getLocationImage("Cần Thơ"),
+    description: "Sông nước, chợ nổi, homestay vườn",
   },
   {
     name: "Hạ Long",
     count: 980,
     image: getLocationImage("Hạ Long"),
+    description: "Vịnh biển, du thuyền, kỳ nghỉ ngắn",
   },
   {
     name: "Ninh Bình",
     count: 690,
     image: getLocationImage("Ninh Bình"),
+    description: "Núi đá, cảnh quan, retreat",
   },
   {
     name: "Vũng Tàu",
     count: 920,
     image: getLocationImage("Vũng Tàu"),
+    description: "Biển gần Sài Gòn, cuối tuần",
   },
   {
     name: "Quy Nhơn",
     count: 540,
     image: getLocationImage("Quy Nhơn"),
+    description: "Biển yên, nghỉ dưỡng riêng tư",
+  },
+  {
+    name: "Phú Quốc",
+    count: 1260,
+    image: getLocationImage("Phú Quốc"),
+    description: "Đảo biển, resort, tuần trăng mật",
+  },
+  {
+    name: "Hội An",
+    count: 880,
+    image: getLocationImage("Hội An"),
+    description: "Phố cổ, boutique stay, ẩm thực",
+  },
+  {
+    name: "Sa Pa",
+    count: 760,
+    image: getLocationImage("Sa Pa"),
+    description: "Núi rừng, săn mây, bungalow",
+  },
+  {
+    name: "Mũi Né",
+    count: 620,
+    image: getLocationImage("Mũi Né"),
+    description: "Đồi cát, biển, resort nghỉ dưỡng",
   },
 ];
 
@@ -283,16 +319,28 @@ export function AdvancedSearchBar() {
       : `${formatDate(checkInDate)} — Chọn trả phòng`
     : "Check-in - Check-out";
 
+  const isExpanded = activePanel !== null;
+
   return (
     <div
       ref={containerRef}
-      className="w-full max-w-4xl mx-auto relative z-20 px-4 md:px-0"
+      onMouseDown={(e) => {
+        if (isExpanded && e.target === e.currentTarget) {
+          setActivePanel(null);
+        }
+      }}
+      className={
+        isExpanded
+          ? "fixed inset-0 z-[100] flex items-start justify-center bg-black/55 px-4 pt-20 md:pt-24"
+          : "relative z-20 mx-auto w-full max-w-5xl px-4 md:px-0"
+      }
     >
+      <div className={isExpanded ? "relative w-full max-w-5xl" : "relative w-full"}>
       {/* ===== SEARCH BAR — Booking.com style ===== */}
-      <div className="bg-white rounded-xl shadow-lg border-2 border-rose-500/70 overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-rose-200/80 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
         <form
           onSubmit={handleSearch}
-          className="flex flex-col md:flex-row text-left"
+          className="flex flex-col text-left md:min-h-[76px] md:flex-row"
         >
           <div className="flex flex-col md:flex-row md:flex-1">
             {/* LOCATION */}
@@ -301,9 +349,9 @@ export function AdvancedSearchBar() {
                 setActivePanel("location");
                 setTimeout(() => inputRef.current?.focus(), 50);
               }}
-              className={`flex md:flex-1 items-center gap-3 px-4 py-4 md:py-5 cursor-pointer transition-colors border-b border-gray-200 md:border-b-0 md:border-r ${activePanel === "location" ? "bg-rose-50/70" : "hover:bg-rose-50/50"}`}
+              className={`flex cursor-pointer items-center gap-3 border-b border-gray-200 px-4 py-4 transition-colors md:flex-1 md:border-b-0 md:border-r md:px-5 md:py-0 ${activePanel === "location" ? "bg-rose-50/70" : "hover:bg-rose-50/50"}`}
             >
-              <MapPin className="h-5 w-5 text-gray-400" />
+              <MapPin className="h-5 w-5 shrink-0 text-gray-400" />
               <div className="flex-1 min-w-0">
                 <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.18em] leading-none mb-1 block">
                   Điểm đến
@@ -319,7 +367,7 @@ export function AdvancedSearchBar() {
                     setActivePanel("location");
                   }}
                   onFocus={() => setActivePanel("location")}
-                  className="w-full bg-transparent border-none outline-none text-gray-900 placeholder-gray-400 font-semibold text-sm md:text-base truncate"
+                  className="w-full truncate border-none bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder-gray-400 md:text-lg"
                 />
               </div>
             </div>
@@ -327,15 +375,15 @@ export function AdvancedSearchBar() {
             {/* DATES */}
             <div
               onClick={() => setActivePanel("calendar")}
-              className={`flex md:flex-1 items-center gap-3 px-4 py-4 md:py-5 cursor-pointer transition-colors border-b border-gray-200 md:border-b-0 md:border-r ${activePanel === "calendar" ? "bg-rose-50/70" : "hover:bg-rose-50/50"}`}
+              className={`flex cursor-pointer items-center gap-3 border-b border-gray-200 px-4 py-4 transition-colors md:flex-1 md:border-b-0 md:border-r md:px-5 md:py-0 ${activePanel === "calendar" ? "bg-rose-50/70" : "hover:bg-rose-50/50"}`}
             >
-              <CalendarIcon className="h-5 w-5 text-gray-400" />
+              <CalendarIcon className="h-5 w-5 shrink-0 text-gray-400" />
               <div className="flex-1 min-w-0">
                 <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.18em] leading-none mb-1 block">
                   Ngày
                 </label>
                 <span
-                  className={`block font-semibold text-sm md:text-base truncate ${checkInDate ? "text-gray-900" : "text-gray-400"}`}
+                  className={`block truncate text-sm font-semibold md:text-lg ${checkInDate ? "text-gray-900" : "text-gray-400"}`}
                 >
                   {dateDisplay}
                 </span>
@@ -347,14 +395,14 @@ export function AdvancedSearchBar() {
               onClick={() =>
                 setActivePanel(activePanel === "guests" ? null : "guests")
               }
-              className={`flex md:flex-1 items-center gap-3 px-4 py-4 md:py-5 cursor-pointer transition-colors ${activePanel === "guests" ? "bg-rose-50/70" : "hover:bg-rose-50/50"}`}
+              className={`flex cursor-pointer items-center gap-3 px-4 py-4 transition-colors md:flex-1 md:px-5 md:py-0 ${activePanel === "guests" ? "bg-rose-50/70" : "hover:bg-rose-50/50"}`}
             >
-              <Users className="h-5 w-5 text-gray-400" />
+              <Users className="h-5 w-5 shrink-0 text-gray-400" />
               <div className="flex-1 min-w-0">
                 <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.18em] leading-none mb-1 block">
                   Khách
                 </label>
-                <span className="block text-gray-900 font-semibold text-sm md:text-base truncate">
+                <span className="block truncate text-sm font-semibold text-gray-900 md:text-lg">
                   {guestSummary}
                 </span>
               </div>
@@ -362,10 +410,10 @@ export function AdvancedSearchBar() {
           </div>
 
           {/* SEARCH BUTTON */}
-          <div className="border-t border-gray-200 md:border-t-0 md:border-l">
+          <div className="border-t border-gray-200 md:border-l md:border-t-0">
             <button
               type="submit"
-              className="w-full md:w-auto md:h-full bg-rose-600 hover:bg-rose-500 text-white px-6 py-4 md:py-5 md:px-8 md:rounded-r-xl font-bold text-base transition-colors shrink-0 flex items-center justify-center gap-2"
+              className="flex w-full shrink-0 items-center justify-center gap-2 bg-rose-600 px-6 py-4 text-base font-bold text-white transition-colors hover:bg-rose-500 md:h-full md:w-auto md:min-w-44 md:px-9 md:py-0 md:text-lg"
             >
               <Search className="w-5 h-5" />
               <span>Tìm kiếm</span>
@@ -383,46 +431,67 @@ export function AdvancedSearchBar() {
       {/* LOCATION PANEL — Booking-style list */}
       {shouldShowLocationPanel && (
         <div
-          className="absolute top-full md:top-full left-0 right-0 mt-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-50"
+          className="absolute left-0 right-0 top-full z-50 mt-4 max-h-[calc(100vh-220px)] overflow-hidden rounded-3xl border border-white/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.25)] dark:border-white/80 dark:bg-white"
           style={{ animation: "fadeSlideIn 200ms ease-out" }}
         >
-          <div className="p-4 md:p-6">
-            <h3 className="text-xs md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
-              {locationInput.trim()
-                ? "Kết quả tìm kiếm"
-                : "Điểm đến thịnh hành"}
-            </h3>
+          <div className="max-h-[calc(100vh-220px)] overflow-y-auto p-4 md:p-6">
+            <div className="mb-5 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-rose-600">
+                  StaySaga gợi ý
+                </p>
+                <h3 className="mt-1 text-xl font-extrabold tracking-tight text-gray-950">
+                  {locationInput.trim() ? "Kết quả phù hợp" : "Thành phố nổi tiếng"}
+                </h3>
+              </div>
+              <p className="hidden max-w-xs text-right text-sm text-gray-500 md:block">
+                Chọn nhanh điểm đến để tiếp tục chọn ngày và số khách.
+              </p>
+            </div>
 
             {filteredDestinations.length > 0 ? (
-              <div
-                className="overflow-y-auto divide-y divide-gray-100 dark:divide-zinc-800"
-                style={{ maxHeight: 360 }}
-              >
-                {filteredDestinations.map((dest) => (
-                  <button
-                    key={dest.name}
-                    type="button"
-                    onClick={() => handleSelectCity(dest.name)}
-                    className="w-full flex items-center gap-4 px-2 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                  >
-                    <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-                      <MapPin className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                        {dest.name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Việt Nam · {dest.count.toLocaleString()} chỗ ở
-                      </p>
-                    </div>
-                  </button>
-                ))}
+              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-gray-700">
+                      {locationInput.trim() ? "Kết quả tìm kiếm" : "Gợi ý hàng đầu"}
+                    </h4>
+                    <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-600">
+                      {filteredDestinations.length} điểm đến
+                    </span>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {filteredDestinations.slice(0, 6).map((dest) => (
+                      <DestinationButton
+                        key={dest.name}
+                        destination={dest}
+                        featured
+                        onSelect={handleSelectCity}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-gray-50 p-4">
+                  <h4 className="mb-3 text-sm font-bold text-gray-700">
+                    Thành phố được đặt nhiều
+                  </h4>
+                  <div className="space-y-2">
+                    {DESTINATIONS.slice(0, 8).map((dest) => (
+                      <DestinationButton
+                        key={dest.name}
+                        destination={dest}
+                        compact
+                        onSelect={handleSelectCity}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="text-center py-6 md:py-10 text-gray-400">
-                <MapPin className="w-8 h-8 md:w-10 md:h-10 mx-auto mb-3 opacity-20" />
-                <p className="font-medium text-sm md:text-base">
+              <div className="rounded-2xl border border-dashed border-gray-200 py-10 text-center text-gray-400">
+                <MapPin className="mx-auto mb-3 h-10 w-10 opacity-20" />
+                <p className="text-sm font-medium md:text-base">
                   Không tìm thấy kết quả
                 </p>
               </div>
@@ -434,28 +503,28 @@ export function AdvancedSearchBar() {
       {/* CALENDAR PANEL */}
       {activePanel === "calendar" && (
         <div
-          className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden z-50"
+          className="absolute left-0 right-0 top-full z-50 mt-3 max-h-[calc(100vh-220px)] overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl dark:border-gray-100 dark:bg-white"
           style={{ animation: "fadeSlideIn 200ms ease-out" }}
         >
           <div className="p-4 md:p-6">
-            <div className="flex items-center justify-between mb-4 md:mb-5">
+            <div className="mb-3 flex items-center justify-between md:mb-4">
               <button
                 type="button"
                 onClick={prevMonth}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                className="rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-100"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-600" />
               </button>
               <button
                 type="button"
                 onClick={nextMonth}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                className="rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-100"
               >
-                <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-600" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 overflow-y-auto max-h-[60vh] md:max-h-none">
+            <div className="grid max-h-[calc(100vh-360px)] grid-cols-1 gap-4 overflow-y-auto md:grid-cols-2 md:gap-8">
               <MonthGrid
                 year={calendarBaseMonth.year}
                 month={calendarBaseMonth.month}
@@ -475,7 +544,7 @@ export function AdvancedSearchBar() {
             </div>
 
             {checkInDate && (
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+              <div className="mt-4 flex items-center justify-between gap-2 border-t border-gray-100 pt-4 dark:border-gray-100">
                 <div className="text-xs md:text-sm text-gray-500 truncate">
                   {checkOutDate ? (
                     <span>
@@ -514,7 +583,7 @@ export function AdvancedSearchBar() {
       {/* GUEST PANEL */}
       {activePanel === "guests" && (
         <div
-          className="absolute top-full right-0 mt-3 w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 p-4 md:p-5 z-50"
+          className="absolute right-0 top-full z-50 mt-3 w-full rounded-2xl border border-gray-100 bg-white p-4 shadow-2xl md:p-5 dark:border-gray-100 dark:bg-white"
           style={{ animation: "fadeSlideIn 200ms ease-out", width: 340 }}
         >
           <GuestRow
@@ -565,7 +634,58 @@ export function AdvancedSearchBar() {
           }
         }
       `}</style>
+      </div>
     </div>
+  );
+}
+
+function DestinationButton({
+  destination,
+  onSelect,
+  featured = false,
+  compact = false,
+}: {
+  destination: (typeof DESTINATIONS)[number];
+  onSelect: (name: string) => void;
+  featured?: boolean;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(destination.name)}
+      className={`group flex w-full items-center gap-3 rounded-2xl text-left transition-all hover:bg-rose-50 ${
+        featured
+          ? "border border-gray-100 bg-white p-3 shadow-sm hover:border-rose-100 hover:shadow-md"
+          : "p-2"
+      }`}
+    >
+      <div
+        className={`relative shrink-0 overflow-hidden rounded-xl bg-rose-50 ${
+          compact ? "h-12 w-12" : "h-16 w-16"
+        }`}
+      >
+        <SafeImage
+          src={destination.image}
+          alt={destination.name}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-linear-to-t from-black/25 to-transparent" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-extrabold text-gray-950">
+          {destination.name}
+        </p>
+        <p className="truncate text-xs font-medium text-gray-500">
+          {destination.description}
+        </p>
+        {!compact && (
+          <p className="mt-1 text-xs font-bold text-rose-600">
+            {destination.count.toLocaleString()} chỗ ở
+          </p>
+        )}
+      </div>
+    </button>
   );
 }
 
@@ -592,7 +712,7 @@ function MonthGrid({
 
   return (
     <div>
-      <h4 className="text-center font-bold text-gray-900 dark:text-white mb-3 text-base">
+      <h4 className="mb-3 text-center text-base font-bold text-gray-900 dark:text-gray-900">
         {MONTHS_VN[month]} {year}
       </h4>
       {/* Day headers */}
@@ -600,16 +720,16 @@ function MonthGrid({
         {DAYS_VN.map((d) => (
           <div
             key={d}
-            className="text-center text-xs font-semibold text-gray-400 py-1.5"
+            className="py-1.5 text-center text-xs font-semibold text-gray-400 dark:text-gray-400"
           >
             {d}
           </div>
         ))}
       </div>
       {/* Days */}
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 gap-y-2">
         {cells.map((day, i) => {
-          if (day === null) return <div key={`e-${i}`} />;
+          if (day === null) return <div key={`e-${i}`} className="h-11" />;
 
           const date = new Date(year, month, day);
           const past = isPast(date);
@@ -618,44 +738,45 @@ function MonthGrid({
           const inRange = isInRange(date, checkIn, checkOut);
           const isToday = isSameDay(date, new Date());
 
-          let classes =
-            "relative h-10 flex items-center justify-center text-sm font-medium rounded-lg transition-all cursor-pointer ";
+          const rangeStart = isCheckIn && checkOut;
+          const rangeEnd = isCheckOut && checkIn;
+          const rangeClasses = inRange
+            ? "bg-rose-50"
+            : rangeStart
+              ? "bg-linear-to-r from-transparent from-50% to-rose-50 to-50%"
+              : rangeEnd
+                ? "bg-linear-to-r from-rose-50 from-50% to-transparent to-50%"
+                : "";
+
+          let buttonClasses =
+            "relative z-10 flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all ";
 
           if (past) {
-            classes += "text-gray-300 dark:text-zinc-700 cursor-not-allowed ";
+            buttonClasses += "cursor-not-allowed text-gray-300 dark:text-gray-300 ";
           } else if (isCheckIn || isCheckOut) {
-            classes += "bg-rose-600 text-white font-bold shadow-sm ";
+            buttonClasses += "bg-rose-600 text-white shadow-[0_8px_18px_rgba(225,29,72,0.28)] ";
           } else if (inRange) {
-            classes +=
-              "bg-rose-100 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 ";
+            buttonClasses += "text-rose-700 hover:bg-rose-100 ";
           } else if (isToday) {
-            classes +=
-              "ring-2 ring-rose-500 text-rose-600 font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 ";
+            buttonClasses += "border border-rose-500 text-rose-600 hover:bg-rose-50 ";
           } else {
-            classes +=
-              "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 ";
+            buttonClasses += "text-gray-700 hover:bg-gray-100 dark:text-gray-700 dark:hover:bg-gray-100 ";
           }
 
           return (
-            <button
+            <div
               key={day}
-              type="button"
-              disabled={past}
-              onClick={() => onDayClick(date)}
-              className={classes}
+              className={`flex h-11 items-center justify-center ${rangeClasses}`}
             >
-              {day}
-              {isCheckIn && checkOut && (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-rose-200 whitespace-nowrap">
-                  nhận
-                </span>
-              )}
-              {isCheckOut && (
-                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-bold text-rose-200 whitespace-nowrap">
-                  trả
-                </span>
-              )}
-            </button>
+              <button
+                type="button"
+                disabled={past}
+                onClick={() => onDayClick(date)}
+                className={buttonClasses}
+              >
+                {day}
+              </button>
+            </div>
           );
         })}
       </div>
@@ -683,10 +804,10 @@ function GuestRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between py-4 ${!isLast ? "border-b border-gray-100 dark:border-zinc-800" : ""}`}
+      className={`flex items-center justify-between py-4 ${!isLast ? "border-b border-gray-100 dark:border-gray-100" : ""}`}
     >
       <div>
-        <p className="font-semibold text-gray-900 dark:text-white">{label}</p>
+        <p className="font-semibold text-gray-900 dark:text-gray-900">{label}</p>
         <p className="text-sm text-gray-500">{desc}</p>
       </div>
       <div className="flex items-center gap-3">
@@ -694,18 +815,18 @@ function GuestRow({
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
-          className="w-9 h-9 rounded-full border border-gray-300 dark:border-zinc-600 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:border-rose-500 hover:text-rose-500 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:text-gray-600 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-rose-500 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-gray-300 disabled:hover:text-gray-600 dark:border-gray-300 dark:text-gray-600"
         >
           <Minus className="w-4 h-4" />
         </button>
-        <span className="w-8 text-center font-bold text-gray-900 dark:text-white text-lg">
+        <span className="w-8 text-center text-lg font-bold text-gray-900 dark:text-gray-900">
           {value}
         </span>
         <button
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
-          className="w-9 h-9 rounded-full border border-gray-300 dark:border-zinc-600 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:border-rose-500 hover:text-rose-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-rose-500 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-30 dark:border-gray-300 dark:text-gray-600"
         >
           <Plus className="w-4 h-4" />
         </button>
