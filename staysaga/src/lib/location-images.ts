@@ -310,14 +310,25 @@ export const getCityImages = (location?: string | null, count = 3) => {
   if (!key) return [];
 
   const pool = vietnamLocationRecords[key].images;
-  return Array.from({ length: Math.max(1, count) }, (_, index) => {
+  if (!pool || (pool as readonly string[]).length === 0) return [];
+
+  const safeCount = Math.min(100, Math.max(1, Math.floor(Number(count) || 0)));
+  return Array.from({ length: safeCount }, (_, index) => {
     const safeIndex = index % pool.length;
     return pool[safeIndex];
   });
 };
 
-export const getCityImage = (location?: string | null, index = 0) =>
-  getCityImages(location, index + 1)[index] ?? DEFAULT_VIETNAM_FALLBACK_IMAGE;
+export const getCityImage = (location?: string | null, index = 0) => {
+  const key = getVerifiedLocationKey(location);
+  if (!key) return DEFAULT_VIETNAM_FALLBACK_IMAGE;
+
+  const pool = vietnamLocationRecords[key].images;
+  if (!pool || (pool as readonly string[]).length === 0) return DEFAULT_VIETNAM_FALLBACK_IMAGE;
+
+  const safeIndex = Math.max(0, Math.floor(Number(index) || 0)) % pool.length;
+  return pool[safeIndex] ?? DEFAULT_VIETNAM_FALLBACK_IMAGE;
+};
 
 export const getLocationImages = getCityImages;
 export const getLocationImage = getCityImage;

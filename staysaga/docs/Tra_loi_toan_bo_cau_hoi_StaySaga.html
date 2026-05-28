@@ -1,0 +1,313 @@
+<!doctype html><html><head><meta charset='utf-8'>
+<title>Trả lời vấn đáp StaySaga</title>
+<style>
+    @page { size: A4; margin: 14mm 13mm 15mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, 'Times New Roman', sans-serif; color: #111827; font-size: 11px; line-height: 1.42; }
+    h1 { text-align: center; font-size: 20px; margin: 0 0 8px; color: #9f1239; }
+    .intro { margin: 0 0 10px; }
+    .q { break-inside: avoid; page-break-inside: avoid; margin: 0 0 8px; padding-bottom: 5px; border-bottom: 1px solid #e5e7eb; }
+    .qt { font-weight: 700; font-size: 11.5px; margin-bottom: 3px; color: #111827; }
+    .ans { margin: 2px 0; }
+    .label { font-weight: 700; color: #9f1239; }
+    .sources { margin-top: 14px; break-before: page; }
+    li { margin-bottom: 4px; }
+    </style></head><body>
+<h1>TRẢ LỜI TOÀN BỘ CÂU HỎI VẤN ĐÁP - STAYSAGA</h1>
+<p class='intro'>Môn: Các công nghệ mới trong phát triển phần mềm. Tài liệu gồm 57 câu, mỗi câu có 2 hướng trả lời: đáp án chuẩn theo tài liệu/nguồn chính thức và đáp án áp dụng trực tiếp vào app StaySaga.</p>
+<p class='intro'>Nguồn nội bộ dùng để áp dụng StaySaga: README.md, supabase/migrations, docs/qa-full-test-report.md, docs/AI_PROMPTS.md và mã nguồn trong src/.</p>
+<section class='q'>
+<div class='qt'>Câu 1. Sự khác biệt giữa Client Component và Server Component trong Next.js là gì? Khi nào nên dùng loại nào?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Server Component render phía server, gửi HTML đã hoàn chỉnh đến client. Client Component cần tương tác JS phía client (useState, useEffect, event handlers). Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong StaySaga, các trang đọc dữ liệu như /homestays, /bookings, /host và /admin ưu tiên Server Component để đọc Supabase server-side. Các phần có state, click, toast, modal, favorite, wizard và realtime subscription là Client Component.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 2. App Router trong Next.js 13+ khác với Pages Router ở điểm nào? Nêu ít nhất 3 điểm khác biệt chính.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Cấu trúc thư mục (app/ vs pages/), Server Components mặc định, Layouts lồng nhau, Server Actions, Loading/Error files. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng App Router trong src/app với các route /homestays, /bookings, /host, /admin và /api. Dự án tận dụng layout/page theo thư mục, Server Components mặc định, Server Actions trong src/core/*/actions.ts và Route Handler cho endpoint cần URL public.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 3. Server Actions trong Next.js là gì? Cho biết cú pháp khai báo một Server Action.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Async function chạy trên server, có thể gọi trực tiếp từ Client Component. Khai báo với &quot;use server&quot; hoặc trong file action.js/ts. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong StaySaga, các file như src/core/bookings/actions.ts, src/core/auth/actions.ts, src/core/favorites/actions.ts dùng &quot;use server&quot; để xử lý đăng nhập, đặt phòng, hủy/đổi lịch, yêu thích và revalidate dữ liệu sau khi ghi.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 4. Các phương thức Data Fetching nào được hỗ trợ trong Next.js? Khi nào dùng fetch() trực tiếp, khi nào dùng React Query / SWR?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: fetch tích hợp sẵn (caching, revalidation), React Query/SWR khi cần client-side fetching, polling, optimistic updates. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga chủ yếu fetch dữ liệu bằng Supabase server client trong Server Component và Server Action. Với phần cần tương tác như bộ lọc, toast, wizard hoặc realtime, dự án dùng Client Component/state; hiện chưa cần React Query vì luồng chính đã nằm ở server và Supabase.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 5. Trong Next.js, file layout.tsx có vai trò gì và khác gì so với page.tsx?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Layout không re-render khi route thay đổi (giữ trạng thái). Dùng cho header, sidebar, providers. Có thể lồng nhau. 1.2. SUPABASE &amp; POSTGRESQL. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> layout.tsx của StaySaga bọc provider, shell và giao diện chung theo nhóm route; page.tsx là nội dung từng màn như danh sách homestay, chi tiết booking hoặc dashboard admin.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 6. Supabase Auth hỗ trợ những phương thức xác thực nào? Liệt kê ít nhất 4 phương thức.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Email/password, Google OAuth, GitHub OAuth, Phone (SMS), Magic Link, SSO. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng Supabase Auth cho đăng ký, đăng nhập, đăng xuất, callback OAuth và quản lý session qua @supabase/ssr. README nêu email/password, Google/Facebook OAuth và quên/đặt lại mật khẩu là các luồng chính.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 7. Row Level Security (RLS) trong Supabase là gì? Mục đích của RLS?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Cơ chế phân quyền ở cấp độ dòng (row) trong database. Đảm bảo user chỉ thấy/sửa được dữ liệu được phép. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga bật RLS cho profiles, homestays, bookings, favorites, reviews và notifications. Policy giúp user chỉ quản lý dữ liệu của mình, host quản lý homestay của mình, admin có quyền quản trị rộng hơn.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 8. Các thành phần chính của Supabase được nhắc đến trong môn học là gì? Liệt kê đầy đủ.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Authentication, Database (PostgreSQL), Storage, Realtime, Edge Functions, Vector. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong StaySaga, Supabase dùng cho Auth, PostgreSQL, RLS, Storage bucket homestay-images và Realtime. Các bảng chính gồm profiles, homestays, homestay_images, amenities, bookings, favorites, reviews, notifications.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 9. Cấu trúc một Row Level Security Policy cơ bản trong Supabase gồm những thành phần nào?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: USING clause (điều kiện lọc), WITH CHECK clause (điều kiện insert/update), loại policy (SELECT, INSERT, UPDATE, DELETE), role (authenticated, anon). Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Policy StaySaga dùng auth.uid() để so khớp user_id hoặc owner_id. Ví dụ bookings cho user đọc booking của mình, host đọc booking thuộc homestay mình, còn admin được mở rộng quyền qua role/helper trong migration.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 10. Supabase Realtime hoạt động dựa trên cơ chế nào? Khi nào nên dùng?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Dựa trên PostgreSQL LISTEN/NOTIFY và/hoặc WebSocket. Dùng cho thay đổi dữ liệu real-time, presence, broadcast. 1.3. DOCKER &amp; CONTAINERIZATION. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng RealtimeSubscription để subscribe thay đổi bookings, reviews, homestays, profiles và notifications. Khi có thay đổi, UI refresh hoặc tăng badge thông báo cho guest/host/admin.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 11. Container khác với Virtual Machine (VM) ở điểm nào? Nêu ít nhất 3 điểm.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: VM có kernel riêng, container dùng chung kernel host; VM nặng hơn, khởi động chậm hơn; container nhẹ, khởi động nhanh, chi phí tài nguyên thấp hơn. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga đóng gói bằng container để chạy nhất quán giữa máy dev và VPS. Container nhẹ hơn VM, phù hợp app Next.js vì database chính nằm ngoài ở Supabase cloud.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 12. Dockerfile và docker-compose.yml có vai trò gì? Sự khác nhau giữa hai file này?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Dockerfile mô tả cách build một image. docker-compose.yml định nghĩa và chạy multi-container app (services, networks, volumes). Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Dockerfile StaySaga build Next.js standalone; docker-compose.yml định nghĩa service staysaga-web, map ${APP_PORT:-3000}:3000 và truyền biến môi trường Supabase/Stripe vào container.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 13. Multi-stage build trong Docker là gì? Tại sao nên dùng?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Build trong nhiều stage, chỉ copy artifact cần thiết sang stage cuối → image nhỏ hơn, bảo mật tốt hơn, tách biệt build environment. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Dockerfile của StaySaga có stage deps, builder và runner. Runner chỉ copy public, .next/standalone và .next/static rồi chạy node server.js bằng user nextjs, giúp image nhỏ và sạch hơn.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 14. Các câu lệnh Docker cơ bản nào cần biết? (docker build, docker run, docker compose up/down, docker ps, docker logs)</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: build tạo image, run khởi chạy container, compose up/down quản lý multi-container, ps liệt kê container đang chạy, logs xem output. 1.4. DEPLOYMENT &amp; DEVOPS. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Khi demo/deploy StaySaga thường dùng npm run build, docker compose up --build, docker compose ps, docker compose logs -f staysaga và docker compose down. Khi lỗi production, logs là nơi kiểm tra đầu tiên.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 15. HTTPS và HTTP khác nhau ở điểm nào? Tại sao cần HTTPS cho production?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: HTTPS mã hoá dữ liệu bằng TLS/SSL, HTTP truyền plain text. HTTPS bảo mật dữ liệu, xác thực server, tránh man-in-the-middle. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga có đăng nhập, cookie session, thông tin đặt phòng và có thể thanh toán, nên production bắt buộc dùng HTTPS để bảo vệ token, cookie và dữ liệu khách.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 16. Reverse proxy (ví dụ Nginx) là gì? Trong mô hình deploy với Cloudflare + VPS, reverse proxy đóng vai trò gì?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Server trung gian tiếp nhận request, chuyển tiếp đến app server. Dùng để load balancing, SSL termination, cache, bảo mật. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong mô hình StaySaga, Cloudflare trỏ domain về VPS, Nginx nhận request 80/443 rồi proxy vào container Next.js port 3000, đồng thời set header X-Forwarded-* và xử lý SSL/redirect HTTPS.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 17. Domain và DNS hoạt động như thế nào? Khi người dùng nhập example.com, quy trình DNS resolution ra sao?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Browser → DNS resolver → Root server → TLD server (.com) → Authoritative nameserver → IP address → Server. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Với StaySaga, domain được cấu hình DNS trên Cloudflare trỏ tới IP VPS. Người dùng nhập domain, DNS resolve ra Cloudflare/origin, request đi qua Nginx rồi vào container app.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 18. Cloudflare trong mô hình deploy đóng vai trò gì? Nêu ít nhất 3 chức năng.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: CDN (tăng tốc), DDoS protection, DNS management, SSL/TLS proxy (Universal SSL), caching, free tier. 1.5. TYPESCRIPT &amp; KIẾN TRÚC WEB. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Cloudflare giúp StaySaga quản lý DNS, bật SSL miễn phí, cache asset tĩnh, chống DDoS cơ bản và ẩn IP VPS, phù hợp mô hình triển khai đồ án.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 19. Sự khác biệt giữa interface và type trong TypeScript là gì? Khi nào dùng interface, khi nào dùng type?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Interface có thể merge (declaration merging), extend được; type linh hoạt hơn (union, intersection). Dùng interface cho object shape, type cho union/intersection/complex types. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng TypeScript cho model/props như booking, homestay, profile. Interface hợp mô tả object row/props; type hợp union role/status như USER | PARTNER | ADMIN hoặc BookingStatus.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 20. SSR, CSR, SSG, ISR là gì? Nêu tên đầy đủ và bản chất mỗi khái niệm.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: SSR = Server-Side Rendering, CSR = Client-Side Rendering, SSG = Static Site Generation, ISR = Incremental Static Regeneration. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng server rendering cho các trang cần session và dữ liệu mới như /bookings, /host, /admin. Các phần tương tác như filter, modal, favorite mới chạy CSR ở client.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 21. type annotation và type inference trong TypeScript khác nhau như thế nào? Ví dụ minh hoạ.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Annotation: khai báo rõ kiểu (let name: string). Inference: TypeScript tự suy kiểu (let name = &quot;A&quot; → string). 1.6. AI TOOLS. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong StaySaga, nên annotation ở boundary như props, payload Server Action và kiểu dữ liệu Supabase; biến cục bộ như nights hoặc totalPrice có thể để TypeScript tự suy luận.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 22. GitHub Copilot và Gemini CLI hoạt động dựa trên nguyên lý nào? Nêu cách sử dụng cơ bản của từng công cụ.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Copilot dùng code context + LLM để suggest code inline. Gemini CLI cho phép tương tác LLM qua terminal, chat, run code. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga có docs/AI_PROMPTS.md ghi các prompt AI dùng để sửa hydration, UI homestays và mock bookings. Có thể nói AI hỗ trợ sinh gợi ý, còn nhóm kiểm tra lại bằng build, lint và test.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 23. Các loại minh chứng sử dụng AI tool mà bạn có thể cung cấp cho giảng viên là gì?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Comment trong code (prompt + response), README (mô tả cách dùng AI), chat history/screenshot, commit message ghi rõ AI hỗ trợ. NHÓM 2 — THÔNG HIỂU Mục tiêu: Sinh viên giải thích, phân tích sự khác biệt, so sánh, diễn giải nguyên lý hoạt động. 2.1. NEXT.JS &amp; KIẾN TRÚC. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Minh chứng AI của StaySaga gồm docs/AI_PROMPTS.md, README, commit history nếu có, tài liệu QA và script sinh báo cáo. Khi vấn đáp có thể mở các file này để chứng minh AI được dùng có kiểm soát.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 24. Tại sao Next.js mặc định render bằng Server Component? Lợi ích chính của việc này là gì?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Giảm JavaScript gửi về client (bundle size nhỏ hơn), tốt cho SEO, truy cập trực tiếp server resources (database, file system), cải thiện First Contentful Paint. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga để Server Component mặc định giúp giảm JS client, đọc Supabase bằng cookie server và không lộ logic server. Chỉ các nút favorite, realtime, form động mới chuyển sang client.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 25. Trong Next.js, khi nào bạn cần dùng &quot;use client&quot; directive? Nếu không có directive này thì mặc định component hoạt động ra sao?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Khi cần dùng React hooks (useState, useEffect), event handlers, browser APIs. Mặc định là Server Component (không có &quot;use client&quot;). Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong StaySaga, &quot;use client&quot; dùng cho component có useState/useEffect, router.push, toast, modal, realtime subscription hoặc click handler. Nếu quên directive, Next.js sẽ báo lỗi vì mặc định là Server Component.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 26. Giải thích luồng xử lý một request trong Next.js App Router, từ khi user truy cập URL đến khi nhận được nội dung.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Request → Routing (route matching) → Layout → Loading → Server Component renders → Data fetching → RSC payload gửi về → Client Component hydration → Hiển thị. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Luồng StaySaga: user vào route, App Router match page/layout, Server Component tạo Supabase server client đọc session/cookie, query DB theo RLS, render HTML/RSC rồi hydrate các Client Component như favorite/realtime.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 27. So sánh Server Actions và API Routes trong Next.js. Khi nào dùng cái nào?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Server Actions: gọi trực tiếp như gọi function, đơn giản, type-safe. API Routes: RESTful endpoints, dùng khi cần webhook, external call, flexibility. Server Actions là lựa chọn hiện đại hơn. 2.2. SUPABASE &amp; DATABASE. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng Server Actions cho login/logout, booking, favorite, review và admin updates vì là mutation nội bộ. API Route phù hợp cho webhook thanh toán hoặc endpoint bên ngoài như geocode/places.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 28. Giải thích cách Supabase Auth quản lý session. Access token và refresh token hoạt động như thế nào?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Sau khi đăng nhập, Supabase trả về access token (JWT, hết hạn sau ~1 giờ) và refresh token (lưu trong httpOnly cookie). Khi access token hết hạn, tự động refresh. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng @supabase/ssr để createServerClient đọc/ghi cookie session trong Server Component/Action và proxy.ts để cập nhật session, bảo vệ route quản lý.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 29. Khi nào nên dùng Supabase Storage thay vì lưu file dạng base64 trong database? Ưu điểm của Storage là gì?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Storage: quản lý file riêng, streaming, CDN, quyền truy cập RLS, không làm phình database. Base64 trong DB: tăng kích thước DB, chậm truy vấn. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Ảnh homestay của StaySaga lưu trong bucket homestay-images; database chỉ lưu url/storage_path trong homestay_images. Cách này nhẹ DB, dễ phân quyền upload cho host và dễ phục vụ ảnh công khai/signed URL.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 30. Mô tả quy trình tạo một RLS Policy để user chỉ đọc được dữ liệu của chính mình trong Supabase.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Tạo bảng có column user_id. Tạo policy SELECT: auth.uid() = user_id. Gắn cho role authenticated. Test bằng cách đăng nhập tài khoản khác. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong StaySaga, bookings có user_id và homestay_id. Policy SELECT cho user dùng auth.uid() = user_id; host dùng EXISTS qua homestays.owner_id; WITH CHECK bảo đảm user chỉ tạo booking của mình.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 31. Sự khác biệt giữa Realtime và polling trong việc cập nhật dữ liệu là gì? Ưu/nhược điểm từng cách?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Polling: gửi request định kỳ (lãng phí bandwidth khi không có thay đổi). Realtime: server push khi có thay đổi (hiệu quả hơn, phức tạp hơn, cần WebSocket). 2.3. DOCKER &amp; DEVOPS. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng Realtime cho booking, review và notification để host/admin thấy thay đổi nhanh. Nếu polling, dashboard phải gọi API định kỳ, tốn request hơn và có độ trễ.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 32. Giải thích tại sao file docker-compose.yml thường dùng volume để mount source code thay vì copy vào image.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Volume mount: code thay đổi → container thấy ngay (hot reload), không cần rebuild image. Copy vào image: mỗi thay đổi cần rebuild, tốn thời gian. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Khi dev StaySaga có thể mount source để hot reload. Docker production hiện copy standalone build vào image để container ổn định, đúng với mục tiêu deploy VPS.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 33. Khi chạy docker compose up, Docker thực hiện những bước nào? Trình bày luồng xử lý.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Đọc docker-compose.yml → Build image (nếu chưa có hoặc có thay đổi) → Pull image (nếu cần) → Tạo network → Tạo và chạy containers → Mount volumes → Cấu hình environment variables. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> docker compose up --build của StaySaga đọc docker-compose.yml, build Dockerfile, tạo service staysaga-web, map port 3000, inject env Supabase/Stripe rồi chạy server.js từ Next standalone.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 34. Tại sao Multi-stage build giúp giảm kích thước Docker image? Giải thích cơ chế.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Stage đầu chứa build tools (Node, compiler). Stage cuối chỉ chứa runtime (node:alpine) và copy artifact từ stage đầu. Loại bỏ dependencies không cần thiết (compiler, dev dependencies). 2.4. DEPLOYMENT &amp; SSL. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Image StaySaga nhỏ vì stage runner chỉ chứa Node runtime, .next/standalone, .next/static và public; npm cache, source thừa và dev dependencies không đi vào image cuối.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 35. Trong mô hình Cloudflare + VPS + Nginx, trình bày luồng request từ browser đến ứng dụng Next.js.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Browser → DNS (Cloudflare) → Cloudflare edge (SSL termination) → VPS IP → Nginx (reverse proxy, port 80/443) → Next.js app (port 3000). Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Luồng production StaySaga: browser -&gt; DNS/Cloudflare -&gt; VPS -&gt; Nginx -&gt; container staysaga-web port 3000 -&gt; Next.js App Router -&gt; Supabase cloud nếu cần dữ liệu -&gt; response quay lại browser.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 36. SSL Certificate (chứng chỉ SSL) hoạt động như thế nào? Giải thích cơ chế mã hoá trong HTTPS handshake.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Client gửi ClientHello → Server gửi certificate (public key + CA signature) → Client xác thực CA → Client tạo pre-master secret, mã hoá bằng public key → Server giải mã → Cả hai tạo shared session key → Mã hoá dữ liệu. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Với StaySaga, TLS bảo vệ cookie Supabase Auth và thông tin booking/checkout. Sau handshake, dữ liệu login, profile và đặt phòng được mã hóa khi truyền qua mạng.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 37. Cloudflare Universal SSL hoạt động như thế nào? Ưu điểm so với tự cài SSL trên VPS?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Cloudflare cấp và renew SSL miễn phí, SSL termination tại Cloudflare edge. Ưu điểm: miễn phí, tự động, bảo mật thêm với Cloudflare features. Nhược điểm: traffic đi qua Cloudflare. 2.5. TYPESCRIPT &amp; KIẾN TRÚC. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga có thể dùng Cloudflare Universal SSL ở edge và Origin Certificate hoặc Let&#x27;s Encrypt trên VPS. Nên dùng chế độ Full Strict để mã hóa cả đoạn Cloudflare tới VPS.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 38. Giải thích khái niệm generics trong TypeScript. Cho ví dụ một hàm generic đơn giản.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Generic cho phép viết code hoạt động với nhiều kiểu dữ liệu mà vẫn type-safe. Ví dụ: function identity&lt;T&gt;(arg: T): T { return arg; }. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga có thể dùng generic cho helper như Result&lt;T&gt; = { data?: T; error?: string } để các action booking, review, profile có kiểu trả về nhất quán và type-safe.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 39. So sánh SSR và SSG. Khi nào nên dùng SSG, khi nào nên dùng SSR cho một trang web?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: SSG: build time render, nhanh, tốt cho nội dung tĩnh (blog, docs), không cần real-time data. SSR: request time render, tốt cho nội dung động (dashboard, profile user). Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trang public ít đổi của StaySaga có thể SSG/ISR; dashboard /host, /admin và /bookings nên SSR vì phụ thuộc session, role và dữ liệu booking mới nhất.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 40. Tại sao nên dùng TypeScript thay vì JavaScript thuần trong dự án Next.js? Liệt kê các lợi ích chính.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Type safety (phát hiện lỗi sớm), autocompletion tốt hơn, refactoring an toàn, documentation tự động qua types, giảm bug runtime. NHÓM 3 — VẬN DỤNG Mục tiêu: Sinh viên thiết kế, đánh giá, so sánh lựa chọn, giải quyết vấn đề thực tế trong dự án. 3.1. THIẾT KẾ &amp; KIẾN TRÚC. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng TypeScript để kiểm soát props, role/status, payload booking và dữ liệu Supabase. Điều này giảm lỗi khi refactor route/action và giúp IDE cảnh báo trước khi build.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 41. Trong dự án của bạn, bạn đã thiết kế database schema như thế nào? Vì sao bạn chọn cấu trúc đó thay vì cách khác?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Mô tả các bảng, mối quan hệ (one-to-many, many-to-many), indexes, RLS. Giải thích trade-off: denormalization vs normalization, embedded vs relational. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Schema StaySaga tách profiles, homestays, homestay_images, amenities, homestay_amenities, bookings, favorites, reviews và notifications. Tách bảng giúp query rõ, tránh lặp dữ liệu, đặt khóa ngoại/RLS và mở rộng host/admin dễ hơn.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 42. Khi Supabase không hỗ trợ một tính năng nhất định (ví dụ: complex job queue), bạn sẽ xử lý như thế nào?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Sử dụng Supabase Edge Functions, kết hợp third-party services (Inngest, Trigger.dev), hoặc implement đơn giản với database polling. Giải thích cách chọn và trade-off. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Nếu StaySaga cần job queue như gửi email nhắc check-in, có thể dùng Supabase Edge Functions + cron, Trigger.dev/Inngest hoặc bảng jobs/notifications với worker định kỳ cho quy mô đồ án.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 43. Bạn đã sử dụng Server Components và Client Components như thế nào trong dự án? Có gặp khó khăn gì khi phân chia không?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Server cho data fetching, static content. Client cho forms, interactive UI. Khó khăn: props serialization, &quot;use client&quot; boundary, data fetching patterns. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga dùng Server Component cho page đọc Supabase và auth gate; Client Component cho FavoriteButton, wizard host, modal đổi giá/ngày, toast và RealtimeSubscription. Khó khăn là ranh giới server-client và props phải serializable.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 44. Thiết kế chiến lược phân quyền (authorization) cho ứng dụng của bạn. Ai được làm gì, kiểm tra ở đâu (client? server? database?)?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: RLS ở database (phòng thủ cuối), Server Actions kiểm tra quyền trước khi xử lý, Client-side UI hiển thị/hide theo vai trò. Giải thích tại sao cần kiểm tra ở nhiều lớp. 3.2. DOCKER &amp; DEPLOYMENT. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga phân quyền Guest/USER/PARTNER/ADMIN. Guest xem public; USER đặt phòng, favorite, review; PARTNER quản lý homestay/booking của mình; ADMIN quản lý hệ thống. Quyền được kiểm tra ở UI, server và RLS.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 45. Nếu ứng dụng Next.js của bạn bị crash khi chạy trong Docker container trên VPS, bạn sẽ debug bằng cách nào? Trình bài các bước.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Kiểm tra logs (docker logs, docker compose logs), kiểm tra environment variables, kiểm tra port binding, kiểm tra network (ping, curl), kiểm tra resource (CPU, RAM, disk). Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Nếu StaySaga crash trong Docker, kiểm tra docker compose logs -f staysaga, env Supabase, NEXT_PUBLIC_SITE_URL, APP_PORT, output .next/standalone, npm run build và thử curl localhost:3000 trên VPS.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 46. Khi deploy lên VPS, bạn cần cấu hình Nginx như thế nào để proxy request đến Next.js app? Cho ví dụ cấu hình cơ bản.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Cấu hình location / proxy_pass http://localhost:3000, set headers (Host, X-Real-IP, X-Forwarded-), cấu hình SSL, cấu hình static file serving / next.js image optimization.*. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Nginx cho StaySaga proxy / về http://127.0.0.1:3000 hoặc tên service Docker, set Host/X-Forwarded-Proto/X-Real-IP, redirect HTTP sang HTTPS và tăng client_max_body_size nếu upload ảnh lớn.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 47. Giả sử bạn cần deploy 2 ứng dụng (frontend Next.js + backend NestJS) trên cùng một VPS. Thiết kế cấu hình Docker Compose và Nginx.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: 2 services trong docker-compose. Nginx làm reverse proxy: route theo path (/api/ → NestJS, / → Next.js). Cấu hình network, healthcheck. 3.3. SUPABASE &amp; DATA. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Nếu thêm NestJS, Compose có service web:3000 và api:3001 cùng network. Nginx route /api/ tới api:3001, còn / tới web:3000; chỉ Nginx expose 80/443 ra public.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 48. Bạn cần hiển thị danh sách bài viết cho user chưa đăng nhập (anonymous). Nêu cách cấu hình RLS Policy cho trường hợp này.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Policy SELECT cho role anon với điều kiện không có điều kiện (auth.uid() IS NULL hoặc không kiểm tra auth). Hoặc dùng public schema access. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong StaySaga, danh sách homestay public cho guest nên có SELECT policy cho anon/authenticated với điều kiện is_active = true hoặc status = approved. Dữ liệu draft/ẩn của host không trả cho anon.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 49. Nếu bạn cần upload file lớn (video, 50MB) lên Supabase Storage, bạn cần lưu ý những gì về cấu hình và RLS?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Storage bucket có file size limit (mặc định 50MB, có thể tăng). Cấu hình RLS: ai được upload, ai được đọc. Nên dùng signed URL cho file private. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Với ảnh/video lớn cho homestay, StaySaga cần cấu hình bucket homestay-images về size/MIME, đường dẫn owner_id/property_id, policy cho host upload property của mình và signed URL nếu file private.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 50. Thiết kế hệ thống notification real-time (thông báo khi có tin nhắn mới) sử dụng Supabase Realtime. Trình bày flow từ client đến server.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: User A insert notification vào bảng → Supabase Realtime gửi event → User B subscribe channel notifications:user_id=B → Nhận event → Cập nhật UI (toast, badge). 3.4. AI TOOLS &amp; QUY TRÌNH. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Notification StaySaga: khi có booking/message/review mới, server insert vào notifications với user_id người nhận; client subscribe notifications:user_id qua Supabase Realtime; nhận INSERT thì tăng badge, hiện toast và refresh.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 51. Trong quá trình phát triển, bạn đã sử dụng AI tool như thế nào? Chọn một tính năng cụ thể và mô tả prompt bạn dùng để tạo code đó.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Mô tả context (ngôn ngữ, framework), prompt cụ thể, kết quả AI trả về, bạn đã chỉnh sửa gì. Ví dụ: &quot;Viết TypeScript interface cho User model&quot; / &quot;Giải thích RLS policy này&quot;. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Ví dụ StaySaga: dùng AI để thiết kế UI /homestays theo phong cách Booking/Agoda hoặc sửa lỗi hydration App Router. Prompt nêu Next.js App Router, TypeScript, Tailwind và yêu cầu giữ đúng Server/Client boundary.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 52. Nêu ít nhất 3 trường hợp mà AI tool không nên dùng hoặc cần cẩn thận khi dùng trong dự án.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Xử lý logic nghiệp vụ phức tạp (AI dễ sai), security-sensitive code (AI có thể suggest insecure patterns), code mà bạn không hiểu (copy-paste không kiểm tra → không bảo vệ được). Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Trong StaySaga cần cẩn thận khi AI viết RLS, service role, thanh toán, migration database và logic tính tiền/chống double booking. Các phần này phải review thủ công và test bằng nhiều role.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 53. Bạn đã quản lý Git commit của mình như thế nào? Tại sao dùng Conventional Commits? Cho ví dụ commit message.</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Conventional Commits: feat: add user authentication, fix: resolve RLS policy bug, docs: update README. Lợi ích: changelog tự động, search, code review dễ hơn. 3.5. TỔNG HỢP &amp; ĐÁNH GIÁ. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> StaySaga nên commit nhỏ theo Conventional Commits như feat: add booking checkout, fix: correct booking RLS, docs: add deployment checklist để lịch sử rõ và dễ review.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 54. Đánh giá 3 điểm mạnh và 3 điểm hạn chế của kiến trúc dự án bạn đã chọn. Nếu làm lại, bạn sẽ thay đổi gì?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Mạnh: đơn giản, maintainable, đúng yêu cầu. Hạn chế: có thể là scalability, complex RLS, performance. Đề xuất cải thiện cụ thể. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Điểm mạnh StaySaga: Next.js + Supabase gọn, RLS bảo mật dữ liệu, Docker standalone dễ deploy. Hạn chế: phụ thuộc schema Supabase cloud, role/RLS phức tạp, một số luồng host/admin cần test thêm.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 55. Trong 6 tiêu chí bắt buộc (Next.js, Supabase, Docker, VPS, GitHub, AI), tiêu chí nào bạn thấy khó nhất? Vì sao? Bạn đã vượt qua như thế nào?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Phân tích cá nhân: có thể là Docker (lần đầu), VPS/SSL (không quen), RLS (logic phức tạp). Nêu cách giải quyết cụ thể. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Với StaySaga, khó nhất là Supabase RLS/schema cloud và Docker/VPS vì lỗi có thể nằm giữa code, config và hạ tầng. Nhóm vượt qua bằng đọc log, viết tài liệu QA, kiểm thử route theo role và ghi bug cụ thể.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 56. Nếu bạn phải thêm một tính năng mới (ví dụ: thanh toán PayPal) vào dự án hiện tại, quy trình thực hiện của bạn sẽ như thế nào?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Thiết kế database (bảng payments), cập nhật RLS, tạo API route / Server Action, tích hợp PayPal SDK, cập nhật UI, viết tests, update docs, deploy. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Thêm PayPal vào StaySaga: tạo bảng payments liên kết bookings, Server Action tạo order, API Route webhook PayPal xác thực server-side, cập nhật booking/payment status, RLS theo role, UI checkout và test sandbox.</p>
+</section>
+<section class='q'>
+<div class='qt'>Câu 57. Hạn chế/thách thức lớn nhất bạn gặp phải trong quá trình phát triển đồ án là gì? Bạn đã giải quyết bằng cách nào?</div>
+<p class='ans'><span class='label'>1) Đáp án chuẩn:</span> Trả lời chuẩn: Mô tả vấn đề cụ thể (không phải &quot;không biết gì&quot;). Giải pháp: tài liệu, cộng đồng, AI tool, thử nghiệm. Bài học rút ra. Khi vấn đáp, nên nêu định nghĩa trước, sau đó nói khi nào dùng và kết luận bằng một ví dụ ngắn để giảng viên thấy mình hiểu bản chất.</p>
+<p class='ans'><span class='label'>2) Theo app StaySaga:</span> Thách thức lớn của StaySaga là đồng bộ codebase với database cloud và phân quyền host/admin. Nhóm xử lý bằng migration, RLS policy, test route theo role, tài liệu qa-full-test-report và workaround demo khi enum role chưa đồng bộ.</p>
+</section>
+<section class='sources'><h2>Nguồn tham khảo chính</h2><ul>
+<li>Next.js Docs: Server/Client Components, App Router, Server Actions, data fetching - https://nextjs.org/docs</li>
+<li>Supabase Docs: Auth, Row Level Security, Storage access control, Realtime - https://supabase.com/docs</li>
+<li>Docker Docs: Docker Compose và multi-stage builds - https://docs.docker.com</li>
+<li>Cloudflare Docs: DNS, proxy, Universal SSL - https://developers.cloudflare.com</li>
+<li>MDN Web Docs: HTTP, HTTPS/TLS - https://developer.mozilla.org</li>
+<li>TypeScript Handbook: Everyday Types, Generics - https://www.typescriptlang.org/docs</li>
+<li>GitHub Docs: GitHub Copilot - https://docs.github.com/copilot</li>
+<li>Gemini CLI Docs - https://google-gemini.github.io/gemini-cli/docs/</li>
+</ul></section></body></html>
