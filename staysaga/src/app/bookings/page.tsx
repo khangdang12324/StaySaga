@@ -155,51 +155,7 @@ export default async function BookingsPage(props: {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 pb-20 font-sans">
-      {/* Premium StaySaga Header */}
-      <header className="bg-rose-600 pt-3.5 pb-3.5 shadow-md">
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
-          <Link href="/" className="text-white text-2xl font-black tracking-tight select-none">
-            StaySaga
-          </Link>
-          <div className="flex items-center gap-3 text-white text-sm font-bold">
-            <span className="hidden sm:inline hover:bg-rose-700 p-2 px-3 rounded-lg cursor-pointer transition-colors">
-              {currency}
-            </span>
-            <div className="hover:bg-rose-700 p-2 rounded-lg cursor-pointer transition-colors flex items-center justify-center">
-              {lang === "VN" ? (
-                <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700">
-                  <span className="text-yellow-400 text-xs leading-none">★</span>
-                </div>
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative">
-                  <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
-                  <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
-                  <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
-                  <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
-                </div>
-              )}
-            </div>
-            <div className="hover:bg-rose-700 p-2 rounded-lg cursor-pointer transition-colors">
-              <HelpCircle className="w-5 h-5" />
-            </div>
-            <div className="hidden lg:inline hover:bg-rose-700 p-2 px-3 rounded-lg cursor-pointer transition-colors">
-              {t("Đăng chỗ nghỉ của Quý vị", "List your property")}
-            </div>
-            <div className="flex items-center gap-2 hover:bg-rose-700 p-2 rounded-lg cursor-pointer transition-colors ml-1">
-              <div className="h-8 w-8 rounded-full bg-amber-400 flex items-center justify-center text-rose-900 font-extrabold shadow-inner">
-                {session?.user?.user_metadata?.full_name?.[0]?.toUpperCase() || "U"}
-              </div>
-              <div className="hidden md:flex flex-col">
-                <span className="text-xs text-rose-100 font-normal leading-none">{t("Tài khoản", "Account")}</span>
-                <span className="text-[13px] leading-tight font-bold mt-0.5">
-                  {session?.user?.user_metadata?.full_name || session?.user?.email?.split("@")[0]}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 pt-24 pb-20 font-sans">
 
       {/* Main Container */}
       <div className="max-w-6xl mx-auto px-4 py-10">

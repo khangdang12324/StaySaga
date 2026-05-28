@@ -34,6 +34,9 @@ import { getHotelBySlug, getAllHotels } from "@/lib/hotel-parser";
 import { resolveHotelGallery } from "@/lib/hotel-images";
 import { cn } from "@/lib/utils";
 import RoomBookingControl from "./RoomBookingControl";
+import GallerySection from "./GallerySection";
+import { MapLinkTrigger, MapSidebarTrigger, MapModal } from "./MapModal";
+import AvailabilityTable from "./AvailabilityTable";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -221,7 +224,7 @@ export default async function HotelDetailPage({ params }: Props) {
             <div className="mt-2 flex items-center gap-1.5 text-sm">
               <MapPin className="h-4 w-4 text-rose-600" />
               <span className="text-zinc-700">{hotel.city}, Việt Nam — </span>
-              <button className="font-bold text-rose-600 hover:underline">Vị trí xuất sắc - hiển thị bản đồ</button>
+              <MapLinkTrigger />
             </div>
           </div>
           
@@ -236,7 +239,7 @@ export default async function HotelDetailPage({ params }: Props) {
               <Share2 className="h-5 w-5" />
             </button>
             <Link 
-              href={`/checkout/${hotel.id}`}
+              href="#booking"
               className="rounded bg-rose-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-rose-700 transition-colors"
             >
               Đặt ngay
@@ -245,28 +248,13 @@ export default async function HotelDetailPage({ params }: Props) {
         </div>
 
         {/* Gallery Section */}
-        <div className="mb-8">
-          <div className="grid grid-cols-4 gap-1.5 overflow-hidden rounded-lg">
-            {/* Main Big Image */}
-            <div className="col-span-4 lg:col-span-2 row-span-2 relative aspect-[4/3] lg:aspect-auto h-full min-h-[400px]">
-              <SafeImage src={heroImage} alt={hotel.title} fill className="object-cover cursor-pointer hover:opacity-95 transition-opacity" />
-            </div>
-            
-            {/* Grid Images */}
-            <div className="hidden lg:grid col-span-2 grid-cols-2 grid-rows-2 gap-1.5">
-              {secondaryImages.slice(0, 4).map((img, i) => (
-                <div key={i} className="relative aspect-square">
-                  <SafeImage src={img} alt={`${hotel.title} ${i+1}`} fill className="object-cover cursor-pointer hover:opacity-95 transition-opacity" />
-                  {i === 3 && secondaryImages.length > 4 && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold cursor-pointer">
-                      +{secondaryImages.length - 3} ảnh
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <GallerySection
+          hotelTitle={hotel.title}
+          images={gallery}
+          displayRating={hotel.displayRating || 9.3}
+          reviewsCount={hotel.reviews_count || 66}
+          reviews={reviews}
+        />
 
         <div className="grid gap-8 lg:grid-cols-[2.2fr_0.8fr]">
           <div className="space-y-12">
@@ -319,57 +307,14 @@ Các cặp đôi đặc biệt thích địa điểm này — họ cho điểm 8
                 </div>
               </div>
               
-              <div className="overflow-hidden rounded-lg border border-zinc-200">
-                 <table className="w-full text-left text-sm">
-                   <thead className="bg-rose-600 text-white">
-                     <tr>
-                       <th className="px-4 py-4 font-semibold w-1/3">Loại chỗ nghỉ</th>
-                       <th className="px-4 py-4 font-semibold">Số lượng khách</th>
-                       <th className="px-4 py-4 font-semibold">Giá hôm nay</th>
-                       <th className="px-4 py-4 font-semibold">Các lựa chọn</th>
-                       <th className="px-4 py-4 font-semibold">Chọn phòng</th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-zinc-200">
-                     {rooms.map((room) => (
-                       <tr key={room.name} className="hover:bg-zinc-50 transition-colors">
-                         <td className="px-4 py-6 align-top">
-                           <button className="font-bold text-rose-600 hover:underline text-[15px]">{room.name}</button>
-                           <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-zinc-500">
-                              <span className="flex items-center gap-1"><BedDouble className="h-3 w-3" /> 1 giường đôi lớn</span>
-                              <span className="flex items-center gap-1"><Sparkles className="h-3 w-3" /> {room.size}</span>
-                              <span className="flex items-center gap-1 font-medium text-zinc-700">Phòng tắm riêng</span>
-                              <span className="flex items-center gap-1 font-medium text-zinc-700">WiFi miễn phí</span>
-                           </div>
-                         </td>
-                         <td className="px-4 py-6 align-top">
-                           <div className="flex gap-0.5"><BedDouble className="h-4 w-4" /></div>
-                         </td>
-                         <td className="px-4 py-6 align-top">
-                           <div className="text-[11px] text-rose-500 line-through">{formatPrice(room.original)}</div>
-                           <div className="text-xl font-bold text-zinc-900">{formatPrice(room.price)}</div>
-                           <div className="text-[10px] text-zinc-500">Đã bao gồm thuế và phí</div>
-                           <div className="mt-1 inline-block rounded bg-rose-600 px-1 py-0.5 text-[10px] font-bold text-white uppercase">Tiết kiệm {room.savings}</div>
-                         </td>
-                         <td className="px-4 py-6 align-top space-y-3">
-                           <div className="text-[13px] font-medium text-zinc-700">Phí hủy: Toàn bộ tiền phòng</div>
-                           <div className="text-[13px] font-bold text-rose-700">Không cần thanh toán trước - thanh toán tại chỗ nghỉ</div>
-                           <div className="text-[13px] font-medium text-rose-700">Không cần thẻ tín dụng</div>
-                           {room.left && (
-                              <div className="text-[11px] font-bold text-rose-600">• Chúng tôi còn {room.left} căn</div>
-                           )}
-                         </td>
-                         <td className="px-4 py-6 align-top">
-                            <RoomBookingControl
-                              href={`/checkout/${hotel.slug || hotel.id}?checkIn=${defaultCheckInParam}&checkOut=${defaultCheckOutParam}&guests=2`}
-                              maxRooms={room.left || 2}
-                            />
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
-              </div>
+              <AvailabilityTable
+                rooms={rooms}
+                hotelId={hotel.id}
+                hotelSlug={hotel.slug}
+                defaultCheckInParam={defaultCheckInParam}
+                defaultCheckOutParam={defaultCheckOutParam}
+                currency={currency}
+              />
             </section>
 
             {/* Guest Reviews Section */}
@@ -500,19 +445,7 @@ Các cặp đôi đặc biệt thích địa điểm này — họ cho điểm 8
             </div>
 
             {/* Interactive Map */}
-            <div className="group relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 shadow-sm cursor-pointer h-48">
-               <iframe
-                  title={`${hotel.title} map`}
-                  loading="lazy"
-                  className="h-full w-full border-0 grayscale group-hover:grayscale-0 transition-all duration-700"
-                  src={`https://www.google.com/maps?q=${hotel.mapQuery}&output=embed`}
-                />
-                <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-                   <div className="rounded-full bg-rose-600 px-6 py-2.5 text-[13px] font-bold text-white shadow-xl group-hover:scale-105 transition-transform">
-                     Hiển thị trên bản đồ
-                   </div>
-                </div>
-            </div>
+            <MapSidebarTrigger mapQuery={hotel.mapQuery} />
             
             {/* Highlights Sidebar */}
             <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
@@ -570,6 +503,17 @@ Các cặp đôi đặc biệt thích địa điểm này — họ cho điểm 8
             </div>
           </section>
         )}
+
+        <MapModal
+          hotelTitle={hotel.title}
+          displayRating={hotel.displayRating || 9.3}
+          reviewsCount={hotel.reviews_count || 66}
+          address={hotel.address || "Đường Phù Đổng Thiên Vương A27, Đà Lạt"}
+          mapQuery={hotel.mapQuery}
+          heroImage={heroImage}
+          price={rooms[0]?.price ? formatPrice(rooms[0].price) : hotel.priceFormatted}
+          roomName={rooms[0]?.name || "Phòng Giường Đôi Hạng Tiết Kiệm"}
+        />
       </main>
     </div>
   );

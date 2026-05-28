@@ -28,6 +28,7 @@ import SafeImage from "@/components/ui/SafeImage";
 import { getLocationImage } from "@/lib/images/location-images";
 import { cn } from "@/lib/utils";
 import CheckoutSubmitButton from "./CheckoutSubmitButton";
+import Step2SubmitButton from "./Step2SubmitButton";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -83,11 +84,43 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
     redirect(`/homestays/${property.slug}`);
   }
 
-  const basePrice = property.price || (property as any).base_price || 0;
-  const { accommodationsCost, discount, totalAmount } = calculateBookingPricing(
-    basePrice,
-    days,
-  );
+  const detailsParam = resolvedSearchParams.details;
+  let selectedRooms: { name: string; qty: number; price: string; original: string }[] = [];
+  try {
+    if (detailsParam) {
+      selectedRooms = JSON.parse(detailsParam);
+    }
+  } catch (e) {
+    console.error("Failed to parse selected rooms details:", e);
+  }
+
+  const totalSelectedRoomsCount = resolvedSearchParams.rooms
+    ? parseInt(resolvedSearchParams.rooms)
+    : (selectedRooms.length > 0 ? selectedRooms.reduce((sum, r) => sum + r.qty, 0) : 1);
+
+  if (selectedRooms.length === 0) {
+    const baseVal = property.price || (property as any).base_price || 0;
+    selectedRooms = [{
+      name: "Phòng Có Giường Cỡ Queen",
+      qty: 1,
+      price: String(baseVal),
+      original: String(Math.round(baseVal * 1.5))
+    }];
+  }
+
+  let customAccommodationsCost = 0;
+  let customOriginalCost = 0;
+
+  selectedRooms.forEach((r) => {
+    const p = parseInt(r.price.replace(/\./g, ""));
+    const orig = r.original ? parseInt(r.original.replace(/\./g, "")) : Math.round(p * 1.5);
+    customAccommodationsCost += p * r.qty;
+    customOriginalCost += orig * r.qty;
+  });
+
+  const accommodationsCost = customOriginalCost * days;
+  const totalAmount = customAccommodationsCost * days;
+  const discount = Math.max(0, accommodationsCost - totalAmount);
 
   const mainImage =
     property.image ||
@@ -198,11 +231,15 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                       <p className="text-[11px] text-zinc-500">12:00 – 00:00</p>
                    </div>
                 </div>
-                <div className="space-y-1 mb-4">
-                   <p className="text-xs font-bold">Bạn đã chọn</p>
-                   <p className="text-[13px]">{days} đêm, 1 phòng cho {guests} người lớn</p>
-                   <p className="text-[13px] font-bold">1 x Phòng Có Giường Cỡ Queen</p>
-                </div>
+                 <div className="space-y-1 mb-4">
+                    <p className="text-xs font-bold">Bạn đã chọn</p>
+                    <p className="text-[13px]">{days} đêm, {totalSelectedRoomsCount} phòng cho {guests} người lớn</p>
+                    {selectedRooms.map((r, i) => (
+                      <p key={i} className="text-[13px] font-bold">
+                        {r.qty} x {r.name}
+                      </p>
+                    ))}
+                 </div>
                 <button className="text-[13px] font-bold text-rose-600 hover:underline">Đổi lựa chọn của bạn</button>
              </div>
 
@@ -274,6 +311,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                  <input type="hidden" name="propertyId" value={String(property.id || resolvedParams.id)} />
                  <input type="hidden" name="slug" value={resolvedParams.id} />
                  <input type="hidden" name="roomId" value={resolvedSearchParams.roomId || ""} />
+                 <input type="hidden" name="details" value={detailsParam || ""} />
+                 <input type="hidden" name="rooms" value={String(totalSelectedRoomsCount)} />
+                 <input type="hidden" name="totalPrice" value={String(totalAmount)} />
 
                 {activeStep !== "finish" ? (
                  <>
@@ -409,11 +449,9 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
                    </div>
                 </div>
 
-                <div className="flex justify-end pt-4">
-                   <button type="submit" className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-10 py-3 rounded-md text-lg shadow-lg hover:shadow-rose-200 transition-all active:scale-[0.98]">
-                      Tiếp theo: Chi tiết cuối cùng
-                   </button>
-                </div>
+                 <div className="flex justify-end pt-4">
+                    <Step2SubmitButton />
+                 </div>
                 </>
                 ) : (
                 <>

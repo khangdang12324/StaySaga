@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { type ReactNode } from "react";
-import {
-  Bell,
-  ChevronDown,
-  CircleHelp,
-  Globe2,
-  Search,
-} from "lucide-react";
+import { Bell, ChevronDown, CircleHelp, Globe2, Search } from "lucide-react";
 import { HostAccountMenu } from "./HostAccountMenu";
 
 type HostNavKey =
@@ -54,44 +48,43 @@ export function HostExtranetShell({
   children,
   hideNav = false,
 }: HostExtranetShellProps) {
-
-
   return (
     <div className="min-h-screen bg-[#f3f3f3] text-[#1a1a1a]">
       <header className="bg-[#f60057] text-white">
         <div className="mx-auto flex h-20 max-w-[1400px] items-center gap-5 px-6">
-          <Link href="/host" className="text-3xl font-bold tracking-tight shrink-0">
+          <Link href="/host" className="shrink-0 text-3xl font-bold tracking-tight">
             StaySaga
           </Link>
-          <div className="hidden h-8 w-px bg-white/40 lg:block shrink-0" />
-          <div className="hidden min-w-0 items-center gap-3 lg:flex shrink-0">
-            <span className="max-w-[120px] xl:max-w-[260px] truncate font-semibold">
+          <div className="hidden h-8 w-px shrink-0 bg-white/40 lg:block" />
+          <div className="hidden min-w-0 shrink-0 items-center gap-3 lg:flex">
+            <span className="max-w-[120px] truncate font-semibold xl:max-w-[260px]">
               {userName}
             </span>
-            <span className="rounded-sm bg-white/15 px-2 py-1 text-xs font-bold ring-1 ring-white/25 whitespace-nowrap shrink-0">
+            <span className="shrink-0 whitespace-nowrap rounded-sm bg-white/15 px-2 py-1 text-xs font-bold ring-1 ring-white/25">
               Tài khoản chính
             </span>
           </div>
-          <div className="ml-auto hidden h-11 w-full max-w-[320px] xl:max-w-[520px] min-w-[120px] items-center rounded-sm bg-white/10 px-4 ring-1 ring-white/10 lg:flex shrink">
-            <span className="flex-1 text-white/90 truncate mr-2">Tìm kiếm</span>
+          <div className="ml-auto hidden h-11 w-full min-w-[120px] max-w-[320px] shrink items-center rounded-sm bg-white/10 px-4 ring-1 ring-white/10 lg:flex xl:max-w-[520px]">
+            <span className="mr-2 flex-1 truncate text-white/90">Tìm kiếm</span>
             <Search className="h-5 w-5 shrink-0" />
           </div>
           <Link
             href="/host/list"
-            className="hidden h-11 w-11 items-center justify-center rounded-full bg-white/15 text-lg font-bold ring-1 ring-white/25 lg:flex shrink-0"
+            className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg font-bold ring-1 ring-white/25 lg:flex"
+            aria-label="Danh sách chỗ nghỉ"
           >
             ★
           </Link>
           <Link
             href="/settings"
-            className="hidden items-center gap-2 font-semibold lg:inline-flex whitespace-nowrap shrink-0"
+            className="hidden shrink-0 items-center gap-2 whitespace-nowrap font-semibold lg:inline-flex"
           >
             <Globe2 className="h-5 w-5 shrink-0" />
             Tiếng Việt
           </Link>
           <Link
             href="/help"
-            className="hidden items-center gap-2 font-semibold lg:inline-flex whitespace-nowrap shrink-0"
+            className="hidden shrink-0 items-center gap-2 whitespace-nowrap font-semibold lg:inline-flex"
           >
             <CircleHelp className="h-5 w-5 shrink-0" />
             Trợ giúp
@@ -107,9 +100,7 @@ export function HostExtranetShell({
                 key={item.key}
                 href={item.href}
                 className={`whitespace-nowrap px-4 py-5 text-[15px] font-medium transition ${
-                  active === item.key
-                    ? "bg-white/12 text-white"
-                    : "text-white hover:bg-white/10"
+                  active === item.key ? "bg-white/12 text-white" : "text-white hover:bg-white/10"
                 }`}
               >
                 {item.label}
@@ -118,17 +109,17 @@ export function HostExtranetShell({
             <div className="group relative inline-flex items-center text-white">
               <button
                 type="button"
-                className={`inline-flex items-center gap-1 whitespace-nowrap px-4 py-5 text-[15px] font-medium hover:bg-white/10 transition-colors ${
+                className={`inline-flex items-center gap-1 whitespace-nowrap px-4 py-5 text-[15px] font-medium transition-colors hover:bg-white/10 ${
                   active === "market-data" ? "bg-white/12 text-white" : "text-white"
                 }`}
               >
                 Khác
                 <ChevronDown className="h-4 w-4" />
               </button>
-              <div className="invisible absolute right-0 top-full z-50 w-48 bg-white text-[#1a1a1a] shadow-lg border border-slate-200 py-1 rounded-sm opacity-0 transition group-hover:visible group-hover:opacity-100">
+              <div className="invisible absolute right-0 top-full z-50 w-48 rounded-sm border border-slate-200 bg-white py-1 text-[#1a1a1a] opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
                 <Link
                   href="/host/market-data"
-                  className={`block px-4 py-3 text-[14px] hover:bg-slate-50 font-semibold transition ${
+                  className={`block px-4 py-3 text-[14px] font-semibold transition hover:bg-slate-50 ${
                     active === "market-data" ? "text-[#f60057]" : "text-slate-800"
                   }`}
                 >

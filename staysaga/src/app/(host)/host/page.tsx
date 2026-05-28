@@ -4,10 +4,14 @@ import {
   Download,
   Eye,
   ListChecks,
+  LogIn,
+  LogOut,
   MessageCircle,
   Search,
   Settings2,
   Star,
+  ThumbsUp,
+  ThumbsDown,
   XCircle,
 } from "lucide-react";
 import { HostExtranetShell } from "./_components/HostExtranetShell";
@@ -168,7 +172,14 @@ export default async function HostDashboardPage({
   if (!canAccessPartner(role)) redirect("/host/onboard");
 
   const params = await searchParams;
-  const { listings, pendingBookings } = await getHostDashboardData();
+  const {
+    listings,
+    pendingBookings,
+    todayCheckIns = 0,
+    todayCheckOuts = 0,
+    reviewsCount = 0,
+    cancelledCount = 0,
+  } = await getHostDashboardData();
   const userName =
     session.user.user_metadata?.full_name ||
     session.user.email ||
@@ -364,10 +375,10 @@ export default async function HostDashboardPage({
               (tab, index) => (
                 <button
                   key={tab}
-                  className={`pb-4 ${
+                  className={`pb-4 text-sm font-semibold transition-colors ${
                     index === 0
-                      ? "border-b-2 border-[#f60057] text-[#f60057]"
-                      : ""
+                      ? "border-b-2 border-[#006ce4] text-[#006ce4]"
+                      : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
                   {tab}
@@ -378,11 +389,19 @@ export default async function HostDashboardPage({
 
           <h3 className="mt-7 text-2xl font-bold">Tổng quan hôm nay</h3>
           <div className="mt-7 grid border border-gray-300 bg-white md:grid-cols-5">
-            <OverviewMetric icon={<ListChecks />} value={pendingBookings} label="Đặt phòng" />
-            <OverviewMetric icon={<MessageCircle />} value={0} label="Khách đến" />
-            <OverviewMetric icon={<MessageCircle />} value={0} label="Khách đi" />
-            <OverviewMetric icon={<Star />} value={0} label="Đánh giá" />
-            <OverviewMetric icon={<XCircle />} value={0} label="Lượt hủy" />
+            <OverviewMetric icon={<ListChecks className="h-7 w-7" />} value={pendingBookings} label="Đặt phòng" />
+            <OverviewMetric icon={<LogIn className="h-7 w-7" />} value={todayCheckIns} label="Khách đến" />
+            <OverviewMetric icon={<LogOut className="h-7 w-7" />} value={todayCheckOuts} label="Khách đi" />
+            <OverviewMetric
+              icon={
+                <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-400">
+                  <Star className="h-4.5 w-4.5" />
+                </div>
+              }
+              value={reviewsCount}
+              label="Đánh giá"
+            />
+            <OverviewMetric icon={<XCircle className="h-7 w-7" />} value={cancelledCount} label="Lượt hủy" />
           </div>
 
           <div className="mt-12 flex flex-wrap items-end justify-between gap-5">
@@ -413,33 +432,50 @@ export default async function HostDashboardPage({
           <div className="mt-8 overflow-x-auto border border-gray-300 bg-white">
             <table className="w-full min-w-[980px] text-left">
               <thead>
-                <tr className="border-b border-gray-300">
-                  <th className="px-4 py-4">ID ↑</th>
-                  <th className="px-4 py-4">Chỗ nghỉ</th>
-                  <th className="px-4 py-4">Trạng thái trên StaySaga</th>
-                  <th className="px-4 py-4">Đến trong 48 giờ tới</th>
-                  <th className="px-4 py-4">Rời đi trong 48 giờ tới</th>
-                  <th className="px-4 py-4">Tin nhắn từ khách</th>
-                  <th className="px-4 py-4">Tin nhắn từ StaySaga</th>
-                  <th className="px-4 py-4">Hủy phòng</th>
+                <tr className="border-b border-gray-300 text-gray-700">
+                  <th className="px-4 py-4 font-bold">ID ↑</th>
+                  <th className="px-4 py-4 font-bold">Chỗ nghỉ</th>
+                  <th className="px-4 py-4 font-bold">Trạng thái trên StaySaga</th>
+                  <th className="px-4 py-4 font-bold text-center">Đến trong 48 giờ tới</th>
+                  <th className="px-4 py-4 font-bold text-center">Rời đi trong 48 giờ tới</th>
+                  <th className="px-4 py-4 font-bold text-center">Tin nhắn từ khách</th>
+                  <th className="px-4 py-4 font-bold text-center">Tin nhắn từ StaySaga</th>
                 </tr>
               </thead>
               <tbody>
-                {visibleListings.map((listing, index) => {
+                {visibleListings.map((listing) => {
                   const open = listing.status === "APPROVED" && listing.is_active;
+
+                  const renderValueBadge = (val?: number) => {
+                    const num = val || 0;
+                    if (num > 0) {
+                      return (
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#006ce4] text-xs font-bold text-white">
+                          {num}
+                        </span>
+                      );
+                    }
+                    return <span className="text-gray-400">0</span>;
+                  };
+
                   return (
-                    <tr key={listing.id} className="border-b border-gray-200">
-                      <td className="px-4 py-5">{listing.id.slice(0, 8)}</td>
+                    <tr key={listing.id} className="border-b border-gray-200 hover:bg-gray-50/50">
+                      <td className="px-4 py-5 text-gray-600">{listing.id.slice(0, 8)}</td>
                       <td className="px-4 py-5">
                         <Link
                           href={`/host/${listing.id}`}
-                          className="font-medium text-[#f60057] hover:underline"
+                          className="font-bold text-gray-900 hover:text-[#006ce4] hover:underline"
                         >
                           {listing.name || "Chỗ nghỉ chưa đặt tên"}
                         </Link>
-                        <p className="text-sm text-gray-500">
-                          {listing.address || listing.city || "Việt Nam"}
-                        </p>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#e61212] text-white">
+                            <Star className="h-2.5 w-2.5 fill-white stroke-none" />
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {listing.address || listing.city || "Việt Nam"}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-5">
                         <span
@@ -449,7 +485,7 @@ export default async function HostDashboardPage({
                         >
                           <span
                             className={`h-3 w-3 rounded-full ${
-                              open ? "bg-emerald-700" : "border border-red-600"
+                              open ? "bg-[#008009]" : "border border-red-600 bg-red-100"
                             }`}
                           />
                           {open
@@ -459,40 +495,30 @@ export default async function HostDashboardPage({
                         {!open ? (
                           <Link
                             href={`/host/${listing.id}`}
-                            className="mt-3 block text-[#f60057]"
+                            className="mt-3 block text-[#006ce4] font-medium hover:underline"
                           >
                             Tìm hiểu nguyên nhân
                           </Link>
                         ) : null}
                       </td>
-                      <td className="px-4 py-5 text-center">0</td>
-                      <td className="px-4 py-5 text-center">0</td>
-                      <td className="px-4 py-5 text-center">0</td>
                       <td className="px-4 py-5 text-center">
-                        {index === 1 ? (
-                          <Link
-                            href="/host/messages"
-                            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#f60057] text-sm font-bold text-white"
-                            aria-label="Xem 5 tin nhắn từ StaySaga"
-                          >
-                            5
-                          </Link>
-                        ) : (
-                          0
-                        )}
+                        {renderValueBadge(listing.check_ins_48h)}
                       </td>
                       <td className="px-4 py-5 text-center">
-                        <DeletePropertyButton
-                          propertyId={listing.id}
-                          status={listing.status || "APPROVED"}
-                        />
+                        {renderValueBadge(listing.check_outs_48h)}
+                      </td>
+                      <td className="px-4 py-5 text-center">
+                        {renderValueBadge(listing.guest_messages_count)}
+                      </td>
+                      <td className="px-4 py-5 text-center">
+                        {renderValueBadge(listing.system_messages_count)}
                       </td>
                     </tr>
                   );
                 })}
                 {visibleListings.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-gray-600">
+                    <td colSpan={7} className="px-4 py-12 text-center text-gray-600">
                       Chưa có chỗ nghỉ nào đang hoạt động.
                     </td>
                   </tr>
@@ -501,15 +527,24 @@ export default async function HostDashboardPage({
             </table>
           </div>
 
-          <div className="mt-8 border border-[#f60057] bg-rose-50 px-6 py-5">
-            Phản hồi của Quý vị rất quan trọng với chúng tôi. Quý vị thấy dữ liệu
-            này có hữu ích không?
-            <Link href="/help" className="ml-4 rounded-full bg-white px-3 py-2">
-              Hữu ích
-            </Link>
-            <Link href="/help" className="ml-2 rounded-full bg-white px-3 py-2">
-              Góp ý
-            </Link>
+          <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border border-[#a2c8f9] bg-[#ebf3ff] px-6 py-4 text-sm text-gray-800">
+            <span>
+              Phản hồi của Quý vị rất quan trọng với chúng tôi. Quý vị thấy dữ liệu này có hữu ích không?
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none transition-colors"
+                title="Hữu ích"
+              >
+                <ThumbsUp className="h-4 w-4" />
+              </button>
+              <button
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none transition-colors"
+                title="Góp ý"
+              >
+                <ThumbsDown className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </section>
       </main>
@@ -551,9 +586,9 @@ function OverviewMetric({
 }) {
   return (
     <div className="border-b border-gray-300 p-7 md:border-b-0 md:border-r last:md:border-r-0">
-      <div className="text-gray-900 [&>svg]:h-7 [&>svg]:w-7">{icon}</div>
-      <p className="mt-7 text-2xl font-bold">{value}</p>
-      <p className="mt-4 text-lg text-[#f60057]">{label}</p>
+      <div className="text-gray-700 flex items-center h-8">{icon}</div>
+      <p className="mt-7 text-2xl font-bold text-gray-900">{value}</p>
+      <p className="mt-4 text-lg text-[#006ce4]">{label}</p>
     </div>
   );
 }

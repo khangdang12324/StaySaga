@@ -1,0 +1,230 @@
+[
+  [
+    1,
+    "Sự khác biệt giữa Client Component và Server Component trong Next.js là gì? Khi nào nên dùng loại nào?"
+  ],
+  [
+    2,
+    "App Router trong Next.js 13+ khác với Pages Router ở điểm nào? Nêu ít nhất 3 điểm khác biệt chính."
+  ],
+  [
+    3,
+    "Server Actions trong Next.js là gì? Cho biết cú pháp khai báo một Server Action."
+  ],
+  [
+    4,
+    "Các phương thức Data Fetching nào được hỗ trợ trong Next.js? Khi nào dùng fetch() trực tiếp, khi nào dùng React Query / SWR?"
+  ],
+  [
+    5,
+    "Trong Next.js, file layout.tsx có vai trò gì và khác gì so với page.tsx?"
+  ],
+  [
+    6,
+    "Supabase Auth hỗ trợ những phương thức xác thực nào? Liệt kê ít nhất 4 phương thức."
+  ],
+  [
+    7,
+    "Row Level Security (RLS) trong Supabase là gì? Mục đích của RLS?"
+  ],
+  [
+    8,
+    "Các thành phần chính của Supabase được nhắc đến trong môn học là gì? Liệt kê đầy đủ."
+  ],
+  [
+    9,
+    "Cấu trúc một Row Level Security Policy cơ bản trong Supabase gồm những thành phần nào?"
+  ],
+  [
+    10,
+    "Supabase Realtime hoạt động dựa trên cơ chế nào? Khi nào nên dùng?"
+  ],
+  [
+    11,
+    "Container khác với Virtual Machine (VM) ở điểm nào? Nêu ít nhất 3 điểm."
+  ],
+  [
+    12,
+    "Dockerfile và docker-compose.yml có vai trò gì? Sự khác nhau giữa hai file này?"
+  ],
+  [
+    13,
+    "Multi-stage build trong Docker là gì? Tại sao nên dùng?"
+  ],
+  [
+    14,
+    "Các câu lệnh Docker cơ bản nào cần biết? (docker build, docker run, docker compose up/down, docker ps, docker logs)"
+  ],
+  [
+    15,
+    "HTTPS và HTTP khác nhau ở điểm nào? Tại sao cần HTTPS cho production?"
+  ],
+  [
+    16,
+    "Reverse proxy (ví dụ Nginx) là gì? Trong mô hình deploy với Cloudflare + VPS, reverse proxy đóng vai trò gì?"
+  ],
+  [
+    17,
+    "Domain và DNS hoạt động như thế nào? Khi người dùng nhập example.com, quy trình DNS resolution ra sao?"
+  ],
+  [
+    18,
+    "Cloudflare trong mô hình deploy đóng vai trò gì? Nêu ít nhất 3 chức năng."
+  ],
+  [
+    19,
+    "Sự khác biệt giữa interface và type trong TypeScript là gì? Khi nào dùng interface, khi nào dùng type?"
+  ],
+  [
+    20,
+    "SSR, CSR, SSG, ISR là gì? Nêu tên đầy đủ và bản chất mỗi khái niệm."
+  ],
+  [
+    21,
+    "type annotation và type inference trong TypeScript khác nhau như thế nào? Ví dụ minh hoạ."
+  ],
+  [
+    22,
+    "GitHub Copilot và Gemini CLI hoạt động dựa trên nguyên lý nào? Nêu cách sử dụng cơ bản của từng công cụ."
+  ],
+  [
+    23,
+    "Các loại minh chứng sử dụng AI tool mà bạn có thể cung cấp cho giảng viên là gì?"
+  ],
+  [
+    24,
+    "Tại sao Next.js mặc định render bằng Server Component? Lợi ích chính của việc này là gì?"
+  ],
+  [
+    25,
+    "Trong Next.js, khi nào bạn cần dùng \"use client\" directive? Nếu không có directive này thì mặc định component hoạt động ra sao?"
+  ],
+  [
+    26,
+    "Giải thích luồng xử lý một request trong Next.js App Router, từ khi user truy cập URL đến khi nhận được nội dung."
+  ],
+  [
+    27,
+    "So sánh Server Actions và API Routes trong Next.js. Khi nào dùng cái nào?"
+  ],
+  [
+    28,
+    "Giải thích cách Supabase Auth quản lý session. Access token và refresh token hoạt động như thế nào?"
+  ],
+  [
+    29,
+    "Khi nào nên dùng Supabase Storage thay vì lưu file dạng base64 trong database? Ưu điểm của Storage là gì?"
+  ],
+  [
+    30,
+    "Mô tả quy trình tạo một RLS Policy để user chỉ đọc được dữ liệu của chính mình trong Supabase."
+  ],
+  [
+    31,
+    "Sự khác biệt giữa Realtime và polling trong việc cập nhật dữ liệu là gì? Ưu/nhược điểm từng cách?"
+  ],
+  [
+    32,
+    "Giải thích tại sao file docker-compose.yml thường dùng volume để mount source code thay vì copy vào image."
+  ],
+  [
+    33,
+    "Khi chạy docker compose up, Docker thực hiện những bước nào? Trình bày luồng xử lý."
+  ],
+  [
+    34,
+    "Tại sao Multi-stage build giúp giảm kích thước Docker image? Giải thích cơ chế."
+  ],
+  [
+    35,
+    "Trong mô hình Cloudflare + VPS + Nginx, trình bày luồng request từ browser đến ứng dụng Next.js."
+  ],
+  [
+    36,
+    "SSL Certificate (chứng chỉ SSL) hoạt động như thế nào? Giải thích cơ chế mã hoá trong HTTPS handshake."
+  ],
+  [
+    37,
+    "Cloudflare Universal SSL hoạt động như thế nào? Ưu điểm so với tự cài SSL trên VPS?"
+  ],
+  [
+    38,
+    "Giải thích khái niệm generics trong TypeScript. Cho ví dụ một hàm generic đơn giản."
+  ],
+  [
+    39,
+    "So sánh SSR và SSG. Khi nào nên dùng SSG, khi nào nên dùng SSR cho một trang web?"
+  ],
+  [
+    40,
+    "Tại sao nên dùng TypeScript thay vì JavaScript thuần trong dự án Next.js? Liệt kê các lợi ích chính."
+  ],
+  [
+    41,
+    "Trong dự án của bạn, bạn đã thiết kế database schema như thế nào? Vì sao bạn chọn cấu trúc đó thay vì cách khác?"
+  ],
+  [
+    42,
+    "Khi Supabase không hỗ trợ một tính năng nhất định (ví dụ: complex job queue), bạn sẽ xử lý như thế nào?"
+  ],
+  [
+    43,
+    "Bạn đã sử dụng Server Components và Client Components như thế nào trong dự án? Có gặp khó khăn gì khi phân chia không?"
+  ],
+  [
+    44,
+    "Thiết kế chiến lược phân quyền (authorization) cho ứng dụng của bạn. Ai được làm gì, kiểm tra ở đâu (client? server? database?)?"
+  ],
+  [
+    45,
+    "Nếu ứng dụng Next.js của bạn bị crash khi chạy trong Docker container trên VPS, bạn sẽ debug bằng cách nào? Trình bài các bước."
+  ],
+  [
+    46,
+    "Khi deploy lên VPS, bạn cần cấu hình Nginx như thế nào để proxy request đến Next.js app? Cho ví dụ cấu hình cơ bản."
+  ],
+  [
+    47,
+    "Giả sử bạn cần deploy 2 ứng dụng (frontend Next.js + backend NestJS) trên cùng một VPS. Thiết kế cấu hình Docker Compose và Nginx."
+  ],
+  [
+    48,
+    "Bạn cần hiển thị danh sách bài viết cho user chưa đăng nhập (anonymous). Nêu cách cấu hình RLS Policy cho trường hợp này."
+  ],
+  [
+    49,
+    "Nếu bạn cần upload file lớn (video, 50MB) lên Supabase Storage, bạn cần lưu ý những gì về cấu hình và RLS?"
+  ],
+  [
+    50,
+    "Thiết kế hệ thống notification real-time (thông báo khi có tin nhắn mới) sử dụng Supabase Realtime. Trình bày flow từ client đến server."
+  ],
+  [
+    51,
+    "Trong quá trình phát triển, bạn đã sử dụng AI tool như thế nào? Chọn một tính năng cụ thể và mô tả prompt bạn dùng để tạo code đó."
+  ],
+  [
+    52,
+    "Nêu ít nhất 3 trường hợp mà AI tool không nên dùng hoặc cần cẩn thận khi dùng trong dự án."
+  ],
+  [
+    53,
+    "Bạn đã quản lý Git commit của mình như thế nào? Tại sao dùng Conventional Commits? Cho ví dụ commit message."
+  ],
+  [
+    54,
+    "Đánh giá 3 điểm mạnh và 3 điểm hạn chế của kiến trúc dự án bạn đã chọn. Nếu làm lại, bạn sẽ thay đổi gì?"
+  ],
+  [
+    55,
+    "Trong 6 tiêu chí bắt buộc (Next.js, Supabase, Docker, VPS, GitHub, AI), tiêu chí nào bạn thấy khó nhất? Vì sao? Bạn đã vượt qua như thế nào?"
+  ],
+  [
+    56,
+    "Nếu bạn phải thêm một tính năng mới (ví dụ: thanh toán PayPal) vào dự án hiện tại, quy trình thực hiện của bạn sẽ như thế nào?"
+  ],
+  [
+    57,
+    "Hạn chế/thách thức lớn nhất bạn gặp phải trong quá trình phát triển đồ án là gì? Bạn đã giải quyết bằng cách nào?"
+  ]
+]

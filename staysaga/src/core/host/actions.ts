@@ -61,13 +61,21 @@ export type HostListing = {
     url: string;
     storage_path: string | null;
   }[];
+  check_ins_48h?: number;
+  check_outs_48h?: number;
+  guest_messages_count?: number;
+  system_messages_count?: number;
 };
 
-type HostDashboardData = {
+export type HostDashboardData = {
   listings: HostListing[];
   totalRevenue: number;
   pendingBookings: number;
   averageRating: number;
+  todayCheckIns?: number;
+  todayCheckOuts?: number;
+  reviewsCount?: number;
+  cancelledCount?: number;
 };
 
 function getString(formData: FormData, key: string) {
@@ -371,11 +379,20 @@ export async function getHostDashboardData(): Promise<HostDashboardData> {
   const listingIds = (listings || []).map((listing) => listing.id);
   let totalRevenue = 0;
   let pendingBookings = 0;
+  let todayCheckIns = 0;
+  let todayCheckOuts = 0;
+  let cancelledCount = 0;
+  let reviewsCount = 0;
+
+  const checkIns48hMap: Record<string, number> = {};
+  const checkOuts48hMap: Record<string, number> = {};
+  const guestMessagesMap: Record<string, number> = {};
+  const systemMessagesMap: Record<string, number> = {};
 
   if (listingIds.length > 0) {
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("total_price, status")
+      .select("id, homestay_id, total_price, status, check_in_date, check_out_date")
       .in("homestay_id", listingIds);
 
     totalRevenue =
@@ -385,6 +402,92 @@ export async function getHostDashboardData(): Promise<HostDashboardData> {
       0;
     pendingBookings =
       bookings?.filter((booking) => booking.status === "PENDING").length || 0;
+    cancelledCount =
+      bookings?.filter((booking) => booking.status === "CANCELLED").length || 0;
+
+    // Dates calculation
+    const now = new Date();
+    // Get local date YYYY-MM-DD
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const todayStr = `${year}-${month}-${day}`;
+
+    const fortyEightHoursLater = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const y48 = fortyEightHoursLater.getFullYear();
+    const m48 = String(fortyEightHoursLater.getMonth() + 1).padStart(2, "0");
+    const d48 = String(fortyEightHoursLater.getDate()).padStart(2, "0");
+    const fortyEightHoursLaterStr = `${y48}-${m48}-${d48}`;
+
+    if (bookings) {
+      for (const booking of bookings) {
+        if (booking.status === "CANCELLED") continue;
+
+        const homestayId = booking.homestay_id;
+
+        if (booking.check_in_date === todayStr) {
+          todayCheckIns++;
+        }
+        if (booking.check_out_date === todayStr) {
+          todayCheckOuts++;
+        }
+
+        if (
+          booking.check_in_date &&
+          booking.check_in_date >= todayStr &&
+          booking.check_in_date <= fortyEightHoursLaterStr
+        ) {
+          checkIns48hMap[homestayId] = (checkIns48hMap[homestayId] || 0) + 1;
+        }
+
+        if (
+          booking.check_out_date &&
+          booking.check_out_date >= todayStr &&
+          booking.check_out_date <= fortyEightHoursLaterStr
+        ) {
+          checkOuts48hMap[homestayId] = (checkOuts48hMap[homestayId] || 0) + 1;
+        }
+      }
+
+      // Query booking_messages for unread messages
+      const bookingIds = bookings.map((b) => b.id);
+      if (bookingIds.length > 0) {
+        const { data: messages } = await supabase
+          .from("booking_messages")
+          .select("booking_id, sender_role, is_read")
+          .in("booking_id", bookingIds);
+
+        if (messages) {
+          const bookingToHomestay: Record<string, string> = {};
+          for (const b of bookings) {
+            bookingToHomestay[b.id] = b.homestay_id;
+          }
+
+          for (const msg of messages) {
+            const homestayId = bookingToHomestay[msg.booking_id];
+            if (!homestayId) continue;
+
+            if (msg.sender_role === "USER" && !msg.is_read) {
+              guestMessagesMap[homestayId] = (guestMessagesMap[homestayId] || 0) + 1;
+            } else if (
+              (msg.sender_role === "SYSTEM" || msg.sender_role === "ADMIN") &&
+              !msg.is_read
+            ) {
+              systemMessagesMap[homestayId] = (systemMessagesMap[homestayId] || 0) + 1;
+            }
+          }
+        }
+      }
+    }
+
+    // Fetch reviews count
+    const { count, error: rErr } = await supabase
+      .from("reviews")
+      .select("id", { count: "exact", head: true })
+      .in("homestay_id", listingIds);
+    if (!rErr && count !== null) {
+      reviewsCount = count;
+    }
   }
 
   const normalizedListings = (listings || [])
@@ -401,6 +504,10 @@ export async function getHostDashboardData(): Promise<HostDashboardData> {
         price_per_night: Number(row.price_per_night || 0),
         avg_rating: Number(row.avg_rating || 0),
         status,
+        check_ins_48h: checkIns48hMap[row.id || ""] || 0,
+        check_outs_48h: checkOuts48hMap[row.id || ""] || 0,
+        guest_messages_count: guestMessagesMap[row.id || ""] || 0,
+        system_messages_count: systemMessagesMap[row.id || ""] || 0,
       };
     })
     .filter((listing) => listing.status !== "DELETED") as HostListing[];
@@ -418,6 +525,10 @@ export async function getHostDashboardData(): Promise<HostDashboardData> {
     totalRevenue,
     pendingBookings,
     averageRating,
+    todayCheckIns,
+    todayCheckOuts,
+    reviewsCount,
+    cancelledCount,
   };
 }
 

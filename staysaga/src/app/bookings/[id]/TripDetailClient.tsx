@@ -105,9 +105,17 @@ export default function TripDetailClient({
   const address = booking.homestay?.address || "Việt Nam";
 
   // Google Maps URL Resolution
-  const mapsLat = booking.homestay?.latitude || 10.815133;
-  const mapsLng = booking.homestay?.longitude || 106.672780;
-  const mapsUrl = `https://www.google.com/maps?q=${mapsLat},${mapsLng}`;
+  const mapsLat = booking.homestay?.latitude;
+  const mapsLng = booking.homestay?.longitude;
+  const mapsUrl = (mapsLat && mapsLng)
+    ? `https://www.google.com/maps?q=${mapsLat},${mapsLng}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        [
+          booking.homestay?.name,
+          booking.homestay?.address || booking.homestay?.city
+        ].filter(Boolean).join(", ")
+      )}`;
+
 
   // Handle Cancellation Action
   async function handleCancelConfirm(e: React.FormEvent) {
@@ -180,62 +188,7 @@ export default function TripDetailClient({
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 pb-20 font-sans">
-      {/* Premium StaySaga Header */}
-      <header className="bg-rose-600 pt-3.5 pb-3.5 shadow-md">
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
-          <Link href="/" className="text-white text-2xl font-black tracking-tight select-none">
-            StaySaga
-          </Link>
-          <div className="flex items-center gap-3 text-white text-sm font-bold">
-            <span className="hidden sm:inline hover:bg-rose-700 p-2 px-3 rounded-lg cursor-pointer transition-colors">
-              {currency}
-            </span>
-            <div className="hover:bg-rose-700 p-2 rounded-lg cursor-pointer transition-colors flex items-center justify-center">
-              {lang === "VN" ? (
-                <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700">
-                  <span className="text-yellow-400 text-[10px] leading-none">★</span>
-                </div>
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative">
-                  <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
-                  <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
-                  <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
-                  <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
-                </div>
-              )}
-            </div>
-            <div className="hover:bg-rose-700 p-2 rounded-lg cursor-pointer transition-colors">
-              <HelpCircle className="w-5 h-5" />
-            </div>
-            <div className="hidden lg:inline hover:bg-rose-700 p-2 px-3 rounded-lg cursor-pointer transition-colors">
-              {t("Đăng chỗ nghỉ của Quý vị", "List your property")}
-            </div>
-            <div className="flex items-center gap-2 hover:bg-rose-700 p-2 rounded-lg cursor-pointer transition-colors ml-1">
-              {userAvatar ? (
-                <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/20">
-                  <SafeImage
-                    src={userAvatar}
-                    alt={userFullName}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="h-8 w-8 rounded-full bg-amber-400 flex items-center justify-center text-rose-900 font-extrabold shadow-inner">
-                  {userFullName?.[0]?.toUpperCase() || "U"}
-                </div>
-              )}
-              <div className="hidden md:flex flex-col">
-                <span className="text-xs text-rose-100 font-normal leading-none">{t("Tài khoản", "Account")}</span>
-                <span className="text-[13px] leading-tight font-bold mt-0.5">
-                  {userFullName}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 pt-24 pb-20 font-sans">
 
       {/* Dynamic Breadcrumbs */}
       <div className="py-4">
@@ -284,9 +237,16 @@ export default function TripDetailClient({
           const bCheckInDate = b.check_in_date ? new Date(b.check_in_date) : new Date();
           const bCheckOutDate = b.check_out_date ? new Date(b.check_out_date) : new Date();
           const bImgUrl = b.homestay?.homestay_images?.[0]?.url || "/images/fallback-hotel.jpg";
-          const bLat = b.homestay?.latitude || 10.815133;
-          const bLng = b.homestay?.longitude || 106.672780;
-          const bMapsUrl = `https://www.google.com/maps?q=${bLat},${bLng}`;
+          const bLat = b.homestay?.latitude;
+          const bLng = b.homestay?.longitude;
+          const bMapsUrl = (bLat && bLng)
+            ? `https://www.google.com/maps?q=${bLat},${bLng}`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                [
+                  b.homestay?.name,
+                  b.homestay?.address || b.homestay?.city
+                ].filter(Boolean).join(", ")
+              )}`;
 
           return (
             <div key={b.id} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-6">
@@ -298,7 +258,7 @@ export default function TripDetailClient({
                 
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg font-black text-slate-900 tracking-tight leading-snug hover:text-rose-600 transition-colors">
-                    <Link href={`/bookings/${b.id}`}>{bHotelName}</Link>
+                    <Link href={`/bookings/success?bookingId=${b.id}`}>{bHotelName}</Link>
                   </h2>
                   
                   <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5 leading-relaxed font-semibold">

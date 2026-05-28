@@ -29,6 +29,7 @@ type CreateBookingFromCheckoutInput = {
   guestPhone: string;
   specialRequest?: string | null;
   paymentMethod?: string | null;
+  totalPrice?: number | null;
 };
 
 const UUID_RE =
@@ -259,7 +260,10 @@ export async function createBookingFromCheckout(input: CreateBookingFromCheckout
     checkoutError("unavailable", input);
   }
 
-  const totalPrice = nights * pricePerNight;
+  const totalPrice =
+    input.totalPrice !== undefined && input.totalPrice !== null
+      ? input.totalPrice
+      : nights * pricePerNight;
   const bookingCode = createBookingCode();
   const paymentStatus =
     input.paymentMethod === "pay_at_property" ? "PAY_AT_PROPERTY" : "UNPAID";
@@ -804,6 +808,9 @@ export async function finishBooking(formData: FormData) {
   const firstName = String(formData.get("firstName") || "").trim();
   const lastName = String(formData.get("lastName") || "").trim();
 
+  const rawTotalPrice = formData.get("totalPrice");
+  const totalPrice = rawTotalPrice ? Number(rawTotalPrice) : null;
+
   await createBookingFromCheckout({
     homestayId: String(formData.get("propertyId") || ""),
     roomId: String(formData.get("roomId") || "") || null,
@@ -818,6 +825,7 @@ export async function finishBooking(formData: FormData) {
       String(formData.get("specialRequests") || formData.get("specialRequest") || "") ||
       null,
     paymentMethod: String(formData.get("paymentMethod") || "visa"),
+    totalPrice: totalPrice,
   });
 }
 
@@ -1020,3 +1028,138 @@ export async function sendBookingMessage(bookingId: string, message: string) {
   revalidatePath("/messages");
   return { success: true };
 }
+
+export async function changeBookingPriceAndDates(
+  bookingId: string,
+  checkIn: string,
+  checkOut: string,
+  price: number
+) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.user) {
+    return { error: "Bạn chưa đăng nhập." };
+  }
+
+  if (!bookingId || !checkIn || !checkOut || isNaN(price) || price < 0) {
+    return { error: "Dữ liệu không hợp lệ." };
+  }
+
+  // Fetch the booking and check if the current user is the owner of the homestay
+  const { data: booking, error: bookingError } = await supabase
+    .from("bookings")
+    .select("id, homestay:homestays(owner_id)")
+    .eq("id", bookingId)
+    .single();
+
+  if (bookingError || !booking) {
+    return { error: "Không tìm thấy đơn đặt phòng." };
+  }
+
+  const homestay = Array.isArray(booking.homestay) ? booking.homestay[0] : booking.homestay;
+  if (homestay?.owner_id !== session.user.id) {
+    return { error: "Bạn không có quyền chỉnh sửa đặt phòng này." };
+  }
+
+  // Update check-in date, check-out date, and total price in the database
+  const { error: updateError } = await supabase
+    .from("bookings")
+    .update({
+      check_in_date: checkIn,
+      check_out_date: checkOut,
+      total_price: price,
+    })
+    .eq("id", bookingId);
+
+  if (updateError) {
+    console.error("Error updating booking price/dates:", updateError);
+    return { error: "Lỗi hệ thống khi cập nhật giá/ngày đặt phòng." };
+  }
+
+  revalidatePath("/bookings");
+  revalidatePath("/host/bookings");
+  revalidatePath("/messages");
+  return { success: true };
+}
+
+export async function respondToCancellationRequest(
+  bookingId: string,
+  accept: boolean,
+  reason: string
+) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.user) {
+    return { error: "Bạn chưa đăng nhập." };
+  }
+
+  if (!bookingId) {
+    return { error: "Mã đặt phòng không hợp lệ." };
+  }
+
+  // Fetch booking and check partner permission
+  const { data: booking, error: fetchError } = await supabase
+    .from("bookings")
+    .select("id, status, user_id, homestay:homestays(owner_id)")
+    .eq("id", bookingId)
+    .single();
+
+  if (fetchError || !booking) {
+    return { error: "Không tìm thấy đơn đặt phòng." };
+  }
+
+  const homestay = Array.isArray(booking.homestay) ? booking.homestay[0] : booking.homestay;
+  if (homestay?.owner_id !== session.user.id) {
+    return { error: "Bạn không có quyền phản hồi yêu cầu này." };
+  }
+
+  if (accept) {
+    // Confirm free cancellation: status -> CANCELLED, total_price -> 0, payment_status -> REFUNDED
+    const { error: updateError } = await supabase
+      .from("bookings")
+      .update({
+        status: "CANCELLED",
+        total_price: 0,
+        payment_status: "REFUNDED",
+      })
+      .eq("id", bookingId);
+
+    if (updateError) {
+      console.error("Error waiving booking fee:", updateError);
+      return { error: "Lỗi hệ thống khi cập nhật trạng thái đặt phòng." };
+    }
+
+    // Insert system message about waiver
+    await supabase.from("booking_messages").insert({
+      booking_id: bookingId,
+      sender_id: session.user.id,
+      receiver_id: booking.user_id,
+      sender_role: "SYSTEM",
+      message: `Chủ nhà đã chấp nhận yêu cầu miễn phí hủy phòng. Đơn đặt phòng này đã được hủy miễn phí thành công. ${reason ? `Lý do/ghi chú: ${reason}` : ""}`,
+      is_read: false,
+    });
+  } else {
+    // Decline free cancellation
+    await supabase.from("booking_messages").insert({
+      booking_id: bookingId,
+      sender_id: session.user.id,
+      receiver_id: booking.user_id,
+      sender_role: "PARTNER",
+      message: `Chúng tôi từ chối yêu cầu miễn phí hủy phòng cho đặt phòng này. Chi tiết từ chối: ${reason || "Không thể miễn phí hủy phòng theo chính sách hiện hành."}`,
+      is_read: false,
+    });
+  }
+
+  revalidatePath("/bookings");
+  revalidatePath("/host/bookings");
+  revalidatePath("/messages");
+  return { success: true };
+}
+
+

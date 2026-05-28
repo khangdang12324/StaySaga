@@ -49,6 +49,17 @@ export default async function BookingSuccessPage(props: {
     booking = data;
   }
 
+  // Fetch messages from DB if bookingId exists
+  let messages: any[] = [];
+  if (bookingId) {
+    const { data: msgData } = await supabase
+      .from("booking_messages")
+      .select("*")
+      .eq("booking_id", bookingId)
+      .order("created_at", { ascending: true });
+    messages = msgData || [];
+  }
+
   // Fallback data if direct access without booking
   const hotelName = booking?.homestay?.name || booking?.homestay?.title || "TTR Skypool Boutique Hotel";
   const city = booking?.homestay?.city || booking?.homestay?.location || "Đà Lạt";
@@ -62,151 +73,8 @@ export default async function BookingSuccessPage(props: {
   const dateLabel = `${format(startDate, "dd/MM/yyyy")} - ${format(endDate, "dd/MM/yyyy")}`;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] text-[#1a1a1a] pb-20">
+    <div className="min-h-screen bg-[#f5f5f5] text-[#1a1a1a] pt-24 pb-20">
       <MockBookingCookieSync bookingId={bookingId || ""} checkIn={checkIn || ""} />
-      <style>{`
-        #booking-print-document {
-          display: none;
-        }
-
-        @media print {
-          @page {
-            size: A4;
-            margin: 14mm;
-          }
-
-          body {
-            background: white !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-
-          body * {
-            visibility: hidden !important;
-          }
-
-          #booking-print-document,
-          #booking-print-document * {
-            visibility: visible !important;
-          }
-
-          #booking-print-document {
-            display: block !important;
-            position: absolute;
-            inset: 0 auto auto 0;
-            width: 100%;
-            color: #111827;
-            font-family: Arial, Helvetica, sans-serif;
-          }
-
-          .print-card {
-            break-inside: avoid;
-          }
-        }
-      `}</style>
-
-      <section id="booking-print-document" aria-hidden="true">
-        <div style={{ borderBottom: "6px solid #e11d48", paddingBottom: 18, marginBottom: 22 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 24, alignItems: "flex-start" }}>
-            <div>
-              <div style={{ color: "#e11d48", fontSize: 28, fontWeight: 800, letterSpacing: -1 }}>StaySaga</div>
-              <div style={{ marginTop: 8, color: "#047857", fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>
-                Đã xác nhận
-              </div>
-              <h1 style={{ margin: "6px 0 0", fontSize: 28, lineHeight: 1.15 }}>
-                Xác nhận đặt phòng
-              </h1>
-            </div>
-            <div style={{ border: "1px solid #fecdd3", background: "#fff1f2", borderRadius: 12, padding: 14, minWidth: 220 }}>
-              <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700 }}>Mã xác nhận</div>
-              <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{displayCode}</div>
-              <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700, marginTop: 12 }}>Mã PIN</div>
-              <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>{pinCode}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="print-card" style={{ border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", marginBottom: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "180px 1fr" }}>
-            <img src={mainImage} alt={hotelName} style={{ width: 180, height: 140, objectFit: "cover" }} />
-            <div style={{ padding: 18 }}>
-              <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700, textTransform: "uppercase" }}>
-                Chỗ nghỉ
-              </div>
-              <h2 style={{ margin: "4px 0 8px", fontSize: 22 }}>{hotelName}</h2>
-              <div style={{ color: "#4b5563", fontSize: 14 }}>{city}, Việt Nam</div>
-              <div style={{ marginTop: 12, color: "#111827", fontSize: 14 }}>
-                Email khách: <strong>{userEmail}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
-          {[
-            ["Ngày lưu trú", dateLabel],
-            ["Số đêm", `${nights} đêm`],
-            ["Tổng giá", formatCurrency(Number(totalPrice))],
-          ].map(([label, value]) => (
-            <div key={label} className="print-card" style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 700 }}>{label}</div>
-              <div style={{ marginTop: 6, fontSize: 17, fontWeight: 800 }}>{value}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="print-card" style={{ border: "1px solid #e5e7eb", borderRadius: 14, padding: 18, marginBottom: 18 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>Thông tin quan trọng</h3>
-          <ul style={{ margin: "12px 0 0", paddingLeft: 20, color: "#374151", fontSize: 14, lineHeight: 1.7 }}>
-            <li>Đơn đặt phòng đã được xác nhận và gửi tới email của khách.</li>
-            <li>Vui lòng xuất trình mã xác nhận khi làm thủ tục nhận phòng.</li>
-            <li>StaySaga không yêu cầu cung cấp thông tin thanh toán qua điện thoại, email hoặc chat.</li>
-          </ul>
-        </div>
-
-        <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 12, color: "#6b7280", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
-          <span>staySaga.vn</span>
-          <span>Ngày in: {format(new Date(), "dd/MM/yyyy HH:mm")}</span>
-        </div>
-      </section>
-
-      {/* Rose Header */}
-      <header className="bg-rose-600 pt-3 pb-3 shadow-sm">
-         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
-            <Link href="/" className="text-white text-2xl font-bold tracking-tight">StaySaga</Link>
-            <div className="flex items-center gap-2 text-white text-sm font-bold">
-               <span className="hidden sm:inline hover:bg-rose-700 p-2 px-3 rounded cursor-pointer transition-colors">{currency}</span>
-               <div className="hover:bg-rose-700 p-2 rounded cursor-pointer transition-colors flex items-center justify-center">
-                  {lang === "VN" ? (
-                    <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center border border-red-700">
-                       <span className="text-yellow-400 text-[10px] leading-none">★</span>
-                    </div>
-                  ) : (
-                    <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative">
-                       <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
-                       <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
-                       <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
-                       <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
-                    </div>
-                  )}
-               </div>
-               <div className="hover:bg-rose-700 p-2 rounded cursor-pointer transition-colors">
-                  <HelpCircle className="w-5 h-5" />
-               </div>
-               <div className="hidden lg:inline hover:bg-rose-700 p-2 px-3 rounded cursor-pointer transition-colors">
-                  {t("Đăng chỗ nghỉ của Quý vị", "List your property")}
-               </div>
-               <div className="flex items-center gap-2 hover:bg-rose-700 p-2 rounded cursor-pointer transition-colors ml-2">
-                  <div className="h-8 w-8 rounded-full bg-[#febb02] flex items-center justify-center text-rose-900 font-bold">
-                    {session?.user?.user_metadata?.full_name?.[0]?.toUpperCase() || "P"}
-                  </div>
-                  <div className="hidden md:flex flex-col">
-                     <span>{session?.user?.user_metadata?.full_name || "Phúc Khang Đặng Nguyễn"}</span>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </header>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
@@ -237,7 +105,24 @@ export default async function BookingSuccessPage(props: {
                       <Smartphone className="w-4 h-4" />
                       {t("Lưu xác nhận vào điện thoại", "Save to phone")}
                    </button>
-                   <PrintConfirmationButton label={t("In xác nhận đặt phòng", "Print confirmation")} />
+                   <PrintConfirmationButton 
+                     label={t("In xác nhận đặt phòng", "Print confirmation")}
+                     booking={booking}
+                     messages={messages}
+                     lang={lang}
+                     currency={currency}
+                     userEmail={userEmail}
+                     totalPrice={Number(totalPrice)}
+                     nights={nights}
+                     displayCode={displayCode}
+                     pinCode={pinCode}
+                     dateLabel={dateLabel}
+                     mainImage={mainImage}
+                     hotelName={hotelName}
+                     city={city}
+                     startDateStr={startDate.toISOString()}
+                     endDateStr={endDate.toISOString()}
+                   />
                 </div>
              </div>
 

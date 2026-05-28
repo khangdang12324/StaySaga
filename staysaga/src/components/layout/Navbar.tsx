@@ -23,6 +23,9 @@ import {
   Shield,
   Plus,
   Users,
+  Briefcase,
+  Wallet,
+  MessageSquare,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -227,9 +230,7 @@ export default function Navbar() {
 
   if (
     pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/host") ||
-    pathname?.startsWith("/bookings") ||
-    pathname?.startsWith("/messages")
+    pathname?.startsWith("/host")
   ) {
     return null;
   }
@@ -445,22 +446,22 @@ export default function Navbar() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className={cn(
-                      "flex items-center gap-2 p-1 rounded-full font-medium transition-all shadow-sm hover:shadow-md border",
-                      "bg-white border-rose-200 text-gray-700 hover:bg-rose-50 ml-2",
-                    )}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold transition-all hover:bg-white/10 text-white ml-2"
                   >
                     {userAvatar ? (
                       <SafeImage
                         src={userAvatar}
                         alt={userName}
-                        className="w-7 h-7 rounded-full object-cover border border-zinc-200"
+                        className="w-7 h-7 rounded-full object-cover border border-white/20"
                       />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs">
+                      <div className="w-7 h-7 rounded-full bg-amber-400 text-rose-700 flex items-center justify-center font-black text-xs shrink-0 shadow-inner">
                         {userName[0].toUpperCase()}
                       </div>
                     )}
+                    <span className="hidden lg:inline text-sm text-white tracking-tight">
+                      {userName}
+                    </span>
                   </button>
 
                   <AnimatePresence>
@@ -470,190 +471,170 @@ export default function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-3 w-72 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden"
+                        className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-zinc-100 overflow-hidden z-50 py-1"
                       >
-                        {/* User Info Header */}
-                        <div className="px-5 py-4 bg-gray-50 dark:bg-zinc-800/50 border-b border-gray-100 dark:border-zinc-800">
-                          <div className="flex items-center gap-3">
-                            {userAvatar ? (
-                              <SafeImage
-                                src={userAvatar}
-                                alt={userName}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold">
-                                {userName[0].toUpperCase()}
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 dark:text-white truncate">
-                                {userName}
-                              </p>
-                              <p className="text-xs text-gray-500 truncate">
-                                {user.email}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
                         {/* Menu Items - User Base */}
-                        <div className="py-2">
-                          <Link
-                            href="/profile"
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                          >
-                            <User className="w-4 h-4 text-gray-400" />
-                            <span>{t("Tài khoản của tôi", "My Account")}</span>
-                          </Link>
-                          <Link
-                            href="/bookings"
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                          >
-                            <CalendarCheck className="w-4 h-4 text-gray-400" />
-                            <span>
-                              {t("Đặt phòng & Chuyến đi", "Bookings & Trips")}
-                            </span>
-                          </Link>
-                          <Link
-                            href="/favorites"
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                          >
-                            <Heart className="w-4 h-4 text-gray-400" />
-                            <span>{t("Đã lưu", "Saved")}</span>
-                          </Link>
-                          <Link
-                            href="/reviews"
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                          >
-                            <Star className="w-4 h-4 text-gray-400" />
-                            <span>{t("Đánh giá của tôi", "My Reviews")}</span>
-                          </Link>
-                        </div>
+                        <Link
+                          href="/profile"
+                          onClick={() => setDropdownOpen(false)}
+                          className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                        >
+                          <User className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                          <span>{t("Tài khoản", "Manage account")}</span>
+                        </Link>
+                        
+                        <Link
+                          href="/bookings"
+                          onClick={() => setDropdownOpen(false)}
+                          className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                        >
+                          <Briefcase className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                          <span>
+                            {t("Đặt chỗ & Chuyến đi", "Bookings & Trips")}
+                          </span>
+                        </Link>
+                        
+                        <Link
+                          href="/favorites"
+                          onClick={() => setDropdownOpen(false)}
+                          className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                        >
+                          <Wallet className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                          <span>{t("Tặng thưởng & Ví", "Rewards & Wallet")}</span>
+                        </Link>
+                        
+                        <Link
+                          href="/reviews"
+                          onClick={() => setDropdownOpen(false)}
+                          className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                        >
+                          <MessageSquare className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                          <span>{t("Đánh giá", "Reviews")}</span>
+                        </Link>
+                        
+                        <Link
+                          href="/favorites"
+                          onClick={() => setDropdownOpen(false)}
+                          className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                        >
+                          <Heart className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                          <span>{t("Đã lưu", "Saved")}</span>
+                        </Link>
 
                         {/* Menu Items - Partner/Admin specific */}
                         {(canAccessPartner(userRole) ||
                           canAccessAdmin(userRole)) && (
                           <>
-                            <hr className="border-gray-100 dark:border-zinc-800" />
-                            <div className="py-2">
-                              {/* Partner Menu */}
-                              {canAccessPartner(userRole) && (
-                                <>
-                                  <Link
-                                    href="/host"
-                                    onClick={() => setDropdownOpen(false)}
-                                    className="flex items-center gap-3 px-5 py-3 text-sm font-semibold text-gray-900 dark:text-gray-100 hover:bg-rose-50 dark:hover:bg-zinc-800 transition-colors"
-                                  >
-                                    <Home className="w-4 h-4 text-rose-500" />
-                                    <span>
-                                      {t(
-                                        "Quản lý chỗ nghỉ",
-                                        "Manage Properties",
-                                      )}
-                                    </span>
-                                  </Link>
-                                  <Link
-                                    href="/host/register"
-                                    onClick={() => setDropdownOpen(false)}
-                                    className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                                  >
-                                    <Plus className="w-4 h-4 text-gray-400" />
-                                    <span>
-                                      {t(
-                                        "Thêm chỗ nghỉ mới",
-                                        "Add New Property",
-                                      )}
-                                    </span>
-                                  </Link>
-                                </>
-                              )}
+                            <hr className="my-1 border-gray-100" />
+                            {/* Partner Menu */}
+                            {canAccessPartner(userRole) && (
+                              <>
+                                <Link
+                                  href="/host"
+                                  onClick={() => setDropdownOpen(false)}
+                                  className="group flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-zinc-800 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                                >
+                                  <Home className="w-4 h-4 text-rose-500 shrink-0" />
+                                  <span>
+                                    {t(
+                                      "Quản lý chỗ nghỉ",
+                                      "Manage Properties",
+                                    )}
+                                  </span>
+                                </Link>
+                                <Link
+                                  href="/host/register"
+                                  onClick={() => setDropdownOpen(false)}
+                                  className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                                >
+                                  <Plus className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                                  <span>
+                                    {t(
+                                      "Thêm chỗ nghỉ mới",
+                                      "Add New Property",
+                                    )}
+                                  </span>
+                                </Link>
+                              </>
+                            )}
 
-                              {/* Admin Menu */}
-                              {canAccessAdmin(userRole) && (
-                                <>
-                                  <Link
-                                    href="/admin"
-                                    onClick={() => setDropdownOpen(false)}
-                                    className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-zinc-800/50 transition-colors"
-                                  >
-                                    <Shield className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                                    <span>
-                                      {t("Admin Dashboard", "Admin Dashboard")}
-                                    </span>
-                                    <span className="ml-auto inline-flex items-center rounded-full bg-rose-100 dark:bg-rose-900/30 px-2 py-0.5 text-xs font-bold text-rose-700 dark:text-rose-300">
-                                      ADMIN
-                                    </span>
-                                  </Link>
-                                  <Link
-                                    href="/admin/users"
-                                    onClick={() => setDropdownOpen(false)}
-                                    className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors ml-2"
-                                  >
-                                    <Users className="w-4 h-4 text-gray-400" />
-                                    <span>
-                                      {t("Quản lý người dùng", "Manage Users")}
-                                    </span>
-                                  </Link>
-                                  <Link
-                                    href="/admin/properties"
-                                    onClick={() => setDropdownOpen(false)}
-                                    className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors ml-2"
-                                  >
-                                    <Home className="w-4 h-4 text-gray-400" />
-                                    <span>
-                                      {t(
-                                        "Quản lý chỗ nghỉ",
-                                        "Manage Properties",
-                                      )}
-                                    </span>
-                                  </Link>
-                                </>
-                              )}
-                            </div>
+                            {/* Admin Menu */}
+                            {canAccessAdmin(userRole) && (
+                              <>
+                                <Link
+                                  href="/admin"
+                                  onClick={() => setDropdownOpen(false)}
+                                  className="group flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                                >
+                                  <Shield className="w-4 h-4 text-rose-600 shrink-0" />
+                                  <span>
+                                    {t("Admin Dashboard", "Admin Dashboard")}
+                                  </span>
+                                  <span className="ml-auto inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-700">
+                                    ADMIN
+                                  </span>
+                                </Link>
+                                <Link
+                                  href="/admin/users"
+                                  onClick={() => setDropdownOpen(false)}
+                                  className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50 ml-2"
+                                >
+                                  <Users className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                                  <span>
+                                    {t("Quản lý người dùng", "Manage Users")}
+                                  </span>
+                                </Link>
+                                <Link
+                                  href="/admin/properties"
+                                  onClick={() => setDropdownOpen(false)}
+                                  className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50 ml-2"
+                                >
+                                  <Home className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                                  <span>
+                                    {t(
+                                      "Quản lý chỗ nghỉ",
+                                      "Manage Properties",
+                                    )}
+                                  </span>
+                                </Link>
+                              </>
+                            )}
                           </>
                         )}
 
-                        <hr className="border-gray-100 dark:border-zinc-800" />
+                        <hr className="my-1 border-gray-100" />
 
-                        {/* Menu Items - Settings */}
-                        <div className="py-2">
-                          <Link
-                            href="/settings"
+                        {/* Menu Items - Settings & Help */}
+                        <Link
+                          href="/settings"
+                          onClick={() => setDropdownOpen(false)}
+                          className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                        >
+                          <Settings className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                          <span>{t("Cài đặt", "Settings")}</span>
+                        </Link>
+                        <Link
+                          href="/help"
+                          onClick={() => setDropdownOpen(false)}
+                          className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
+                        >
+                          <HelpCircle className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
+                          <span>{t("Trợ giúp", "Help & Support")}</span>
+                        </Link>
+
+                        <hr className="my-1 border-gray-100" />
+
+                        {/* Logout button */}
+                        <form action={logout}>
+                          <button
+                            type="submit"
                             onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                            className="group w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50/50 transition-colors text-left"
                           >
-                            <Settings className="w-4 h-4 text-gray-500 dark:text-gray-300" />
-                            <span>{t("Cài đặt", "Settings")}</span>
-                          </Link>
-                          <Link
-                            href="/help"
-                            onClick={() => setDropdownOpen(false)}
-                            className="flex items-center gap-3 px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                          >
-                            <HelpCircle className="w-4 h-4 text-gray-400" />
-                            <span>{t("Trợ giúp", "Help & Support")}</span>
-                          </Link>
-                        </div>
-
-                        <hr className="border-gray-100 dark:border-zinc-800" />
-
-                        <div className="py-2">
-                          <form action={logout}>
-                            <button
-                              type="submit"
-                              onClick={() => setDropdownOpen(false)}
-                              className="w-full flex items-center gap-3 px-5 py-3 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors font-medium"
-                            >
-                              <LogOut className="w-4 h-4" />
-                              <span>{t("Đăng xuất", "Log out")}</span>
-                            </button>
-                          </form>
-                        </div>
+                            <LogOut className="w-4 h-4 shrink-0" />
+                            <span>{t("Đăng xuất", "Log out")}</span>
+                          </button>
+                        </form>
                       </motion.div>
                     )}
                   </AnimatePresence>

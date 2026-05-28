@@ -272,43 +272,10 @@ export default function MessagesClient({
   };
 
   return (
-    <div className="h-screen w-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col overflow-hidden">
-      
-      {/* Premium Full-Width Brand Header */}
-      <header className="bg-rose-600 text-white h-14 px-6 flex items-center justify-between shrink-0 shadow-sm border-b border-rose-700/50">
-        <div className="flex items-center gap-6">
-          <Link href="/bookings" className="text-xl font-black tracking-tight flex items-center gap-1.5 hover:opacity-90 transition-opacity">
-            <ArrowLeft className="w-5 h-5" />
-            <span>StaySaga Inbox</span>
-          </Link>
-        </div>
-        
-        <div className="flex items-center gap-5 text-sm font-bold">
-          <span className="cursor-pointer hover:bg-rose-700 px-3 py-1.5 rounded-lg transition-colors">{currency}</span>
-          
-          <div className="w-5 h-5 rounded-full bg-red-650 flex items-center justify-center border border-red-750 shadow-sm relative overflow-hidden shrink-0 cursor-pointer">
-            <span className="text-yellow-400 text-[10px] leading-none">★</span>
-          </div>
-          
-          <HelpCircle className="w-5 h-5 cursor-pointer hover:bg-rose-700 p-0.5 rounded-md transition-colors" />
-          
-          <span className="hidden md:inline cursor-pointer hover:bg-rose-700 px-3 py-1.5 rounded-lg transition-colors">
-            {t("Đăng chỗ nghỉ của Quý vị", "List your property")}
-          </span>
-          
-          <div className="flex items-center gap-2 bg-rose-700 hover:bg-rose-800/80 px-3.5 py-1.5 rounded-xl cursor-pointer transition-all border border-rose-500/20">
-            <div className="h-6 w-6 rounded-full bg-amber-400 flex items-center justify-center text-rose-900 font-black text-xs shadow-inner">
-              {userFullName?.[0]?.toUpperCase() || "U"}
-            </div>
-            <span className="hidden sm:inline text-xs font-extrabold max-w-[150px] truncate">
-              {userFullName}
-            </span>
-          </div>
-        </div>
-      </header>
+    <div className="h-screen w-screen bg-[#f8fafc] text-slate-800 font-sans flex flex-col overflow-hidden pt-[72px]">
 
       {/* Main Messaging Fluid Viewport */}
-      <div className="flex-1 flex w-full h-[calc(100vh-56px)] overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row w-full h-[calc(100vh-72px)] overflow-hidden">
         
         {/* Left Pane: Conversations List Sidebar */}
         <div className={`w-full md:w-[350px] shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden ${selectedConvoId ? 'hidden md:flex' : 'flex'}`}>
@@ -360,13 +327,22 @@ export default function MessagesClient({
                 const img = convo.booking.homestay?.homestay_images?.[0]?.url || "/images/fallback-hotel.jpg";
 
                 return (
-                  <button
+                  <div
                     key={convo.booking.id}
                     onClick={() => {
                       setSelectedConvoId(convo.booking.id);
                       setShowMenu(false);
                     }}
-                    className={`w-full text-left p-4 flex gap-3 transition-all relative border-b border-slate-100/80 cursor-pointer ${
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedConvoId(convo.booking.id);
+                        setShowMenu(false);
+                      }
+                    }}
+                    className={`w-full text-left p-4 flex gap-3 transition-all relative border-b border-slate-100/80 cursor-pointer select-none ${
                       isActive ? "bg-rose-50/30 hover:bg-rose-50/40" : "hover:bg-slate-50"
                     }`}
                   >
@@ -451,7 +427,7 @@ export default function MessagesClient({
                         </p>
                       )}
                     </div>
-                  </button>
+                  </div>
                 );
               })
             ) : (
@@ -476,8 +452,10 @@ export default function MessagesClient({
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <div>
-                    <h3 className="font-black text-lg text-slate-900 leading-tight">
-                      {activeBooking.homestay?.name || activeBooking.homestay?.city || "StaySaga Homestay"}
+                    <h3 className="font-black text-lg text-slate-900 leading-tight hover:text-rose-600 transition-colors">
+                      <Link href={`/bookings/${activeBooking.id}`}>
+                        {activeBooking.homestay?.name || activeBooking.homestay?.city || "StaySaga Homestay"}
+                      </Link>
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[11px] text-slate-500 flex items-center gap-1 font-bold">
@@ -535,8 +513,10 @@ export default function MessagesClient({
                       className="object-cover" 
                     />
                   </div>
-                  <h2 className="text-xl font-black text-slate-900 leading-snug">
-                    {activeBooking.homestay?.name || "StaySaga Homestay"}
+                  <h2 className="text-xl font-black text-slate-900 leading-snug hover:text-rose-600 transition-colors">
+                    <Link href={`/bookings/${activeBooking.id}`}>
+                      {activeBooking.homestay?.name || "StaySaga Homestay"}
+                    </Link>
                   </h2>
                   <p className="text-xs text-slate-500 font-bold mt-1">
                     {format(new Date(activeBooking.check_in_date), "d MMM")} - {format(new Date(activeBooking.check_out_date), "d MMM, yyyy")}
