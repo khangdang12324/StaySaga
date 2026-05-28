@@ -1,6 +1,6 @@
-const htmlToDocx = require('html-to-docx');
-const fs = require('fs');
-const path = require('path');
+const htmlToDocx = require("html-to-docx");
+const fs = require("fs");
+const path = require("path");
 
 const htmlContent = `
 <!DOCTYPE html>
@@ -725,20 +725,20 @@ CMD ["npm", "start"]</pre>
 
 async function createThesisDocuments() {
   try {
-    console.log('🔄 Converting HTML to DOCX...');
-    
+    console.log("🔄 Converting HTML to DOCX...");
+
     const buffer = await htmlToDocx(htmlContent);
-    
-    const fs = require('fs');
+
+    const fs = require("fs");
     fs.writeFileSync(
-      path.join(__dirname, 'Xay_Dung_He_Thong_Quan_Ly_Homestay_StaySaga.docx'),
-      buffer
+      path.join(__dirname, "Xay_Dung_He_Thong_Quan_Ly_Homestay_StaySaga.docx"),
+      buffer,
     );
-    
-    console.log('✅ Thesis document created successfully!');
-    console.log('📄 File: Xay_Dung_He_Thong_Quan_Ly_Homestay_StaySaga.docx');
+
+    console.log("✅ Thesis document created successfully!");
+    console.log("📄 File: Xay_Dung_He_Thong_Quan_Ly_Homestay_StaySaga.docx");
   } catch (error) {
-    console.error('❌ Error creating thesis:', error.message);
+    console.error("❌ Error creating thesis:", error.message);
     process.exit(1);
   }
 }
