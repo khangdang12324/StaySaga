@@ -16,8 +16,6 @@ import {
   CheckCircle,
   AlertTriangle,
 } from "lucide-react";
-import { getRegistrationProgress } from "../../host/page";
-
 type Props = {
   params: Promise<{ sub: string }>;
   searchParams?: Promise<{ status?: string; error?: string }>;
