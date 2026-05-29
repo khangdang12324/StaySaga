@@ -413,10 +413,19 @@ export function AmenitiesForm({
                     {[
                       ["Lịch", `/host/${propertyId}/calendar`],
                       ["Mở/đóng phòng", `/host/${propertyId}/availability`],
-                      ["Sao chép giá cho các ngày trong tương lai", `/host/${propertyId}/calendar`],
-                      ["Quy tắc giới hạn linh động", `/host/${propertyId}/calendar`],
+                      [
+                        "Sao chép giá cho các ngày trong tương lai",
+                        `/host/${propertyId}/calendar`,
+                      ],
+                      [
+                        "Quy tắc giới hạn linh động",
+                        `/host/${propertyId}/calendar`,
+                      ],
                       ["Đồng bộ hóa lịch", `/host/${propertyId}/sync`],
-                      ["Tính năng mở phòng trống", `/host/${propertyId}/availability`],
+                      [
+                        "Tính năng mở phòng trống",
+                        `/host/${propertyId}/availability`,
+                      ],
                     ].map(([label, href]) => (
                       <Link
                         key={label}
