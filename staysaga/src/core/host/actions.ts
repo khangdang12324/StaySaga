@@ -1873,3 +1873,207 @@ export async function promoteToHost() {
   revalidatePath("/host");
   redirect("/host/register");
 }
+
+export async function requestClosePropertyAction(propertyId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: "Bạn chưa đăng nhập." };
+    }
+
+    const authSupabase = supabase as unknown as SupabaseLike;
+    const role = await getUserRole(authSupabase, user.id);
+    if (!canAccessPartner(role)) {
+      return { error: "Bạn không có quyền thao tác với chỗ nghỉ này." };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const { data: property, error: propError } = await adminSupabase
+      .from("homestays")
+      .select("id, owner_id, status")
+      .eq("id", propertyId)
+      .maybeSingle();
+
+    if (propError || !property) {
+      return { error: "Không tìm thấy chỗ nghỉ." };
+    }
+
+    if (role !== "ADMIN" && property.owner_id !== user.id) {
+      return { error: "Bạn không có quyền thao tác với chỗ nghỉ này." };
+    }
+
+    const { error: updateError } = await adminSupabase
+      .from("homestays")
+      .update({
+        status: "CLOSED_TEMP",
+        is_active: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", propertyId);
+
+    if (updateError) {
+      return { error: "Không thể tạm đóng chỗ nghỉ." };
+    }
+
+    revalidatePath("/host");
+    revalidatePath("/host/list");
+    revalidatePath(`/host/${propertyId}`);
+    revalidatePath("/homestays");
+    revalidatePath("/");
+
+    return {
+      success: true,
+      message: "Đã tạm đóng chỗ nghỉ. Khách sẽ không thể đặt chỗ nghỉ này cho đến khi bạn mở lại.",
+    };
+  } catch (err: any) {
+    return { error: err.message || "Đã xảy ra lỗi khi tạm đóng chỗ nghỉ." };
+  }
+}
+
+export async function reopenPropertyAction(propertyId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: "Bạn chưa đăng nhập." };
+    }
+
+    const authSupabase = supabase as unknown as SupabaseLike;
+    const role = await getUserRole(authSupabase, user.id);
+    if (!canAccessPartner(role)) {
+      return { error: "Bạn không có quyền thao tác với chỗ nghỉ này." };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const { data: property, error: propError } = await adminSupabase
+      .from("homestays")
+      .select("id, owner_id, status")
+      .eq("id", propertyId)
+      .maybeSingle();
+
+    if (propError || !property) {
+      return { error: "Không tìm thấy chỗ nghỉ." };
+    }
+
+    if (role !== "ADMIN" && property.owner_id !== user.id) {
+      return { error: "Bạn không có quyền thao tác với chỗ nghỉ này." };
+    }
+
+    const currentStatus = property.status;
+    if (currentStatus !== "CLOSED_TEMP" && currentStatus !== "APPROVED") {
+      return { error: "Không thể mở bán lại chỗ nghỉ ở trạng thái này. Vui lòng liên hệ quản trị viên." };
+    }
+
+    const { error: updateError } = await adminSupabase
+      .from("homestays")
+      .update({
+        status: "APPROVED",
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", propertyId);
+
+    if (updateError) {
+      return { error: "Không thể mở bán lại chỗ nghỉ." };
+    }
+
+    revalidatePath("/host");
+    revalidatePath("/host/list");
+    revalidatePath(`/host/${propertyId}`);
+    revalidatePath("/homestays");
+    revalidatePath("/");
+
+    return {
+      success: true,
+      message: "Chỗ nghỉ đã được mở bán trở lại.",
+    };
+  } catch (err: any) {
+    return { error: err.message || "Đã xảy ra lỗi khi mở lại chỗ nghỉ." };
+  }
+}
+
+export async function requestDeletePropertyAction(propertyId: string, reason: string) {
+  try {
+    if (!reason || reason.trim().length < 10) {
+      return { error: "Lý do yêu cầu xóa phải có tối thiểu 10 ký tự." };
+    }
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: "Bạn chưa đăng nhập." };
+    }
+
+    const authSupabase = supabase as unknown as SupabaseLike;
+    const role = await getUserRole(authSupabase, user.id);
+    if (!canAccessPartner(role)) {
+      return { error: "Bạn không có quyền thao tác với chỗ nghỉ này." };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const { data: property, error: propError } = await adminSupabase
+      .from("homestays")
+      .select("id, owner_id, status")
+      .eq("id", propertyId)
+      .maybeSingle();
+
+    if (propError || !property) {
+      return { error: "Không tìm thấy chỗ nghỉ." };
+    }
+
+    if (role !== "ADMIN" && property.owner_id !== user.id) {
+      return { error: "Bạn không có quyền thao tác với chỗ nghỉ này." };
+    }
+
+    // Check future bookings
+    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const { data: bookings, error: bookingsError } = await adminSupabase
+      .from("bookings")
+      .select("id")
+      .eq("homestay_id", propertyId)
+      .in("status", ["PENDING", "CONFIRMED", "CHECKED_IN"])
+      .gte("check_out_date", today);
+
+    if (bookingsError) {
+      return { error: "Không thể kiểm tra đơn đặt phòng sắp tới." };
+    }
+
+    if (bookings && bookings.length > 0) {
+      return {
+        error: "Chỗ nghỉ đang có đơn đặt phòng sắp tới. Vui lòng xử lý các đơn đặt phòng trước khi yêu cầu xóa.",
+      };
+    }
+
+    const { error: updateError } = await adminSupabase
+      .from("homestays")
+      .update({
+        status: "DELETE_REQUESTED",
+        is_active: false,
+        delete_reason: reason,
+        delete_request_reason: reason,
+        delete_requested_at: new Date().toISOString(),
+        delete_requested_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", propertyId);
+
+    if (updateError) {
+      return { error: "Không thể yêu cầu xóa chỗ nghỉ." };
+    }
+
+    revalidatePath("/host");
+    revalidatePath("/host/list");
+    revalidatePath(`/host/${propertyId}`);
+    revalidatePath("/homestays");
+    revalidatePath("/admin/properties");
+    revalidatePath("/admin");
+
+    return {
+      success: true,
+      message: "Đã gửi yêu cầu xóa chỗ nghỉ. Quản trị viên sẽ xem xét trước khi gỡ khỏi hệ thống.",
+    };
+  } catch (err: any) {
+    return { error: err.message || "Đã xảy ra lỗi khi yêu cầu xóa chỗ nghỉ." };
+  }
+}

@@ -15,7 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { HostExtranetShell } from "./_components/HostExtranetShell";
-import { DeletePropertyButton } from "./_components/DeletePropertyButton";
+import { ListingActionsDropdown } from "./_components/ListingActionsDropdown";
 import { DeleteRegistrationButton } from "./_components/DeleteRegistrationButton";
 import { getHostDashboardData } from "@/core/host/actions";
 import {
@@ -186,17 +186,57 @@ export default async function HostDashboardPage({
     "Tài khoản đối tác";
   const activeListings = listings.filter(
     (item) =>
-      item.status === "APPROVED" &&
-      item.is_active &&
-      !hiddenRegistrationStatuses.has(item.status || ""),
+      item.status !== "DRAFT" &&
+      item.status !== "DELETED",
   );
   const notOnBookingListings = listings.filter(
     (item) =>
-      !hiddenRegistrationStatuses.has(item.status || "") &&
-      !(item.status === "APPROVED" && item.is_active),
+      item.status === "DRAFT",
   );
   const visibleListings = activeListings;
   const visibleInactiveListings = notOnBookingListings;
+
+  const getStatusBadge = (status?: string, isActive?: boolean) => {
+    const currentStatus = status || "PENDING";
+    const baseClass = "inline-flex items-center gap-1.5 text-xs font-semibold";
+    
+    if (currentStatus === "APPROVED") {
+      if (isActive) {
+        return (
+          <span className={`${baseClass} text-emerald-800`}>
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Mở / Có thể đặt phòng
+          </span>
+        );
+      } else {
+        return (
+          <span className={`${baseClass} text-slate-600`}>
+            <span className="h-2 w-2 rounded-full bg-slate-400" />
+            Đã duyệt / Chưa mở bán
+          </span>
+        );
+      }
+    }
+
+    const statusConfigs: Record<string, { label: string; dotClass: string; textClass: string }> = {
+      DRAFT: { label: "Bản nháp", dotClass: "bg-slate-400", textClass: "text-slate-600" },
+      PENDING: { label: "Chờ duyệt", dotClass: "bg-amber-400", textClass: "text-amber-800" },
+      REJECTED: { label: "Bị từ chối", dotClass: "bg-rose-500", textClass: "text-rose-700" },
+      CLOSED_TEMP: { label: "Tạm đóng", dotClass: "bg-orange-400", textClass: "text-orange-800" },
+      DELETE_REQUESTED: { label: "Chờ xóa", dotClass: "bg-red-400 animate-pulse", textClass: "text-red-700 font-bold" },
+      DELETED: { label: "Đã xóa", dotClass: "bg-slate-300", textClass: "text-slate-400 italic" },
+      SUSPENDED: { label: "Bị khóa", dotClass: "bg-red-600", textClass: "text-red-700" },
+    };
+
+    const config = statusConfigs[currentStatus] || { label: currentStatus, dotClass: "bg-slate-400", textClass: "text-slate-600" };
+
+    return (
+      <span className={`${baseClass} ${config.textClass}`}>
+        <span className={`h-2 w-2 rounded-full ${config.dotClass}`} />
+        {config.label}
+      </span>
+    );
+  };
 
   return (
     <HostExtranetShell active="home" userName={userName}>
@@ -440,6 +480,7 @@ export default async function HostDashboardPage({
                   <th className="px-4 py-4 font-bold text-center">Rời đi trong 48 giờ tới</th>
                   <th className="px-4 py-4 font-bold text-center">Tin nhắn từ khách</th>
                   <th className="px-4 py-4 font-bold text-center">Tin nhắn từ StaySaga</th>
+                  <th className="px-4 py-4 font-bold text-right">Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -477,48 +518,34 @@ export default async function HostDashboardPage({
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-5">
-                        <span
-                          className={`inline-flex items-center gap-2 ${
-                            open ? "text-gray-800" : "text-red-600"
-                          }`}
-                        >
-                          <span
-                            className={`h-3 w-3 rounded-full ${
-                              open ? "bg-[#008009]" : "border border-red-600 bg-red-100"
-                            }`}
-                          />
-                          {open
-                            ? "Mở / Có thể đặt phòng"
-                            : "Đóng / Không thể đặt phòng"}
-                        </span>
-                        {!open ? (
-                          <Link
-                            href={`/host/${listing.id}`}
-                            className="mt-3 block text-[#006ce4] font-medium hover:underline"
-                          >
-                            Tìm hiểu nguyên nhân
-                          </Link>
-                        ) : null}
+                      <td className="px-4 py-5 align-middle">
+                        {getStatusBadge(listing.status, listing.is_active)}
                       </td>
-                      <td className="px-4 py-5 text-center">
+                      <td className="px-4 py-5 text-center align-middle">
                         {renderValueBadge(listing.check_ins_48h)}
                       </td>
-                      <td className="px-4 py-5 text-center">
+                      <td className="px-4 py-5 text-center align-middle">
                         {renderValueBadge(listing.check_outs_48h)}
                       </td>
-                      <td className="px-4 py-5 text-center">
+                      <td className="px-4 py-5 text-center align-middle">
                         {renderValueBadge(listing.guest_messages_count)}
                       </td>
-                      <td className="px-4 py-5 text-center">
+                      <td className="px-4 py-5 text-center align-middle">
                         {renderValueBadge(listing.system_messages_count)}
+                      </td>
+                      <td className="px-4 py-5 text-right align-middle">
+                        <ListingActionsDropdown
+                          propertyId={listing.id}
+                          status={listing.status || "APPROVED"}
+                          isActive={listing.is_active}
+                        />
                       </td>
                     </tr>
                   );
                 })}
                 {visibleListings.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-gray-600">
+                    <td colSpan={8} className="px-4 py-12 text-center text-gray-600">
                       Chưa có chỗ nghỉ nào đang hoạt động.
                     </td>
                   </tr>

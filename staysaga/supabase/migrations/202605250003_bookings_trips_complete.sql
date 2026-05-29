@@ -28,7 +28,7 @@ BEGIN
     END LOOP;
 END $$;
 
-ALTER TABLE public.bookings ADD CONSTRAINT bookings_status_check CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'));
+ALTER TABLE public.bookings ADD CONSTRAINT bookings_status_check CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'CHECKED_IN', 'NO_SHOW'));
 ALTER TABLE public.bookings ADD CONSTRAINT bookings_payment_status_check CHECK (payment_status IN ('UNPAID', 'PAID', 'PAY_AT_PROPERTY', 'REFUNDED'));
 
 -- 3. Trigger to auto-generate booking_code on insert (if it doesn't already exist)
@@ -106,7 +106,7 @@ USING (
   )
   or exists (
     select 1 from public.profiles p
-    where p.id = auth.uid() and p.role = 'admin'
+    where p.id = auth.uid() and p.role = 'ADMIN'
   )
 );
 
@@ -127,7 +127,7 @@ WITH CHECK (
   )
   or exists (
     select 1 from public.profiles p
-    where p.id = auth.uid() and p.role = 'admin'
+    where p.id = auth.uid() and p.role = 'ADMIN'
   )
 );
 
@@ -143,7 +143,7 @@ USING (
   )
   or exists (
     select 1 from public.profiles p
-    where p.id = auth.uid() and p.role = 'admin'
+    where p.id = auth.uid() and p.role = 'ADMIN'
   )
 );
 
@@ -164,7 +164,7 @@ USING (
   )
   or exists (
     select 1 from public.profiles p
-    where p.id = auth.uid() and p.role = 'admin'
+    where p.id = auth.uid() and p.role = 'ADMIN'
   )
 )
 WITH CHECK (
@@ -174,6 +174,6 @@ WITH CHECK (
   )
   or exists (
     select 1 from public.profiles p
-    where p.id = auth.uid() and p.role = 'admin'
+    where p.id = auth.uid() and p.role = 'ADMIN'
   )
 );

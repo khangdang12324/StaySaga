@@ -27,13 +27,13 @@ on public.site_settings for all
 using (
   exists (
     select 1 from public.profiles p
-    where p.id = auth.uid() and p.role = 'admin'
+    where p.id = auth.uid() and p.role = 'ADMIN'
   )
 )
 with check (
   exists (
     select 1 from public.profiles p
-    where p.id = auth.uid() and p.role = 'admin'
+    where p.id = auth.uid() and p.role = 'ADMIN'
   )
 );
 

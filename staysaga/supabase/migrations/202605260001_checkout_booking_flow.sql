@@ -44,7 +44,7 @@ end $$;
 
 alter table public.bookings
   add constraint bookings_status_check
-  check (status in ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'));
+  check (status in ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'CHECKED_IN', 'NO_SHOW'));
 
 alter table public.bookings
   add constraint bookings_payment_status_check

@@ -509,3 +509,66 @@ export async function updateWebsiteSettings(formData: FormData) {
   revalidatePath("/admin/settings");
   redirect("/admin/settings?status=updated");
 }
+
+export async function approveDeletePropertyAction(propertyId: string) {
+  try {
+    const { supabase, user } = await getAdminClient();
+    if (!propertyId) return { error: "Thiếu ID chỗ nghỉ." };
+
+    const activeBookings = await countActiveBookings(supabase, propertyId);
+    if (activeBookings > 0) {
+      return { error: "Chỗ nghỉ đang có đơn đặt phòng sắp tới. Không thể xóa." };
+    }
+
+    const { error } = await supabase
+      .from("homestays")
+      .update({
+        status: "DELETED",
+        is_active: false,
+        deleted_at: new Date().toISOString(),
+        deleted_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", propertyId);
+
+    if (error) return { error: "Không thể cập nhật trạng thái xóa." };
+
+    revalidatePath("/admin/properties");
+    revalidatePath("/admin");
+    revalidatePath("/host");
+    revalidatePath("/host/list");
+    revalidatePath("/homestays");
+    return { success: true, message: "Đã duyệt xóa chỗ nghỉ." };
+  } catch (err: any) {
+    return { error: err.message || "Lỗi phê duyệt xóa." };
+  }
+}
+
+export async function rejectDeletePropertyAction(propertyId: string, adminNote?: string) {
+  try {
+    const { supabase } = await getAdminClient();
+    if (!propertyId) return { error: "Thiếu ID chỗ nghỉ." };
+
+    const { error } = await supabase
+      .from("homestays")
+      .update({
+        status: "APPROVED",
+        is_active: true,
+        suspended_reason: adminNote ? `Từ chối yêu cầu xóa: ${adminNote}` : "Từ chối yêu cầu xóa.",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", propertyId)
+      .eq("status", "DELETE_REQUESTED");
+
+    if (error) return { error: "Không thể từ chối yêu cầu xóa." };
+
+    revalidatePath("/admin/properties");
+    revalidatePath("/admin");
+    revalidatePath("/host");
+    revalidatePath("/host/list");
+    revalidatePath("/homestays");
+    return { success: true, message: "Đã từ chối yêu cầu xóa chỗ nghỉ." };
+  } catch (err: any) {
+    return { error: err.message || "Lỗi từ chối yêu cầu xóa." };
+  }
+}

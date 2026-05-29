@@ -10,8 +10,8 @@ import {
   hideProperty,
   reopenProperty,
   updatePropertyStatus,
-  approveDeleteProperty,
-  rejectDeleteProperty,
+  approveDeletePropertyAction,
+  rejectDeletePropertyAction,
   suspendProperty,
 } from "@/core/admin/actions";
 import {
@@ -328,12 +328,31 @@ export function AdminPropertiesClient({
           setDeleteRejectionInputReason("");
           router.refresh();
         } else {
-          toast.error("Thực hiện thao tác thất bại.", { id: loadingToastId });
+          toast.error(err instanceof Error ? err.message : "Thực hiện thao tác thất bại.", { id: loadingToastId });
         }
       } finally {
         setActiveActionId(null);
       }
     });
+  };
+
+  const handleApproveDelete = async (fd: FormData) => {
+    const id = fd.get("id") as string;
+    const res = await approveDeletePropertyAction(id);
+    if (res?.error) {
+      throw new Error(res.error);
+    }
+    return res;
+  };
+
+  const handleRejectDelete = async (fd: FormData) => {
+    const id = fd.get("id") as string;
+    const reason = fd.get("reason") as string;
+    const res = await rejectDeletePropertyAction(id, reason);
+    if (res?.error) {
+      throw new Error(res.error);
+    }
+    return res;
   };
 
   const activeOwnerProp = ownerIdParam ? initialProperties.find(p => p.owner_id === ownerIdParam) : null;
@@ -615,7 +634,7 @@ export function AdminPropertiesClient({
                                   {p.status === "DELETE_REQUESTED" && (
                                     <>
                                       <button
-                                        onClick={() => triggerAction(approveDeleteProperty, p.id, "Đã phê duyệt xóa chỗ nghỉ.", "Đồng ý phê duyệt yêu cầu xóa và xóa mềm chỗ nghỉ này?")}
+                                        onClick={() => triggerAction(handleApproveDelete, p.id, "Đã phê duyệt xóa chỗ nghỉ.", "Đồng ý phê duyệt yêu cầu xóa và xóa mềm chỗ nghỉ này?")}
                                         className="w-full text-left rounded px-2.5 py-1.5 text-[11px] font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
                                       >
                                         Duyệt xóa
@@ -889,7 +908,7 @@ export function AdminPropertiesClient({
               {selectedProperty.status === "DELETE_REQUESTED" && (
                 <>
                   <button
-                    onClick={() => triggerAction(approveDeleteProperty, selectedProperty.id, "Đã duyệt yêu cầu xóa.", "Duyệt yêu cầu xóa và thực hiện xóa mềm chỗ nghỉ này?")}
+                    onClick={() => triggerAction(handleApproveDelete, selectedProperty.id, "Đã duyệt yêu cầu xóa.", "Duyệt yêu cầu xóa và thực hiện xóa mềm chỗ nghỉ này?")}
                     disabled={activeActionId !== null}
                     className="rounded bg-red-600 text-white px-4 py-2 text-xs font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center gap-1 cursor-pointer"
                   >
@@ -980,7 +999,7 @@ export function AdminPropertiesClient({
               </button>
               <button
                 type="button"
-                onClick={() => triggerAction(rejectDeleteProperty, deleteRejectionPropertyId, "Đã từ chối yêu cầu xóa.", undefined, deleteRejectionInputReason)}
+                onClick={() => triggerAction(handleRejectDelete, deleteRejectionPropertyId, "Đã từ chối yêu cầu xóa.", undefined, deleteRejectionInputReason)}
                 className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:opacity-50 transition-colors cursor-pointer"
                 disabled={deleteRejectionInputReason.trim().length < 3 || activeActionId !== null}
               >
