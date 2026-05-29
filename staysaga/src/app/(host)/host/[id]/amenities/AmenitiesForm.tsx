@@ -207,11 +207,7 @@ const disabledAmenities = [
   "Phòng tắm đứng",
 ];
 
-const buildingAmenities = [
-  "Đơn lập",
-  "Căn hộ riêng trong tòa nhà",
-  "Song lập",
-];
+const buildingAmenities = ["Đơn lập", "Căn hộ riêng trong tòa nhà", "Song lập"];
 
 const familyAmenities = [
   "Cửa an toàn cho trẻ nhỏ",
@@ -231,9 +227,7 @@ const securityAmenities = [
   "Máy điều hòa độc lập cho từng phòng",
 ];
 
-const cleaningAmenities = [
-  "Nước rửa tay",
-];
+const cleaningAmenities = ["Nước rửa tay"];
 
 // Items that require a "Mới!" badge
 const newItems = new Set([
@@ -252,12 +246,17 @@ export function AmenitiesForm({
 }: AmenitiesFormProps) {
   const [area, setArea] = useState<string>(String(initialAreaSqm));
   const [unit, setUnit] = useState<"sqm" | "sqft">("sqm");
-  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [status, setStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPromoBanner, setShowPromoBanner] = useState(true);
 
   // Keep track of check state in a local Map/State for easy styling of buttons
-  const [selectedAmenities, setSelectedAmenities] = useState<Record<string, boolean>>(() => {
+  const [selectedAmenities, setSelectedAmenities] = useState<
+    Record<string, boolean>
+  >(() => {
     const initial: Record<string, boolean> = {};
     savedAmenityNames.forEach((name) => {
       initial[name] = true;
@@ -290,7 +289,10 @@ export function AmenitiesForm({
       setStatus({ type: "success", message: "Đã lưu tiện nghi phòng." });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      setStatus({ type: "error", message: `Lỗi: ${res.error || "Không thể lưu."}` });
+      setStatus({
+        type: "error",
+        message: `Lỗi: ${res.error || "Không thể lưu."}`,
+      });
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
@@ -304,17 +306,25 @@ export function AmenitiesForm({
   const shortId = propertyId.slice(0, 8);
 
   return (
-    <form onSubmit={handleSave} className="min-h-screen bg-[#f5f5f5] pb-32 text-[#1a1a1a] font-sans">
+    <form
+      onSubmit={handleSave}
+      className="min-h-screen bg-[#f5f5f5] pb-32 text-[#1a1a1a] font-sans"
+    >
       {/* Top Header */}
-      <header className="bg-[#003b95] text-white">
+      <header className="bg-[#f60057] text-white">
         <div className="mx-auto flex h-[68px] max-w-[1400px] items-center justify-between px-6">
           <div className="flex items-center gap-6">
-            <Link href="/host" className="text-[22px] font-bold tracking-tight text-white hover:opacity-90">
+            <Link
+              href="/host"
+              className="text-[22px] font-bold tracking-tight text-white hover:opacity-90"
+            >
               StaySaga
             </Link>
             <div className="hidden h-6 w-px bg-white/20 md:block" />
             <div className="hidden items-center gap-2 md:flex">
-              <span className="font-semibold text-sm truncate max-w-[180px]">{propertyName || "Khang home"}</span>
+              <span className="font-semibold text-sm truncate max-w-[180px]">
+                {propertyName || "Khang home"}
+              </span>
               <span className="rounded bg-white/10 px-2 py-0.5 text-xs text-white/80 font-medium">
                 {shortId}
               </span>
@@ -326,23 +336,36 @@ export function AmenitiesForm({
               <input
                 type="text"
                 placeholder="Tìm kiếm"
-                className="h-9 w-full rounded border-0 bg-white pl-3 pr-10 text-sm text-[#1a1a1a] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="h-9 w-full rounded border-0 bg-white pl-3 pr-10 text-sm text-[#1a1a1a] placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500"
               />
               <Search className="absolute right-3 top-2.5 h-4 w-4 text-gray-500" />
             </div>
 
-            <button type="button" className="flex items-center gap-1.5 hover:bg-white/10 p-1.5 rounded transition">
+            <button
+              type="button"
+              className="flex items-center gap-1.5 hover:bg-white/10 p-1.5 rounded transition"
+            >
               <div className="h-5 w-5 rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white border border-white">
                 ★
               </div>
-              <span className="text-sm font-semibold hidden sm:inline">Tiếng Việt</span>
+              <span className="text-sm font-semibold hidden sm:inline">
+                Tiếng Việt
+              </span>
             </button>
 
-            <button type="button" className="hover:bg-white/10 p-2 rounded transition" aria-label="Trợ giúp">
+            <button
+              type="button"
+              className="hover:bg-white/10 p-2 rounded transition"
+              aria-label="Trợ giúp"
+            >
               <HelpCircle className="h-5.5 w-5.5 text-white" />
             </button>
 
-            <button type="button" className="relative hover:bg-white/10 p-2 rounded transition" aria-label="Thông báo">
+            <button
+              type="button"
+              className="relative hover:bg-white/10 p-2 rounded transition"
+              aria-label="Thông báo"
+            >
               <Bell className="h-5.5 w-5.5 text-white" />
               <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-[#d4111e]" />
             </button>
@@ -354,39 +377,139 @@ export function AmenitiesForm({
         </div>
 
         {/* Sub Navigation Bar */}
-        <nav className="bg-[#00224f] text-white overflow-x-auto border-t border-white/10">
-          <div className="mx-auto flex max-w-[1400px] h-[52px] items-center px-6 text-sm font-medium gap-1 whitespace-nowrap">
-            <Link href="/host" className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5 flex items-center gap-1.5">
+        <nav className="bg-[#a8003b] text-white overflow-visible border-t border-white/10">
+          <div className="mx-auto flex max-w-[1400px] h-[52px] items-center overflow-x-auto overflow-y-visible px-6 text-sm font-medium gap-1 whitespace-nowrap">
+            <Link
+              href="/host"
+              className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5 flex items-center gap-1.5"
+            >
               <span>Trang chủ</span>
-              <span className="bg-[#d4111e] text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full">6</span>
+              <span className="bg-[#d4111e] text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full">
+                6
+              </span>
             </Link>
-            <Link href={`/host/${propertyId}/calendar`} className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5">
-              Giá & Tình trạng phòng trống
-            </Link>
-            <Link href={`/host/${propertyId}/promotions`} className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5">
-              Chương trình khuyến mãi
-            </Link>
-            <Link href="/host/bookings" className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5">
-              Đặt phòng
-            </Link>
-            <Link href={`/host/${propertyId}`} className="px-3.5 py-4 border-b-2 border-blue-400 text-blue-400 bg-white/5 flex items-center gap-1.5">
+            <div ref={ratesMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setRatesMenuOpen((current) => !current)}
+                className={`px-3.5 py-4 border-b-2 flex items-center gap-1.5 transition-colors ${
+                  ratesMenuOpen
+                    ? "border-white text-white bg-white/10"
+                    : "border-transparent hover:bg-white/5 text-white"
+                }`}
+              >
+                <span>Giá & Tình trạng phòng trống</span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${ratesMenuOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {ratesMenuOpen && (
+                <div className="absolute left-0 top-full z-[60] w-[382px] border border-slate-200 bg-white py-4 text-slate-800 shadow-2xl">
+                  <div className="px-5 pb-1 text-[13px] font-black uppercase tracking-wide text-slate-400 select-none">
+                    TÌNH TRẠNG PHÒNG TRỐNG
+                  </div>
+                  <div className="px-2">
+                    {[
+                      ["Lịch", `/host/${propertyId}/calendar`],
+                      ["Mở/đóng phòng", `/host/${propertyId}/availability`],
+                      ["Sao chép giá cho các ngày trong tương lai", `/host/${propertyId}/calendar`],
+                      ["Quy tắc giới hạn linh động", `/host/${propertyId}/calendar`],
+                      ["Đồng bộ hóa lịch", `/host/${propertyId}/sync`],
+                      ["Tính năng mở phòng trống", `/host/${propertyId}/availability`],
+                    ].map(([label, href]) => (
+                      <Link
+                        key={label}
+                        href={href}
+                        onClick={() => setRatesMenuOpen(false)}
+                        className="block px-3 py-2.5 text-[15px] font-medium text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
+                      >
+                        {label}
+                      </Link>
+                    ))}
+
+                    <div className="my-3 border-t border-slate-200" />
+
+                    <div className="px-5 pb-1 text-[13px] font-black uppercase tracking-wide text-slate-400 select-none">
+                      GIÁ
+                    </div>
+                    {[
+                      ["Loại giá", `/host/${propertyId}/rates`],
+                      ["Dịch vụ giá trị gia tăng", `/host/${propertyId}/rates`],
+                      ["Giá theo số lượng khách", `/host/${propertyId}/rates`],
+                    ].map(([label, href]) => (
+                      <Link
+                        key={label}
+                        href={href}
+                        onClick={() => setRatesMenuOpen(false)}
+                        className="block px-3 py-2.5 text-[15px] font-medium text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
+                      >
+                        {label}
+                      </Link>
+                    ))}
+
+                    <div className="my-3 border-t border-slate-200" />
+
+                    <div className="px-5 pb-1 text-[13px] font-black uppercase tracking-wide text-slate-400 select-none">
+                      NHẮM MỤC TIÊU
+                    </div>
+                    {[
+                      ["Mức giá theo quốc gia", `/host/${propertyId}/rates`],
+                      ["Giá trên điện thoại", `/host/${propertyId}/rates`],
+                    ].map(([label, href]) => (
+                      <Link
+                        key={label}
+                        href={href}
+                        onClick={() => setRatesMenuOpen(false)}
+                        className="block px-3 py-2.5 text-[15px] font-medium text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <Link
+              href={`/host/${propertyId}`}
+              className="px-3.5 py-4 border-b-2 border-rose-400 text-rose-400 bg-white/5 flex items-center gap-1.5"
+            >
               <span>Chỗ nghỉ</span>
-              <span className="bg-[#d4111e] text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full">5</span>
+              <span className="bg-[#d4111e] text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full">
+                5
+              </span>
             </Link>
-            <Link href="/host/performance" className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5 flex items-center gap-1.5">
+            <Link
+              href="/host/performance"
+              className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5 flex items-center gap-1.5"
+            >
               <span>Thúc đẩy hiệu suất</span>
-              <span className="bg-[#d4111e] text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full">25</span>
+              <span className="bg-[#d4111e] text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full">
+                25
+              </span>
             </Link>
-            <Link href="/host/messages" className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5">
+            <Link
+              href="/host/messages"
+              className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5"
+            >
               Hộp thư
             </Link>
-            <Link href="/host/reviews" className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5">
+            <Link
+              href="/host/reviews"
+              className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5"
+            >
               Đánh giá của khách
             </Link>
-            <Link href="/host/finance" className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5">
+            <Link
+              href="/host/finance"
+              className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5"
+            >
               Tài chính
             </Link>
-            <Link href="/host/analytics" className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5">
+            <Link
+              href="/host/analytics"
+              className="px-3.5 py-4 border-b-2 border-transparent hover:bg-white/5"
+            >
               Phân tích
             </Link>
           </div>
@@ -395,21 +518,25 @@ export function AmenitiesForm({
 
       {/* Main Page Layout */}
       <main className="mx-auto max-w-[1100px] px-6 py-6">
-        
         {/* Breadcrumb / Back Navigation */}
-        <div className="flex items-center gap-2 text-sm text-[#006ce4] mb-4">
-          <Link href={`/host/${propertyId}`} className="hover:underline flex items-center">
+        <div className="flex items-center gap-2 text-sm text-[#f60057] mb-4">
+          <Link
+            href={`/host/${propertyId}`}
+            className="hover:underline flex items-center"
+          >
             ‹ Quay lại
           </Link>
         </div>
 
         {/* Success / Error Banners */}
         {status && (
-          <div className={`mb-6 border p-4 text-sm font-semibold rounded-[4px] shadow-sm flex items-center gap-3 ${
-            status.type === "success" 
-              ? "border-[#008009] bg-[#f3fbf4] text-[#008009]" 
-              : "border-[#d4111e] bg-[#fdf3f4] text-[#d4111e]"
-          }`}>
+          <div
+            className={`mb-6 border p-4 text-sm font-semibold rounded-[4px] shadow-sm flex items-center gap-3 ${
+              status.type === "success"
+                ? "border-[#008009] bg-[#f3fbf4] text-[#008009]"
+                : "border-[#d4111e] bg-[#fdf3f4] text-[#d4111e]"
+            }`}
+          >
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span>{status.message}</span>
           </div>
@@ -421,13 +548,18 @@ export function AmenitiesForm({
             <AlertCircle className="h-5.5 w-5.5 text-[#e07b00]" />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-bold text-[#1a1a1a]">Yêu cầu bổ sung thông tin</h2>
+            <h2 className="text-base font-bold text-[#1a1a1a]">
+              Yêu cầu bổ sung thông tin
+            </h2>
             <p className="text-sm mt-1 text-[#474747] leading-relaxed">
-              Quý vị sẽ cần cung cấp thêm thông tin KYP về chỗ nghỉ để tuân thủ các yêu cầu pháp lý và quy định pháp luật khác nhau. Vui lòng sử dụng đường link bên dưới để thêm thông tin. Để biết thêm chi tiết, hãy xem bài viết này trong Trợ giúp Đối tác.
+              Quý vị sẽ cần cung cấp thêm thông tin KYP về chỗ nghỉ để tuân thủ
+              các yêu cầu pháp lý và quy định pháp luật khác nhau. Vui lòng sử
+              dụng đường link bên dưới để thêm thông tin. Để biết thêm chi tiết,
+              hãy xem bài viết này trong Trợ giúp Đối tác.
             </p>
             <button
               type="button"
-              className="mt-3.5 rounded-[4px] bg-[#006ce4] px-4 py-2 text-sm font-bold text-white hover:bg-[#005bb8] transition duration-150 shadow-sm"
+              className="mt-3.5 rounded-[4px] bg-[#f60057] px-4 py-2 text-sm font-bold text-white hover:bg-[#d9004e] transition duration-150 shadow-sm"
             >
               Hoàn tất thông tin
             </button>
@@ -435,7 +567,9 @@ export function AmenitiesForm({
         </section>
 
         {/* Title */}
-        <h1 className="text-[28px] font-bold tracking-tight text-[#1a1a1a] mb-6">Tiện nghi phòng</h1>
+        <h1 className="text-[28px] font-bold tracking-tight text-[#1a1a1a] mb-6">
+          Tiện nghi phòng
+        </h1>
 
         {/* Promo / New Amenities Alert Box */}
         {showPromoBanner && (
@@ -451,11 +585,13 @@ export function AmenitiesForm({
             <div className="grid gap-6 pr-6 md:grid-cols-[1fr_auto]">
               <div>
                 <h2 className="text-[17px] font-bold text-[#1a1a1a] leading-snug">
-                  Chúng tôi vừa thêm các tiện nghi mới vào truyền thông & công nghệ. Vui lòng dành vài phút để cập nhật những tiện nghi phù hợp với Quý vị.
+                  Chúng tôi vừa thêm các tiện nghi mới vào truyền thông & công
+                  nghệ. Vui lòng dành vài phút để cập nhật những tiện nghi phù
+                  hợp với Quý vị.
                 </h2>
               </div>
               <div className="md:border-l md:border-gray-200 md:pl-8 min-w-[260px]">
-                <ul className="space-y-2.5 text-sm text-[#006ce4] font-semibold list-disc pl-4">
+                <ul className="space-y-2.5 text-sm text-[#f60057] font-semibold list-disc pl-4">
                   <li>Thiết bị phát Wi-Fi di động</li>
                   <li>Điện thoại thông minh</li>
                   <li>Dịch vụ streaming (như là Netflix)</li>
@@ -471,19 +607,25 @@ export function AmenitiesForm({
             <AlertCircle className="h-5.5 w-5.5 text-[#e07b00]" />
           </div>
           <div>
-            <h2 className="text-[17px] font-bold text-[#1a1a1a]">Vẫn còn thiếu:</h2>
+            <h2 className="text-[17px] font-bold text-[#1a1a1a]">
+              Vẫn còn thiếu:
+            </h2>
             <ul className="mt-4 list-disc pl-5 space-y-3.5 text-sm text-[#474747]">
               <li>
                 <span>Kích thước phòng</span>
-                <ul className="list-disc pl-5 mt-1 text-[#006ce4] font-bold">
+                <ul className="list-disc pl-5 mt-1 text-[#f60057] font-bold">
                   <li>
-                    <span className="cursor-pointer hover:underline">{propertyName || "Căn Hộ 1 Phòng Ngủ"}</span>
+                    <span className="cursor-pointer hover:underline">
+                      {propertyName || "Căn Hộ 1 Phòng Ngủ"}
+                    </span>
                   </li>
                 </ul>
               </li>
               <li>
                 <span>Thông tin về </span>
-                <span className="text-[#006ce4] font-bold cursor-pointer hover:underline">Các tiện nghi hàng đầu</span>
+                <span className="text-[#f60057] font-bold cursor-pointer hover:underline">
+                  Các tiện nghi hàng đầu
+                </span>
                 <span> tại chỗ nghỉ</span>
               </li>
             </ul>
@@ -493,16 +635,21 @@ export function AmenitiesForm({
         {/* Room Size Section */}
         <section className="mb-8 border border-gray-200 bg-white p-6 rounded-[4px] shadow-sm">
           <p className="text-sm text-[#474747] leading-relaxed">
-            Chúng tôi hiển thị kích cỡ phòng cho khách thấy trên trang chỗ nghỉ của StaySaga.
+            Chúng tôi hiển thị kích cỡ phòng cho khách thấy trên trang chỗ nghỉ
+            của StaySaga.
           </p>
 
-          <h3 className="mt-6 text-sm font-bold text-[#1a1a1a]">Quý vị muốn dùng đơn vị đo lường nào?</h3>
-          <div className="mt-2.5 inline-flex rounded-[4px] overflow-hidden border border-[#006ce4]">
+          <h3 className="mt-6 text-sm font-bold text-[#1a1a1a]">
+            Quý vị muốn dùng đơn vị đo lường nào?
+          </h3>
+          <div className="mt-2.5 inline-flex rounded-[4px] overflow-hidden border border-[#f60057]">
             <button
               type="button"
               onClick={() => setUnit("sqm")}
               className={`px-5 py-2 text-sm font-bold transition-colors ${
-                unit === "sqm" ? "bg-[#006ce4] text-white" : "bg-white text-[#006ce4] hover:bg-blue-50"
+                unit === "sqm"
+                  ? "bg-[#f60057] text-white"
+                  : "bg-white text-[#f60057] hover:bg-rose-50"
               }`}
             >
               mét vuông
@@ -510,26 +657,32 @@ export function AmenitiesForm({
             <button
               type="button"
               onClick={() => setUnit("sqft")}
-              className={`px-5 py-2 text-sm font-bold transition-colors border-l border-[#006ce4] ${
-                unit === "sqft" ? "bg-[#006ce4] text-white" : "bg-white text-[#006ce4] hover:bg-blue-50"
+              className={`px-5 py-2 text-sm font-bold transition-colors border-l border-[#f60057] ${
+                unit === "sqft"
+                  ? "bg-[#f60057] text-white"
+                  : "bg-white text-[#f60057] hover:bg-rose-50"
               }`}
             >
               feet vuông
             </button>
           </div>
 
-          <h3 className="mt-6 text-sm font-bold text-[#1a1a1a]">Vui lòng nhập kích cỡ (các) phòng</h3>
+          <h3 className="mt-6 text-sm font-bold text-[#1a1a1a]">
+            Vui lòng nhập kích cỡ (các) phòng
+          </h3>
           <div className="mt-3.5 max-w-[400px]">
-            <span className="text-sm font-semibold text-[#595959]">{propertyName || "Căn Hộ 1 Phòng Ngủ"}</span>
+            <span className="text-sm font-semibold text-[#595959]">
+              {propertyName || "Căn Hộ 1 Phòng Ngủ"}
+            </span>
             <div className="mt-1.5 flex rounded-[4px] shadow-sm overflow-hidden">
               <input
                 type="number"
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
                 className={`h-11 flex-1 border px-3 text-sm focus:outline-none focus:ring-1 ${
-                  isAreaEmptyOrZero 
-                    ? "border-[#d4111e] focus:ring-[#d4111e] focus:border-[#d4111e]" 
-                    : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                  isAreaEmptyOrZero
+                    ? "border-[#d4111e] focus:ring-[#d4111e] focus:border-[#d4111e]"
+                    : "border-gray-300 focus:ring-rose-500 focus:border-rose-500"
                 }`}
                 placeholder="0"
               />
@@ -549,7 +702,9 @@ export function AmenitiesForm({
             <div className="mt-6 border border-[#febb02] bg-[#fffcf0] p-4 rounded-[4px] flex gap-3 text-sm text-[#474747] leading-relaxed shadow-sm">
               <AlertCircle className="h-5 w-5 text-[#e07b00] shrink-0 mt-0.5" />
               <p>
-                1 trong tổng các loại phòng của Quý vị có diện tích nhỏ hơn trung bình <strong>(dưới 6 m²)</strong>. Quý vị có thể kiểm tra lại những kích thước và diện tích này là chính xác không?
+                1 trong tổng các loại phòng của Quý vị có diện tích nhỏ hơn
+                trung bình <strong>(dưới 6 m²)</strong>. Quý vị có thể kiểm tra
+                lại những kích thước và diện tích này là chính xác không?
               </p>
             </div>
           )}
@@ -641,16 +796,15 @@ export function AmenitiesForm({
           selectedAmenities={selectedAmenities}
           onToggle={handleToggleAmenity}
         />
-
       </main>
 
       {/* Fixed Footer Bar */}
-      <footer className="fixed inset-x-0 bottom-0 z-40 bg-[#0f294a]/95 py-4 border-t border-white/10 shadow-lg backdrop-blur-sm">
+      <footer className="fixed inset-x-0 bottom-0 z-40 bg-[#7f002c]/95 py-4 border-t border-white/10 shadow-lg backdrop-blur-sm">
         <div className="mx-auto flex max-w-[1100px] justify-end px-6">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-[4px] bg-[#006ce4] hover:bg-[#005bb8] px-8 py-3 text-base font-bold text-white transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="rounded-[4px] bg-[#f60057] hover:bg-[#d9004e] px-8 py-3 text-base font-bold text-white transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {isSubmitting ? "Đang lưu..." : "Lưu"}
           </button>
@@ -679,7 +833,9 @@ function AmenityGroupComponent({
   const [isExpanded, setIsExpanded] = useState(false);
   const initialDisplayCount = 9;
 
-  const displayedItems = isExpanded ? items : items.slice(0, initialDisplayCount);
+  const displayedItems = isExpanded
+    ? items
+    : items.slice(0, initialDisplayCount);
   const hasMore = items.length > initialDisplayCount;
 
   return (
@@ -697,7 +853,10 @@ function AmenityGroupComponent({
           const isNew = newItems.has(item);
 
           return (
-            <div key={item} className="grid items-center gap-4 py-3.5 md:grid-cols-[1fr_auto_auto]">
+            <div
+              key={item}
+              className="grid items-center gap-4 py-3.5 md:grid-cols-[1fr_auto_auto]"
+            >
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-[#1a1a1a]">{item}</span>
                 {isNew && (
@@ -714,8 +873,8 @@ function AmenityGroupComponent({
                   onClick={() => onToggle(item, true)}
                   className={`h-9 px-5 text-sm font-bold transition-all ${
                     isSelected
-                      ? "bg-[#006ce4] text-white border-r border-[#006ce4]"
-                      : "bg-white text-[#006ce4] hover:bg-blue-50 border-r border-gray-300"
+                      ? "bg-[#f60057] text-white border-r border-[#f60057]"
+                      : "bg-white text-[#f60057] hover:bg-rose-50 border-r border-gray-300"
                   }`}
                 >
                   Có
@@ -725,8 +884,8 @@ function AmenityGroupComponent({
                   onClick={() => onToggle(item, false)}
                   className={`h-9 px-5 text-sm font-bold transition-all ${
                     !isSelected
-                      ? "bg-[#006ce4] text-white"
-                      : "bg-white text-[#006ce4] hover:bg-blue-50"
+                      ? "bg-[#f60057] text-white"
+                      : "bg-white text-[#f60057] hover:bg-rose-50"
                   }`}
                 >
                   Không
@@ -737,7 +896,7 @@ function AmenityGroupComponent({
               {showPhotosIcon && idx > 0 && idx < 5 ? (
                 <button
                   type="button"
-                  className="inline-flex h-9 w-12 items-center justify-center rounded-[4px] border border-[#006ce4] text-[#006ce4] hover:bg-blue-50 transition"
+                  className="inline-flex h-9 w-12 items-center justify-center rounded-[4px] border border-[#f60057] text-[#f60057] hover:bg-rose-50 transition"
                   aria-label={`Thêm ảnh cho ${item}`}
                 >
                   <Camera className="h-4.5 w-4.5" />
@@ -754,7 +913,7 @@ function AmenityGroupComponent({
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-4 inline-flex items-center gap-1.5 font-bold text-sm text-[#006ce4] hover:underline transition"
+          className="mt-4 inline-flex items-center gap-1.5 font-bold text-sm text-[#f60057] hover:underline transition"
         >
           {isExpanded ? (
             <>

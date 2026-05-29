@@ -147,7 +147,7 @@ export default function StepperHomestayForm({ listing, mode, action }: Props) {
                 className="block w-full rounded-lg border border-dashed border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-rose-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-[#f60057] hover:file:bg-rose-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
               />
             </Field>
-            {mode === "edit" && (
+            {mode === "edit" && listing?.status === "APPROVED" && (
               <label className="mt-4 flex w-fit items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium dark:border-zinc-700">
                 <input name="is_active" type="checkbox" defaultChecked={listing?.is_active} className="h-4 w-4 rounded border-zinc-300 accent-[#f60057]" />
                 Đang hiển thị trên web

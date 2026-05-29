@@ -132,6 +132,7 @@ export default function LoginPage() {
 
           <div className="mt-6 grid grid-cols-1 gap-3">
             <form action={signInWithGoogle}>
+              <input type="hidden" name="next" value={next} />
               <button
                 type="submit"
                 className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none transition-all"
@@ -163,6 +164,7 @@ export default function LoginPage() {
             </form>
 
             <form action={signInWithFacebook}>
+              <input type="hidden" name="next" value={next} />
               <button
                 type="submit"
                 className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-xl shadow-sm bg-[#1877F2] text-sm font-medium text-white hover:bg-[#1865F2] focus:outline-none transition-all"

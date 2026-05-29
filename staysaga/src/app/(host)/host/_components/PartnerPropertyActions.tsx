@@ -79,11 +79,11 @@ export function PartnerPropertyActions({
             Tạm đóng chỗ nghỉ
           </PendingSubmitButton>
         </form>
-      ) : status === "CLOSED_TEMP" ? (
+      ) : status === "CLOSED_TEMP" || (status === "APPROVED" && !isActive) ? (
         <form action={reopenMyProperty}>
           <input type="hidden" name="id" value={propertyId} />
           <PendingSubmitButton className={outline} pendingText="Đang mở lại...">
-            Mở lại chỗ nghỉ
+            {status === "APPROVED" ? "Mở bán chỗ nghỉ" : "Mở lại chỗ nghỉ"}
           </PendingSubmitButton>
         </form>
       ) : null}

@@ -90,19 +90,23 @@ function normalizeOrigin(url: string): string {
   return parsed.origin;
 }
 
-function isInternalHost(host: string): boolean {
-  const hostname = host.split(":")[0];
-  return hostname === "0.0.0.0";
+function getSafeNextPath(value: FormDataEntryValue | null) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+
+  return value;
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(formData?: FormData) {
   const supabase = await createClient();
   const origin = await getRedirectOrigin();
+  const next = getSafeNextPath(formData?.get("next") ?? null);
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
 
@@ -116,14 +120,15 @@ export async function signInWithGoogle() {
   }
 }
 
-export async function signInWithFacebook() {
+export async function signInWithFacebook(formData?: FormData) {
   const supabase = await createClient();
   const origin = await getRedirectOrigin();
+  const next = getSafeNextPath(formData?.get("next") ?? null);
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "facebook",
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
       scopes: "public_profile,email",
     },
   });

@@ -42,6 +42,42 @@ function getPropertyActivity(status: PropertyStatus) {
   return status === "APPROVED";
 }
 
+function revalidatePropertyViews(propertyId?: string) {
+  revalidatePath("/admin/properties");
+  revalidatePath("/admin");
+  revalidatePath("/host");
+  revalidatePath("/host", "layout");
+  revalidatePath("/host/list");
+  revalidatePath("/host/property");
+  revalidatePath("/host/availability");
+  revalidatePath("/homestays");
+  revalidatePath("/");
+
+  if (propertyId) {
+    revalidatePath(`/host/${propertyId}`);
+  }
+}
+
+async function updateHomestayWithMetadataFallback(
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  id: string,
+  payload: Record<string, unknown>,
+  fallbackPayload: Record<string, unknown>,
+) {
+  const result = await supabase.from("homestays").update(payload).eq("id", id);
+  if (!result.error) return result;
+
+  const message = String(result.error.message || "").toLowerCase();
+  const shouldRetry =
+    result.error.code === "42703" ||
+    message.includes("column") ||
+    message.includes("schema cache");
+
+  if (!shouldRetry) return result;
+
+  return supabase.from("homestays").update(fallbackPayload).eq("id", id);
+}
+
 async function getAdminClient() {
   const supabase = await createClient();
   const {
@@ -129,11 +165,7 @@ export async function updatePropertyStatus(formData: FormData) {
     redirect("/admin/properties?error=update_failed");
   }
 
-  revalidatePath("/admin/properties");
-  revalidatePath("/admin");
-  revalidatePath("/host");
-  revalidatePath("/host/list");
-  revalidatePath("/homestays");
+  revalidatePropertyViews(id);
   redirectToProperties("updated");
 }
 
@@ -145,30 +177,35 @@ export async function approveProperty(formData: FormData) {
     redirect("/admin/properties?error=invalid");
   }
 
-  const { error } = await supabase
-    .from("homestays")
-    .update({
+  const now = new Date().toISOString();
+  const basePayload = {
+    status: "APPROVED",
+    is_active: true,
+    rejection_reason: null,
+    updated_at: now,
+  };
+  const { error } = await updateHomestayWithMetadataFallback(
+    supabase,
+    id,
+    {
+      ...basePayload,
       status: "APPROVED",
-      is_active: false,
+      is_active: true,
       verification_status: "APPROVED",
       rejection_reason: null,
-      approved_at: new Date().toISOString(),
+      approved_at: now,
       approved_by: user.id,
-      reviewed_at: new Date().toISOString(),
+      reviewed_at: now,
       reviewed_by: user.id,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
+    },
+    basePayload,
+  );
 
   if (error) {
     redirect("/admin/properties?error=update_failed");
   }
 
-  revalidatePath("/admin/properties");
-  revalidatePath("/admin");
-  revalidatePath("/host");
-  revalidatePath("/host/list");
-  revalidatePath("/homestays");
+  revalidatePropertyViews(id);
   redirectToProperties("approved");
 }
 

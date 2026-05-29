@@ -1,42 +1,61 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/roles";
+import {
+  canAccessPartner,
+  getUserRole,
+  type SupabaseLike,
+} from "@/lib/auth/roles";
 import { getHostDashboardData } from "@/core/host/actions";
 import { logout } from "@/core/auth/actions";
-import { ArrowRight, Bell, Check, CreditCard, Globe, Search, UserCircle, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  Bell,
+  Check,
+  CreditCard,
+  Globe,
+  Search,
+  UserCircle,
+  Shield,
+} from "lucide-react";
 import { RealtimeSubscription } from "@/components/realtime/RealtimeSubscription";
 
 export default async function ListYourPropertyPage() {
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session?.user) {
+  if (!user) {
     redirect("/login?next=/host/list");
   }
 
   let hostHref = "/host";
   let userName = "";
-  let listings: Awaited<ReturnType<typeof getHostDashboardData>>["listings"] = [];
-  if (session?.user) {
+  let hasPartnerAccess = false;
+  let listings: Awaited<ReturnType<typeof getHostDashboardData>>["listings"] =
+    [];
+  if (user) {
     const role = await getUserRole(
       supabase as unknown as SupabaseLike,
-      session.user.id,
+      user.id,
     );
-    const hasPartnerAccess = canAccessPartner(role);
+    hasPartnerAccess = canAccessPartner(role);
     hostHref = hasPartnerAccess ? "/host" : "/host/onboard";
     userName =
-      session.user.user_metadata?.full_name ||
-      session.user.user_metadata?.name ||
-      session.user.email?.split("@")[0] ||
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
       "bạn";
     if (hasPartnerAccess) {
       const hostData = await getHostDashboardData();
       listings = hostData.listings;
     }
   }
+
+  const createNewRegistrationHref = hasPartnerAccess
+    ? "/host/register?new=1"
+    : "/host/onboard?next=%2Fhost%2Fregister%3Fnew%3D1";
 
   return (
     <div className="min-h-screen bg-white text-slate-950">
@@ -45,12 +64,14 @@ export default async function ListYourPropertyPage() {
           <Link href="/" className="text-3xl font-black tracking-tight">
             StaySaga<span className="text-white">.</span>
           </Link>
-          {session?.user && (
+          {user && (
             <>
               <span className="hidden h-8 w-px bg-white/35 md:block" />
               <div className="hidden items-center gap-3 md:flex">
                 <span className="font-semibold">{userName}</span>
-                <span className="rounded bg-emerald-600 px-2 py-1 text-xs font-bold">Tài khoản chính</span>
+                <span className="rounded bg-emerald-600 px-2 py-1 text-xs font-bold">
+                  Tài khoản chính
+                </span>
               </div>
             </>
           )}
@@ -58,7 +79,9 @@ export default async function ListYourPropertyPage() {
             <span className="flex-1 text-white/90">Tìm kiếm</span>
             <Search className="h-5 w-5" />
           </div>
-          <span className="rounded-full bg-[#d9004e] px-3 py-1 text-sm font-bold ring-1 ring-white/30">VN</span>
+          <span className="rounded-full bg-[#d9004e] px-3 py-1 text-sm font-bold ring-1 ring-white/30">
+            VN
+          </span>
           <Globe className="h-6 w-6" />
           <Bell className="h-6 w-6" />
           <details className="group relative">
@@ -66,7 +89,9 @@ export default async function ListYourPropertyPage() {
               <span className="flex h-12 w-12 items-center justify-center rounded-full ring-2 ring-white/80">
                 <UserCircle className="h-10 w-10" />
               </span>
-              <span className="hidden max-w-32 truncate font-bold md:inline">{userName}</span>
+              <span className="hidden max-w-32 truncate font-bold md:inline">
+                {userName}
+              </span>
             </summary>
             <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-72 overflow-hidden rounded-b-lg border border-slate-200 bg-white py-2 text-slate-950 shadow-xl">
               <Link
@@ -76,7 +101,7 @@ export default async function ListYourPropertyPage() {
                 Xem chỗ nghỉ của tôi
               </Link>
               <Link
-                href="/host/register?new=1"
+                href={createNewRegistrationHref}
                 className="block px-5 py-3 text-base hover:bg-rose-50 hover:text-[#f60057] focus:bg-rose-50 focus:text-[#f60057] focus:outline-none"
               >
                 Thêm chỗ nghỉ mới
@@ -100,20 +125,20 @@ export default async function ListYourPropertyPage() {
                 Tham gia cùng 29,279,209 chỗ nghỉ khác đã có trên StaySaga
               </p>
               <h2 className="text-5xl md:text-6xl font-black leading-tight text-gray-950">
-                {session?.user ? (
+                {user ? (
                   <>
                     Chào mừng trở lại,{" "}
                     <span className="text-rose-500">{userName}</span>!
                   </>
                 ) : (
                   <>
-                    Đăng chỗ <span className="text-rose-500">nghỉ</span> của bạn trên
-                    StaySaga
+                    Đăng chỗ <span className="text-rose-500">nghỉ</span> của bạn
+                    trên StaySaga
                   </>
                 )}
               </h2>
               <p className="mt-6 text-lg max-w-xl text-gray-600">
-                {session?.user
+                {user
                   ? 'Chỉ mất ít nhất 15 phút để hoàn tất đăng ký - bấm "Tiếp tục" để tiếp tục nơi bạn đã dừng lại.'
                   : "Đăng ký trên một trong những ứng dụng du lịch được yêu thích nhất để kiếm nhiều hơn, nhanh hơn và phát triển thương hiệu của bạn."}
               </p>
@@ -121,7 +146,7 @@ export default async function ListYourPropertyPage() {
 
             <div className="relative z-10">
               <div className="bg-white rounded-[28px] p-8 text-gray-900 shadow-2xl shadow-rose-100 border border-rose-100 w-full max-w-md ml-auto">
-                {session?.user ? (
+                {user ? (
                   <>
                     <h3 className="text-xl font-bold mb-2">
                       Tiếp tục đăng ký của bạn
@@ -157,7 +182,8 @@ export default async function ListYourPropertyPage() {
                             <Link
                               href={
                                 listing
-                                  ? (listing.status === "APPROVED" && listing.is_active)
+                                  ? listing.status === "APPROVED" &&
+                                    listing.is_active
                                     ? `/host/${listing.id}`
                                     : `/host/properties/${listing.id}/edit`
                                   : "/host/register"
@@ -176,7 +202,7 @@ export default async function ListYourPropertyPage() {
                         Bắt đầu đăng ký mới?
                       </p>
                       <Link
-                        href="/host/register?new=1"
+                        href={createNewRegistrationHref}
                         className="inline-flex items-center justify-center gap-3 w-full rounded-full bg-[#f60057] text-white py-3 font-semibold shadow-sm hover:bg-[#f60057] transition-colors"
                       >
                         Tạo đăng ký mới <ArrowRight className="w-4 h-4" />
@@ -185,18 +211,19 @@ export default async function ListYourPropertyPage() {
                   </>
                 ) : (
                   <>
-                    <h3 className="text-xl font-bold mb-3">
-                      Đăng ký miễn phí
-                    </h3>
+                    <h3 className="text-xl font-bold mb-3">Đăng ký miễn phí</h3>
                     <ul className="space-y-2 text-sm text-gray-600 mb-4">
                       <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-rose-500 mt-1" /> 45% chủ nhà nhận được đơn đặt phòng đầu tiên trong vòng một tuần
+                        <Check className="w-5 h-5 text-rose-500 mt-1" /> 45% chủ
+                        nhà nhận được đơn đặt phòng đầu tiên trong vòng một tuần
                       </li>
                       <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-rose-500 mt-1" /> Chọn đặt phòng ngay lập tức hoặc Yêu cầu đặt phòng
+                        <Check className="w-5 h-5 text-rose-500 mt-1" /> Chọn
+                        đặt phòng ngay lập tức hoặc Yêu cầu đặt phòng
                       </li>
                       <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-rose-500 mt-1" /> Chúng tôi sẽ hỗ trợ thanh toán cho bạn
+                        <Check className="w-5 h-5 text-rose-500 mt-1" /> Chúng
+                        tôi sẽ hỗ trợ thanh toán cho bạn
                       </li>
                     </ul>
 
@@ -225,7 +252,7 @@ export default async function ListYourPropertyPage() {
                     <p className="mt-3 text-xs text-gray-500">
                       Đã bắt đầu đăng ký?{" "}
                       <Link
-                        href="/host/register"
+                        href="/host/register?new=1"
                         className="text-[#f60057] font-medium"
                       >
                         Tiếp tục đăng ký của bạn
@@ -246,7 +273,8 @@ export default async function ListYourPropertyPage() {
                 <div>
                   <h4 className="font-bold">Đón khách không lo lắng</h4>
                   <p className="text-sm text-gray-600">
-                    Bảo vệ trách nhiệm pháp lý lên đến $1,000,000 và các tùy chọn bảo vệ thiệt hại.
+                    Bảo vệ trách nhiệm pháp lý lên đến $1,000,000 và các tùy
+                    chọn bảo vệ thiệt hại.
                   </p>
                 </div>
               </div>
@@ -258,7 +286,8 @@ export default async function ListYourPropertyPage() {
                 <div>
                   <h4 className="font-bold">Thanh toán dễ dàng</h4>
                   <p className="text-sm text-gray-600">
-                    Chúng tôi hỗ trợ thanh toán và giúp bạn kiểm soát phương thức và thời gian nhận tiền.
+                    Chúng tôi hỗ trợ thanh toán và giúp bạn kiểm soát phương
+                    thức và thời gian nhận tiền.
                   </p>
                 </div>
               </div>
@@ -270,7 +299,8 @@ export default async function ListYourPropertyPage() {
                 <div>
                   <h4 className="font-bold">Tiếp cận du khách toàn cầu</h4>
                   <p className="text-sm text-gray-600">
-                    Đăng trên một thị trường tiếp cận hàng triệu du khách trên toàn thế giới.
+                    Đăng trên một thị trường tiếp cận hàng triệu du khách trên
+                    toàn thế giới.
                   </p>
                 </div>
               </div>
@@ -283,19 +313,22 @@ export default async function ListYourPropertyPage() {
               <div className="p-6 rounded-3xl border border-rose-100 bg-white">
                 <h4 className="font-semibold mb-2">Nhập chi tiết chỗ nghỉ</h4>
                 <p className="text-sm text-gray-600">
-                  Nhập thông tin liền mạch từ các trang web khác và tránh trùng lặp đặt phòng.
+                  Nhập thông tin liền mạch từ các trang web khác và tránh trùng
+                  lặp đặt phòng.
                 </p>
               </div>
               <div className="p-6 rounded-3xl border border-rose-100 bg-white">
                 <h4 className="font-semibold mb-2">Sử dụng điểm đánh giá</h4>
                 <p className="text-sm text-gray-600">
-                  Hiển thị điểm đánh giá từ các trang khác để tạo niềm tin ngay từ đầu.
+                  Hiển thị điểm đánh giá từ các trang khác để tạo niềm tin ngay
+                  từ đầu.
                 </p>
               </div>
               <div className="p-6 rounded-3xl border border-rose-100 bg-white">
                 <h4 className="font-semibold mb-2">Nổi bật</h4>
                 <p className="text-sm text-gray-600">
-                  Huy hiệu chủ nhà mới và các công cụ quảng bá giúp tăng khả năng hiển thị sớm.
+                  Huy hiệu chủ nhà mới và các công cụ quảng bá giúp tăng khả
+                  năng hiển thị sớm.
                 </p>
               </div>
             </div>
@@ -321,8 +354,10 @@ export default async function ListYourPropertyPage() {
           </div>
         </section>
       </main>
-      <RealtimeSubscription table="homestays" filter={`owner_id=eq.${session.user.id}`} />
+      <RealtimeSubscription
+        table="homestays"
+        filter={`owner_id=eq.${user.id}`}
+      />
     </div>
   );
 }
-

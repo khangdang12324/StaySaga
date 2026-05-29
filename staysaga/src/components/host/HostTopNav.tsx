@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  ChevronDown,
-  Menu,
-  X,
-  Home,
-  Calendar,
-  Percent,
+  BarChart3,
   Bookmark,
   Building2,
-  TrendingUp,
-  Mail,
-  Star,
+  Calendar,
+  ChevronDown,
   Coins,
-  BarChart3,
+  Home,
+  Mail,
+  Menu,
+  Percent,
+  Star,
+  TrendingUp,
+  X,
 } from "lucide-react";
 
 interface SubMenuItem {
@@ -33,18 +33,13 @@ interface MenuGroup {
 interface MenuItem {
   label: string;
   href?: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   badge?: number;
   groups?: MenuGroup[];
 }
 
 const menuConfig: MenuItem[] = [
-  {
-    label: "Trang chủ",
-    href: "/host",
-    icon: Home,
-    badge: 2,
-  },
+  { label: "Trang chủ", href: "/host", icon: Home, badge: 2 },
   {
     label: "Giá & Tình trạng phòng trống",
     icon: Calendar,
@@ -69,7 +64,7 @@ const menuConfig: MenuItem[] = [
         ],
       },
       {
-        header: "NHẰM MỤC TIÊU",
+        header: "NHẮM MỤC TIÊU",
         items: [
           { label: "Mức giá theo quốc gia", href: "/host/rates/country" },
           { label: "Giá trên điện thoại", href: "/host/rates/mobile" },
@@ -205,52 +200,59 @@ const menuConfig: MenuItem[] = [
   },
 ];
 
+function isRouteActive(pathname: string, href: string) {
+  if (pathname === href) return true;
+
+  if (href === "/host/calendar") {
+    return /^\/host\/[^/]+\/calendar(\/|$)/.test(pathname);
+  }
+
+  if (href === "/host/rates") {
+    return pathname === "/host/rates" || /^\/host\/[^/]+\/calendar\/rate-plans(\/|$)/.test(pathname);
+  }
+
+  if (href === "/host/sync") {
+    return pathname === "/host/sync" || /^\/host\/[^/]+\/sync(\/|$)/.test(pathname);
+  }
+
+  return pathname.startsWith(`${href}/`);
+}
+
 export function HostTopNav() {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdownIndex, setActiveDropdownIndex] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setActiveDropdownIndex(null);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close menus when changing route
-  useEffect(() => {
-    setMobileMenuOpen(false);
-    setActiveDropdownIndex(null);
-  }, [pathname]);
-
   const isItemActive = (item: MenuItem) => {
-    if (item.href) {
-      return pathname === item.href;
-    }
-    if (item.groups) {
-      return item.groups.some((group) =>
-        group.items.some((sub) => pathname === sub.href)
-      );
-    }
-    return false;
+    if (item.href) return isRouteActive(pathname, item.href);
+    return item.groups?.some((group) => group.items.some((sub) => isRouteActive(pathname, sub.href))) ?? false;
   };
 
   const handleDropdownClick = (index: number) => {
-    setActiveDropdownIndex(activeDropdownIndex === index ? null : index);
+    setActiveDropdownIndex((current) => (current === index ? null : index));
+  };
+
+  const closeMenus = () => {
+    setMobileMenuOpen(false);
+    setActiveDropdownIndex(null);
   };
 
   return (
-    <div ref={dropdownRef} className="border-t border-white/10 bg-[#f60057] text-white">
-      <div className="mx-auto max-w-[1400px] px-6">
-        {/* Mobile Header / Toggle */}
-        <div className="flex h-12 items-center justify-between lg:hidden">
+    <div ref={dropdownRef} className="border-t border-white/15 bg-[#f60057] text-white">
+      <div className="w-full">
+        <div className="flex h-12 items-center justify-between px-4 lg:hidden">
           <span className="text-sm font-bold">Menu quản trị</span>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -261,25 +263,24 @@ export function HostTopNav() {
           </button>
         </div>
 
-        {/* Desktop Navigation (Booking.com style) */}
-        <nav className="hidden lg:flex lg:flex-wrap lg:items-end justify-between xl:justify-start xl:gap-2">
+        <nav className="hidden h-[104px] min-w-0 lg:flex lg:flex-nowrap lg:items-stretch">
           {menuConfig.map((item, index) => {
             const active = isItemActive(item);
             const Icon = item.icon;
-
+            const isOpen = activeDropdownIndex === index;
             const triggerButtonContent = (
               <>
-                <span className="relative flex items-center justify-center">
-                  <Icon className="h-5 w-5" />
-                  {item.badge && (
-                    <span className="absolute -right-2.5 -top-2 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-white px-1 text-[9px] font-black text-[#f60057] shadow-sm">
+                <span className="relative flex h-9 items-center justify-center">
+                  <Icon className="h-8 w-8 stroke-[1.8]" />
+                  {item.badge ? (
+                    <span className="absolute -right-3 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-black text-[#f60057] shadow-sm">
                       {item.badge}
                     </span>
-                  )}
+                  ) : null}
                 </span>
-                <span className="flex items-center gap-0.5 text-center text-xs tracking-tight font-bold">
+                <span className="flex min-w-0 max-w-[190px] items-center justify-center gap-1 text-balance text-center text-[13px] font-bold leading-tight xl:text-[15px]">
                   {item.label}
-                  {item.groups && <ChevronDown className="h-3 w-3 shrink-0 opacity-80" />}
+                  {item.groups ? <ChevronDown className={`h-4 w-4 shrink-0 opacity-90 transition-transform ${isOpen ? "rotate-180" : ""}`} /> : null}
                 </span>
               </>
             );
@@ -289,7 +290,8 @@ export function HostTopNav() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 text-white/95 transition-colors hover:bg-white/10 select-none ${
+                  onClick={closeMenus}
+                  className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-2 px-2 text-center text-white/95 transition-colors hover:bg-white/10 select-none xl:px-4 ${
                     active ? "bg-white/15 shadow-[inset_0_-4px_0_#fff] text-white" : ""
                   }`}
                 >
@@ -299,42 +301,47 @@ export function HostTopNav() {
             }
 
             return (
-              <div key={item.label} className="relative group/menu">
+              <div key={item.label} className="relative flex min-w-0 flex-1 group/menu">
                 <button
                   onClick={() => handleDropdownClick(index)}
-                  className={`flex flex-col items-center justify-center gap-1.5 px-3 py-3.5 text-white/95 transition-colors hover:bg-white/10 focus:outline-none cursor-pointer select-none ${
-                    active ? "bg-white/15 shadow-[inset_0_-4px_0_#fff] text-white" : ""
+                  className={`flex w-full min-w-0 flex-col items-center justify-center gap-2 px-2 text-center text-white/95 transition-colors hover:bg-white/10 focus:outline-none cursor-pointer select-none xl:px-4 ${
+                    active || isOpen ? "bg-white/15 shadow-[inset_0_-4px_0_#fff] text-white" : ""
                   }`}
+                  aria-expanded={isOpen}
                 >
                   {triggerButtonContent}
                 </button>
 
-                {/* Dropdown Menu (Booking.com style with grouped headers) */}
-                <div className="absolute left-0 top-full z-50 hidden min-w-[280px] max-w-[360px] rounded-sm border border-slate-200 bg-white py-2 text-slate-800 shadow-2xl group-hover/menu:block animate-in fade-in slide-in-from-top-1 duration-150">
+                <div
+                  className={`absolute left-0 top-full z-50 min-w-[374px] max-w-[374px] border border-slate-200 bg-white py-4 text-slate-800 shadow-2xl transition ${
+                    isOpen ? "block" : "hidden group-hover/menu:block"
+                  }`}
+                >
                   {item.groups?.map((group, gIdx) => (
-                    <div key={gIdx} className={gIdx > 0 ? "border-t border-slate-100 mt-2 pt-2" : ""}>
-                      {group.header && (
-                        <div className="px-4 py-1 text-[10.5px] font-black tracking-wider text-slate-400 select-none">
+                    <div key={group.header ?? gIdx} className={gIdx > 0 ? "mt-4 border-t border-slate-200 pt-3" : ""}>
+                      {group.header ? (
+                        <div className="px-5 pb-1 text-[13px] font-black uppercase tracking-wide text-slate-400 select-none">
                           {group.header}
                         </div>
-                      )}
-                      <div className="space-y-0.5">
+                      ) : null}
+                      <div>
                         {group.items.map((sub) => {
-                          const subActive = pathname === sub.href;
+                          const subActive = isRouteActive(pathname, sub.href);
                           return (
                             <Link
                               key={sub.label}
                               href={sub.href}
-                              className={`flex items-center justify-between px-4 py-2 text-[13px] font-semibold transition hover:bg-slate-50 ${
-                                subActive ? "bg-rose-50 text-[#f60057] font-black" : "text-slate-700 hover:text-slate-900"
+                              onClick={closeMenus}
+                              className={`flex min-h-11 items-center justify-between gap-4 px-5 py-2.5 text-[16px] font-normal leading-snug transition ${
+                                subActive ? "bg-rose-50 text-[#f60057]" : "text-slate-800 hover:bg-slate-50 hover:text-[#f60057]"
                               }`}
                             >
-                              <span className="leading-snug">{sub.label}</span>
-                              {sub.tag && (
-                                <span className="rounded-[3px] bg-emerald-700 px-1.5 py-0.5 text-[9px] font-black text-white uppercase tracking-wider scale-90">
+                              <span>{sub.label}</span>
+                              {sub.tag ? (
+                                <span className="shrink-0 rounded-[3px] bg-[#008009] px-2 py-1 text-[12px] font-black leading-none text-white">
                                   {sub.tag}
                                 </span>
-                              )}
+                              ) : null}
                             </Link>
                           );
                         })}
@@ -347,9 +354,8 @@ export function HostTopNav() {
           })}
         </nav>
 
-        {/* Mobile Navigation Drawer */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-white/15 py-2 space-y-1">
+        {mobileMenuOpen ? (
+          <div className="lg:hidden border-t border-white/15 px-4 py-2 space-y-1">
             {menuConfig.map((item, index) => {
               const active = isItemActive(item);
               const Icon = item.icon;
@@ -359,6 +365,7 @@ export function HostTopNav() {
                   <Link
                     key={item.label}
                     href={item.href}
+                    onClick={closeMenus}
                     className={`flex items-center justify-between rounded-md px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-white/10 ${
                       active ? "bg-white/15" : ""
                     }`}
@@ -367,11 +374,11 @@ export function HostTopNav() {
                       <Icon className="h-5 w-5" />
                       <span>{item.label}</span>
                     </div>
-                    {item.badge && (
+                    {item.badge ? (
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-[#f60057]">
                         {item.badge}
                       </span>
-                    )}
+                    ) : null}
                   </Link>
                 );
               }
@@ -391,41 +398,42 @@ export function HostTopNav() {
                       <span>{item.label}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {item.badge && (
+                      {item.badge ? (
                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-[#f60057]">
                           {item.badge}
                         </span>
-                      )}
+                      ) : null}
                       <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                     </div>
                   </button>
 
-                  {isOpen && (
+                  {isOpen ? (
                     <div className="ml-8 border-l border-white/20 pl-2 py-1 space-y-2">
                       {item.groups?.map((group, gIdx) => (
-                        <div key={gIdx} className="space-y-1">
-                          {group.header && (
-                            <div className="px-3 text-[10px] font-black tracking-wider text-white/50">
+                        <div key={group.header ?? gIdx} className="space-y-1">
+                          {group.header ? (
+                            <div className="px-3 text-[10px] font-black tracking-wider text-white/60">
                               {group.header}
                             </div>
-                          )}
+                          ) : null}
                           <div className="space-y-0.5">
                             {group.items.map((sub) => {
-                              const subActive = pathname === sub.href;
+                              const subActive = isRouteActive(pathname, sub.href);
                               return (
                                 <Link
                                   key={sub.label}
                                   href={sub.href}
-                                  className={`flex items-center justify-between rounded px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/10 ${
-                                    subActive ? "bg-white/10 text-white font-bold" : "text-white/80 hover:text-white"
+                                  onClick={closeMenus}
+                                  className={`flex items-center justify-between gap-3 rounded px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-white/10 ${
+                                    subActive ? "bg-white/10 text-white font-bold" : "text-white/85 hover:text-white"
                                   }`}
                                 >
                                   <span>{sub.label}</span>
-                                  {sub.tag && (
-                                    <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase">
+                                  {sub.tag ? (
+                                    <span className="rounded bg-[#008009] px-1.5 py-0.5 text-[9px] font-bold text-white uppercase">
                                       {sub.tag}
                                     </span>
-                                  )}
+                                  ) : null}
                                 </Link>
                               );
                             })}
@@ -433,12 +441,12 @@ export function HostTopNav() {
                         </div>
                       ))}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               );
             })}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export default async function HostAvailabilityPage() {
   // Fetch host properties
   const { data: homestays } = await supabase
     .from("homestays")
-    .select("id, name, address, city, price_per_night, is_active, status")
+    .select("id, name, address, city, price_per_night, is_active, status, registration_checklist")
     .eq("owner_id", session.user.id)
     .neq("status", "DELETED")
     .order("created_at", { ascending: false });
@@ -70,13 +70,27 @@ export default async function HostAvailabilityPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {homestays.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50">
-                      <td className="px-5 py-5 font-bold text-slate-900">
-                        <Link href={`/host/${item.id}`} className="hover:text-[#f60057] hover:underline">
-                          {item.name || "Chỗ nghỉ chưa đặt tên"}
-                        </Link>
-                      </td>
+                  {homestays.map((item) => {
+                    const placeholderNames = [
+                      "ChÃ¡Â»â€” nghÃ¡Â»â€° chÃ†Â°a Ã„â€˜Ã¡ÂºÂ·t tÃƒÂªn",
+                      "Cho nghi chua dat ten",
+                      "Chá»— nghá»‰ chÆ°a Ä‘áº·t tÃªn",
+                      "Chỗ nghỉ chưa đặt tên",
+                    ];
+                    const rawName = item.name?.trim() || "";
+                    const isPlaceholder = !rawName || placeholderNames.includes(rawName);
+                    const draftName = (item.registration_checklist as any)?.draftState?.name;
+                    const displayName = (isPlaceholder && draftName && typeof draftName === "string" && draftName.trim())
+                      ? draftName.trim()
+                      : (item.name || "Chỗ nghỉ chưa đặt tên");
+
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50/50">
+                        <td className="px-5 py-5 font-bold text-slate-900">
+                          <Link href={`/host/${item.id}`} className="hover:text-[#f60057] hover:underline">
+                            {displayName}
+                          </Link>
+                        </td>
                       <td className="px-5 py-5 text-slate-600">
                         {item.address ? `${item.address}, ` : ""}{item.city}
                       </td>
@@ -130,7 +144,8 @@ export default async function HostAvailabilityPage() {
                         />
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             </div>

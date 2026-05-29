@@ -115,7 +115,18 @@ export default async function PropertyDashboardPage({
     ? detail.homestay_images
     : [];
   const isOpen = isBookableProperty(propertyStatus, Boolean(detail.is_active));
-  const name = detail.name || "Chỗ nghỉ chưa đặt tên";
+  const placeholderNames = [
+    "ChÃ¡Â»â€” nghÃ¡Â»â€° chÃ†Â°a Ã„â€˜Ã¡ÂºÂ·t tÃƒÂªn",
+    "Cho nghi chua dat ten",
+    "Chá»— nghá»‰ chÆ°a Ä‘áº·t tÃªn",
+    "Chỗ nghỉ chưa đặt tên",
+  ];
+  const rawName = detail.name?.trim() || "";
+  const isPlaceholder = !rawName || placeholderNames.includes(rawName);
+  const draftName = (detail as any).registration_checklist?.draftState?.name;
+  const name = (isPlaceholder && draftName && typeof draftName === "string" && draftName.trim())
+    ? draftName.trim()
+    : (detail.name || "Chỗ nghỉ chưa đặt tên");
   const city = detail.city || detail.country || "Việt Nam";
   const userName =
     session.user.user_metadata?.full_name ||
@@ -180,7 +191,7 @@ export default async function PropertyDashboardPage({
           <HostAccountMenu userName={userName} />
         </div>
         <nav className="border-t border-white/10">
-          <div className="mx-auto flex max-w-[1400px] overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mx-auto flex h-[104px] max-w-[1400px] items-stretch px-6">
             <NavItem active icon={<Home />} label="Trang chủ" />
             <NavItem
               icon={<CalendarDays />}
@@ -363,7 +374,7 @@ function NavItem({
   badge?: number;
   href?: string;
 }) {
-  const className = `relative flex min-w-fit flex-col items-center gap-1 px-5 py-4 text-sm font-semibold hover:bg-white/10 ${
+  const className = `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-2 py-4 text-center text-[13px] font-semibold leading-tight hover:bg-white/10 xl:text-sm ${
     active ? "bg-white/10 shadow-[inset_0_-4px_0_#fff]" : ""
   }`;
   const content = (
@@ -376,7 +387,7 @@ function NavItem({
           </span>
         ) : null}
       </span>
-      <span className="flex items-center gap-1">
+      <span className="flex min-w-0 items-center justify-center gap-1 text-balance">
         {label}
         {dropdown ? <ChevronDown className="h-4 w-4" /> : null}
       </span>

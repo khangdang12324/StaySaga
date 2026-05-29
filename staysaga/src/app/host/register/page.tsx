@@ -12,24 +12,35 @@ export const metadata = {
 };
 
 type HostRegisterPageProps = {
-  searchParams: Promise<{ propertyId?: string; new?: string; step?: string; editStep?: string }>;
+  searchParams: Promise<{
+    propertyId?: string;
+    new?: string;
+    step?: string;
+    editStep?: string;
+  }>;
 };
 
-export default async function HostRegisterPage({ searchParams }: HostRegisterPageProps) {
+export default async function HostRegisterPage({
+  searchParams,
+}: HostRegisterPageProps) {
+  const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.user) redirect("/login?next=/host/register");
+  const nextPath =
+    params.new === "1" ? "/host/register?new=1" : "/host/register";
+
+  if (!session?.user) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
 
   const role = await getUserRole(
     supabase as unknown as SupabaseLike,
     session.user.id,
   );
-  if (!canAccessPartner(role)) redirect("/host/onboard");
+  if (!canAccessPartner(role))
+    redirect(`/host/onboard?next=${encodeURIComponent(nextPath)}`);
 
-  const params = await searchParams;
   let initialDraft = null;
   let initialImages: any[] = [];
 
@@ -97,7 +108,10 @@ function convertListingToDraft(listing: any): any {
     bedrooms,
     maxGuests: listing.max_guests || 2,
     bathrooms: listing.bathrooms || 1,
-    area: listing.area_sqm || listing.area_m2 ? String(listing.area_sqm || listing.area_m2) : "",
+    area:
+      listing.area_sqm || listing.area_m2
+        ? String(listing.area_sqm || listing.area_m2)
+        : "",
     welcomeChildren: listing.policies?.allowChildren !== false,
     hasCrib: false,
     amenities,

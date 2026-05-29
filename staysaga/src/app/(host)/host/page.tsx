@@ -30,11 +30,6 @@ type DashboardListing = Awaited<
   ReturnType<typeof getHostDashboardData>
 >["listings"][number];
 
-const hiddenRegistrationStatuses = new Set<string>([
-  "DELETED",
-  "DELETE_REQUESTED",
-]);
-
 const placeholderNames = new Set([
   "ChÃ¡Â»â€” nghÃ¡Â»â€° chÃ†Â°a Ã„â€˜Ã¡ÂºÂ·t tÃƒÂªn",
   "Cho nghi chua dat ten",
@@ -44,8 +39,20 @@ const placeholderNames = new Set([
 
 const hasPositiveNumber = (value: unknown) => Number(value || 0) > 0;
 
-const hasRealName = (item: DashboardListing) => {
+const getListingDisplayName = (item: DashboardListing) => {
   const name = item.name?.trim();
+  if (name && !placeholderNames.has(name)) {
+    return name;
+  }
+  const draftName = item.registration_checklist?.draftState?.name;
+  if (draftName && typeof draftName === "string" && draftName.trim()) {
+    return draftName.trim();
+  }
+  return "Chỗ nghỉ chưa đặt tên";
+};
+
+const hasRealName = (item: DashboardListing) => {
+  const name = getListingDisplayName(item);
   return Boolean(name && !placeholderNames.has(name));
 };
 
@@ -212,7 +219,7 @@ export default async function HostDashboardPage({
         return (
           <span className={`${baseClass} text-slate-600`}>
             <span className="h-2 w-2 rounded-full bg-slate-400" />
-            Đã duyệt / Chưa mở bán
+            Đã duyệt
           </span>
         );
       }
@@ -320,7 +327,7 @@ export default async function HostDashboardPage({
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={listing.homestay_images[0].url}
-                                alt={listing.name || "Ảnh chỗ nghỉ"}
+                                alt={getListingDisplayName(listing)}
                                 className="h-full w-full object-cover"
                               />
                             ) : null}
@@ -330,7 +337,7 @@ export default async function HostDashboardPage({
                               href={continueHref}
                               className="font-bold text-[#f60057] hover:underline"
                             >
-                              {listing.name || "Chỗ nghỉ chưa đặt tên"}
+                              {getListingDisplayName(listing)}
                             </Link>
                             <p className="text-sm text-gray-500">
                               {listing.address || listing.city || "Việt Nam"}
@@ -392,12 +399,12 @@ export default async function HostDashboardPage({
         </section>
 
         <section className="mt-12">
-          <h2 className="text-2xl font-bold">Các chỗ nghỉ đang hoạt động</h2>
+          <h2 className="text-2xl font-bold">Các chỗ nghỉ trên StaySaga</h2>
           <div className="mt-8 flex flex-wrap items-end gap-5">
             <label className="font-bold">
               Lọc theo vị trí
               <select className="mt-2 block h-11 w-[250px] border border-gray-500 bg-white px-3 font-normal">
-                <option>{activeListings.length} chỗ nghỉ đang hoạt động</option>
+                <option>{activeListings.length} chỗ nghỉ trên StaySaga</option>
                 <option>Việt Nam</option>
               </select>
             </label>
@@ -485,8 +492,6 @@ export default async function HostDashboardPage({
               </thead>
               <tbody>
                 {visibleListings.map((listing) => {
-                  const open = listing.status === "APPROVED" && listing.is_active;
-
                   const renderValueBadge = (val?: number) => {
                     const num = val || 0;
                     if (num > 0) {
@@ -507,7 +512,7 @@ export default async function HostDashboardPage({
                           href={`/host/${listing.id}`}
                           className="font-bold text-gray-900 hover:text-[#006ce4] hover:underline"
                         >
-                          {listing.name || "Chỗ nghỉ chưa đặt tên"}
+                          {getListingDisplayName(listing)}
                         </Link>
                         <div className="mt-1 flex items-center gap-1.5">
                           <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#e61212] text-white">

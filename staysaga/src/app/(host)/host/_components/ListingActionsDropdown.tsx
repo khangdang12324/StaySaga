@@ -189,7 +189,7 @@ export function ListingActionsDropdown({ propertyId, status, isActive }: Props) 
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
                 >
                   <Play className="h-4 w-4 text-emerald-500" />
-                  <span>Mở lại chỗ nghỉ</span>
+                  <span>{status === "APPROVED" ? "Mở bán chỗ nghỉ" : "Mở lại chỗ nghỉ"}</span>
                 </button>
               ) : null}
 

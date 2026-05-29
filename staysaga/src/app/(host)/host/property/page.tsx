@@ -29,6 +29,7 @@ export default async function HostPropertyListPage() {
       price_per_night,
       status,
       is_active,
+      registration_checklist,
       homestay_images(id, url)
     `)
     .eq("owner_id", session.user.id)
@@ -66,6 +67,19 @@ export default async function HostPropertyListPage() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {homestays.map((item) => {
               const image = item.homestay_images?.[0]?.url;
+              const placeholderNames = [
+                "ChÃ¡Â»â€” nghÃ¡Â»â€° chÃ†Â°a Ã„â€˜Ã¡ÂºÂ·t tÃƒÂªn",
+                "Cho nghi chua dat ten",
+                "Chá»— nghá»‰ chÆ°a Ä‘áº·t tÃªn",
+                "Chỗ nghỉ chưa đặt tên",
+              ];
+              const rawName = item.name?.trim() || "";
+              const isPlaceholder = !rawName || placeholderNames.includes(rawName);
+              const draftName = (item.registration_checklist as any)?.draftState?.name;
+              const displayName = (isPlaceholder && draftName && typeof draftName === "string" && draftName.trim())
+                ? draftName.trim()
+                : (item.name || "Chỗ nghỉ chưa đặt tên");
+
               return (
                 <div key={item.id} className="border border-slate-250 bg-white overflow-hidden shadow-sm flex flex-col justify-between rounded-sm">
                   <div>
@@ -75,7 +89,7 @@ export default async function HostPropertyListPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={image}
-                          alt={item.name || "Ảnh chỗ nghỉ"}
+                          alt={displayName}
                           className="h-full w-full object-cover"
                         />
                       ) : (
@@ -97,8 +111,7 @@ export default async function HostPropertyListPage() {
                     {/* Property Meta */}
                     <div className="p-5">
                       <h3 className="text-[17px] font-bold text-slate-900 line-clamp-1">
-                        {item.name || "Chỗ nghỉ chưa đặt tên"}
-                      </h3>
+                        {displayName}</h3>
                       <p className="mt-1 text-xs text-slate-500 line-clamp-1">
                         {item.address ? `${item.address}, ` : ""}{item.city}
                       </p>

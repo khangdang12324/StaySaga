@@ -220,11 +220,11 @@ export default function AvailabilityTable({
   return (
     <div className="space-y-6">
       {/* 1. Search Box (Yellow wrapper like Booking.com) */}
-      <div className="rounded-lg bg-[#febb02] p-1 shadow-sm">
+      <div className="rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-red-500 p-1.5 shadow-lg shadow-rose-100">
         <div className="flex flex-col md:flex-row items-stretch gap-1">
           {/* Dates Selector */}
-          <div className="relative flex flex-1 items-center gap-3 rounded bg-white px-3 py-2 border border-transparent focus-within:ring-2 focus-within:ring-amber-500">
-            <CalendarDays className="h-5 w-5 text-zinc-400 shrink-0" />
+          <div className="relative flex flex-1 items-center gap-3 rounded-xl bg-white px-4 py-3 border border-transparent focus-within:ring-2 focus-within:ring-rose-200">
+            <CalendarDays className="h-5 w-5 text-rose-500 shrink-0" />
             <div className="flex-1 flex gap-2 text-xs font-bold text-zinc-700">
               <div className="flex flex-col flex-1 min-w-[110px]">
                 <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider">Nhận phòng</span>
@@ -232,17 +232,17 @@ export default function AvailabilityTable({
                   type="date"
                   value={checkIn}
                   onChange={(e) => handleDateChange("checkIn", e.target.value)}
-                  className="w-full font-bold text-zinc-850 outline-none bg-transparent mt-0.5 cursor-pointer text-xs"
+                  className="w-full font-bold text-zinc-900 outline-none bg-transparent mt-0.5 cursor-pointer text-sm"
                 />
               </div>
-              <div className="border-l border-zinc-200 self-stretch my-1"></div>
+              <div className="border-l border-rose-100 self-stretch my-1"></div>
               <div className="flex flex-col flex-1 min-w-[110px]">
                 <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider">Trả phòng</span>
                 <input
                   type="date"
                   value={checkOut}
                   onChange={(e) => handleDateChange("checkOut", e.target.value)}
-                  className="w-full font-bold text-zinc-850 outline-none bg-transparent mt-0.5 cursor-pointer text-xs"
+                  className="w-full font-bold text-zinc-900 outline-none bg-transparent mt-0.5 cursor-pointer text-sm"
                   min={checkIn}
                 />
               </div>
@@ -250,14 +250,14 @@ export default function AvailabilityTable({
           </div>
 
           {/* Guests Selector */}
-          <div className="relative flex flex-1 items-center gap-3 rounded bg-white px-3 py-2 border border-transparent focus-within:ring-2 focus-within:ring-amber-500">
-            <Users className="h-5 w-5 text-zinc-400 shrink-0" />
+          <div className="relative flex flex-1 items-center gap-3 rounded-xl bg-white px-4 py-3 border border-transparent focus-within:ring-2 focus-within:ring-rose-200">
+            <Users className="h-5 w-5 text-rose-500 shrink-0" />
             <div className="flex-1 flex flex-col">
               <span className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider">Số lượng khách</span>
               <select
                 value={guestsCount}
                 onChange={(e) => setGuestsCount(Number(e.target.value))}
-                className="w-full font-bold text-zinc-850 outline-none bg-transparent mt-0.5 text-xs cursor-pointer py-0.5"
+                className="w-full font-bold text-zinc-900 outline-none bg-transparent mt-0.5 text-sm cursor-pointer py-0.5"
               >
                 {Array.from({ length: 10 }, (_, i) => i + 1).map((g) => (
                   <option key={g} value={g}>
@@ -272,7 +272,7 @@ export default function AvailabilityTable({
           <button
             type="button"
             onClick={handleApplyChanges}
-            className="flex items-center justify-center gap-2 rounded bg-[#006ce4] px-6 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#0057b8] active:scale-[0.99] shrink-0 sm:w-auto w-full cursor-pointer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-rose-700 px-7 py-4 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 active:scale-[0.99] shrink-0 sm:w-auto w-full cursor-pointer"
           >
             {hasChanges ? (
               <>
@@ -287,45 +287,45 @@ export default function AvailabilityTable({
       </div>
 
       {/* 2. Filters Box: Lọc theo */}
-      <div className="flex items-center gap-6 text-sm">
+      <div className="flex flex-wrap items-center gap-4 text-sm">
         <span className="font-bold text-zinc-800">Lọc theo:</span>
-        <label className="flex items-center gap-2 font-medium text-zinc-700 cursor-pointer select-none">
+        <label className="flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50/70 px-3 py-2 font-semibold text-zinc-700 cursor-pointer select-none transition hover:border-rose-200 hover:bg-rose-50">
           <input
             type="checkbox"
             checked={filterType.room}
             onChange={(e) => setFilterType((prev) => ({ ...prev, room: e.target.checked }))}
-            className="h-4 w-4 rounded border-zinc-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+            className="h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
           />
           Phòng
         </label>
-        <label className="flex items-center gap-2 font-medium text-zinc-700 cursor-pointer select-none">
+        <label className="flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50/70 px-3 py-2 font-semibold text-zinc-700 cursor-pointer select-none transition hover:border-rose-200 hover:bg-rose-50">
           <input
             type="checkbox"
             checked={filterType.apartment}
             onChange={(e) => setFilterType((prev) => ({ ...prev, apartment: e.target.checked }))}
-            className="h-4 w-4 rounded border-zinc-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+            className="h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
           />
           Căn hộ
         </label>
       </div>
 
       {/* 3. Availability Table */}
-      <div className="overflow-hidden rounded-lg border border-zinc-200 shadow-sm relative">
+      <div className="overflow-hidden rounded-2xl border border-rose-100 shadow-xl shadow-rose-50 relative">
         <table className="w-full text-left text-sm border-collapse">
-          <thead className="bg-[#4c76b2] text-white text-xs font-bold uppercase">
-            <tr className="divide-x divide-zinc-200/20">
+          <thead className="bg-gradient-to-r from-rose-600 to-red-500 text-white text-xs font-bold uppercase">
+            <tr className="divide-x divide-white/20">
               <th className="px-4 py-3.5 w-[30%] border-b border-zinc-200">Loại chỗ ở</th>
               <th className="px-4 py-3.5 w-[10%] text-center border-b border-zinc-200">Số lượng khách</th>
-              <th className="px-4 py-3.5 w-[15%] bg-[#003580] relative text-center border-b border-zinc-200">
+              <th className="px-4 py-3.5 w-[15%] bg-rose-800 relative text-center border-b border-rose-200">
                 <span className="relative z-10">Giá cho {nights} đêm</span>
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#003580]" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-rose-800" />
               </th>
               <th className="px-4 py-3.5 w-[22%] border-b border-zinc-200">Các lựa chọn</th>
               <th className="px-4 py-3.5 w-[11%] text-center border-b border-zinc-200">Chọn số lượng</th>
-              <th className="px-4 py-3.5 w-[12%] bg-white border-b border-zinc-200"></th>
+              <th className="px-4 py-3.5 w-[12%] bg-rose-50 border-b border-rose-100"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-200">
+          <tbody className="divide-y divide-rose-100 bg-white">
             {filteredRooms.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-zinc-500 font-medium bg-zinc-50/50">
@@ -340,7 +340,7 @@ export default function AvailabilityTable({
                 const showRowSpan = idx === 0;
 
                 return (
-                  <tr key={room.name} className="hover:bg-zinc-50/50 transition-colors divide-x divide-zinc-200">
+                  <tr key={room.name} className="hover:bg-rose-50/40 transition-colors divide-x divide-rose-100">
                     {/* 1. Room Info */}
                     <td className="px-4 py-5 align-top">
                       <button className="font-bold text-rose-600 hover:text-rose-700 hover:underline text-[15px] text-left">
@@ -376,17 +376,17 @@ export default function AvailabilityTable({
                         {formatPriceValue(roomPriceNum * nights)}
                       </div>
                       <div className="text-[10px] text-zinc-500">Đã bao gồm thuế và phí</div>
-                      <div className="mt-1.5 inline-block rounded bg-emerald-700 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider">
+                      <div className="mt-1.5 inline-block rounded-full bg-rose-600 px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider">
                         Tiết kiệm {room.savings}
                       </div>
                     </td>
 
                     {/* 4. Policies/Options */}
                     <td className="px-4 py-5 align-top space-y-2 text-xs">
-                      <div className="flex items-center gap-1 font-bold text-emerald-700">
+                      <div className="flex items-center gap-1 font-bold text-rose-700">
                         <span>✓ Bao gồm 1 chỗ đậu xe + nhận phòng trễ</span>
                       </div>
-                      <div className="text-emerald-700 font-medium">
+                      <div className="text-rose-700 font-medium">
                         ✓ Hủy miễn phí trước 18:00, 29 tháng 5, 2026
                       </div>
                       <div className="text-zinc-600">
@@ -407,7 +407,7 @@ export default function AvailabilityTable({
                       <select
                         value={currentQty}
                         onChange={(e) => handleSelectChange(originalIdx, Number(e.target.value))}
-                        className="w-full rounded border border-zinc-300 bg-white p-1.5 text-xs font-bold text-zinc-800 outline-none focus:border-rose-600 cursor-pointer"
+                        className="w-full rounded-lg border border-rose-200 bg-white p-1.5 text-xs font-bold text-zinc-800 outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-100 cursor-pointer"
                       >
                         <option value={0}>0</option>
                         {Array.from({ length: room.left || 4 }, (_, i) => i + 1).map((val) => (
@@ -422,7 +422,7 @@ export default function AvailabilityTable({
                     {showRowSpan && (
                       <td
                         rowSpan={filteredRooms.length}
-                        className="align-top border-l border-zinc-200 bg-rose-50/20 p-4 w-[230px]"
+                        className="align-top border-l border-rose-100 bg-gradient-to-b from-rose-50 to-white p-4 w-[230px]"
                       >
                         <div className="sticky top-24 space-y-4">
                           {totalRooms > 0 ? (
@@ -444,7 +444,7 @@ export default function AvailabilityTable({
 
                               <Link
                                 href={checkoutHref}
-                                className="block w-full rounded bg-rose-600 px-4 py-2.5 text-center text-sm font-bold text-white shadow-md transition hover:bg-rose-700 active:scale-[0.99]"
+                                className="block w-full rounded-xl bg-gradient-to-r from-rose-600 to-red-600 px-4 py-3 text-center text-sm font-bold text-white shadow-md shadow-rose-100 transition hover:from-rose-700 hover:to-red-700 active:scale-[0.99]"
                               >
                                 Tôi sẽ đặt
                               </Link>
@@ -464,7 +464,7 @@ export default function AvailabilityTable({
                               <button
                                 type="button"
                                 disabled
-                                className="w-full cursor-not-allowed rounded bg-zinc-100 border border-zinc-200 py-2.5 text-xs font-bold text-zinc-400"
+                                className="w-full cursor-not-allowed rounded-xl bg-rose-100 border border-rose-100 py-2.5 text-xs font-bold text-rose-300"
                               >
                                 Tôi sẽ đặt
                               </button>
@@ -488,7 +488,7 @@ export default function AvailabilityTable({
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
           <div className="rounded-lg bg-white p-6 shadow-xl flex flex-col items-center gap-4 min-w-[220px]">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#006ce4] border-t-transparent" />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-rose-600 border-t-transparent" />
             <p className="text-sm font-bold text-zinc-700">Đang tải ngày...</p>
           </div>
         </div>

@@ -30,11 +30,14 @@ type AdminUserRow = {
 
 const errorMessages: Record<string, string> = {
   invalid: "Dữ liệu phân quyền không hợp lệ.",
-  self_lock: "Không thể tự hạ quyền hoặc khóa chính tài khoản ADMIN đang đăng nhập.",
+  self_lock:
+    "Không thể tự hạ quyền hoặc khóa chính tài khoản ADMIN đang đăng nhập.",
   update_failed: "Lưu phân quyền thất bại. Vui lòng kiểm tra RLS hoặc DB.",
 };
 
-export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
+export default async function AdminUsersPage({
+  searchParams,
+}: AdminUsersPageProps) {
   const { user: currentUser } = await requireAdmin();
   const params = searchParams ? await searchParams : {};
 
@@ -48,14 +51,17 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   let totalCount = 0;
 
   const supabaseAdmin = await createAdminClient();
-  
+
   let usersData: any[] | null = null;
   let dbError: any = null;
 
   try {
     let query = supabaseAdmin
       .from("profiles")
-      .select("id, full_name, email, role, status, created_at, avatar_url, bookings:bookings(id)", { count: "exact" })
+      .select(
+        "id, full_name, email, role, status, created_at, avatar_url, bookings:bookings(id)",
+        { count: "exact" },
+      )
       .order("created_at", { ascending: false });
 
     if (q) {
@@ -68,7 +74,10 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
       query = query.eq("status", statusFilter);
     }
 
-    const { data, count, error } = await query.range(offset, offset + limit - 1);
+    const { data, count, error } = await query.range(
+      offset,
+      offset + limit - 1,
+    );
     usersData = data;
     totalCount = count || 0;
     dbError = error;
@@ -77,12 +86,21 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   }
 
   // Fallback if status column does not exist (code 42703)
-  if (dbError && (dbError.code === "42703" || String(dbError.message || "").includes("status"))) {
-    console.warn("Database profiles table is missing 'status' column. Falling back to in-memory handling.");
+  if (
+    dbError &&
+    (dbError.code === "42703" ||
+      String(dbError.message || "").includes("status"))
+  ) {
+    console.warn(
+      "Database profiles table is missing 'status' column. Falling back to in-memory handling.",
+    );
     try {
       let query = supabaseAdmin
         .from("profiles")
-        .select("id, full_name, email, role, created_at, avatar_url, bookings:bookings(id)", { count: "exact" })
+        .select(
+          "id, full_name, email, role, created_at, avatar_url, bookings:bookings(id)",
+          { count: "exact" },
+        )
         .order("created_at", { ascending: false });
 
       if (q) {
@@ -92,7 +110,10 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         query = query.eq("role", roleFilter);
       }
 
-      const { data, count, error } = await query.range(offset, offset + limit - 1);
+      const { data, count, error } = await query.range(
+        offset,
+        offset + limit - 1,
+      );
       dbError = error;
       if (data) {
         usersData = data.map((u: any) => ({ ...u, status: "ACTIVE" }));
@@ -125,7 +146,6 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     }
   };
 
-
   return (
     <AdminShell
       title="Người dùng & Phân quyền"
@@ -142,7 +162,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
       {/* Filter panel */}
       <form className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4 items-end mb-6">
         <div className="block md:col-span-2">
-          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">Tìm kiếm thành viên</span>
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">
+            Tìm kiếm thành viên
+          </span>
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input
@@ -155,7 +177,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         </div>
 
         <div className="block">
-          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">Vai trò (Role)</span>
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">
+            Vai trò (Role)
+          </span>
           <select
             name="role"
             defaultValue={roleFilter}
@@ -169,7 +193,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         </div>
 
         <div className="block">
-          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">Trạng thái</span>
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">
+            Trạng thái
+          </span>
           <select
             name="status"
             defaultValue={statusFilter}
@@ -193,20 +219,25 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-wider text-slate-500 border-b border-slate-200">
-             <tr>
+              <tr>
                 <th className="px-6 py-4 whitespace-nowrap">Thành viên</th>
                 <th className="px-6 py-4 whitespace-nowrap">Email</th>
                 <th className="px-6 py-4 whitespace-nowrap">Vai trò</th>
                 <th className="px-6 py-4 whitespace-nowrap">Trạng thái</th>
                 <th className="px-6 py-4 whitespace-nowrap">Số booking</th>
                 <th className="px-6 py-4 whitespace-nowrap">Ngày tham gia</th>
-                <th className="px-6 py-4 text-right whitespace-nowrap">Thao tác hệ thống</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap">
+                  Thao tác hệ thống
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-bold">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-12 text-center text-slate-500 font-bold"
+                  >
                     Không tìm thấy thành viên nào khớp với bộ lọc.
                   </td>
                 </tr>
@@ -217,15 +248,24 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                   const status = (item.status || "ACTIVE") as ProfileStatus;
 
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors align-middle">
+                    <tr
+                      key={item.id}
+                      className="hover:bg-slate-50/50 transition-colors align-middle"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <UserAvatar src={item.avatar_url} alt={item.full_name || "Avatar"} className="h-9 w-9" />
+                          <UserAvatar
+                            src={item.avatar_url}
+                            alt={item.full_name || "Avatar"}
+                            className="h-9 w-9"
+                          />
                           <div>
                             <p className="font-bold text-slate-900 text-sm leading-snug whitespace-nowrap">
                               {item.full_name || "Chưa cập nhật tên"}
                             </p>
-                            <p className="text-[10px] text-slate-400 mt-0.5 font-mono">ID: {item.id.slice(0, 8)}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                              ID: {item.id.slice(0, 8)}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -239,11 +279,15 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                               ? "bg-purple-100 text-purple-800"
                               : role === "PARTNER"
                                 ? "bg-amber-100 text-amber-800"
-                                : "bg-blue-100 text-blue-800"
+                                : "bg-rose-100 text-rose-800"
                           }`}
                         >
-                          {role === "ADMIN" && <ShieldAlert className="h-3 w-3" />}
-                          {role === "PARTNER" && <UserCheck className="h-3 w-3" />}
+                          {role === "ADMIN" && (
+                            <ShieldAlert className="h-3 w-3" />
+                          )}
+                          {role === "PARTNER" && (
+                            <UserCheck className="h-3 w-3" />
+                          )}
                           {role === "USER" && <UserCheck className="h-3 w-3" />}
                           {role}
                         </span>
@@ -270,7 +314,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                           userId={item.id}
                           currentRole={role}
                           currentStatus={status}
-                          userName={item.full_name || item.email || "Thành viên"}
+                          userName={
+                            item.full_name || item.email || "Thành viên"
+                          }
                           isSelf={isSelf}
                         />
                       </td>

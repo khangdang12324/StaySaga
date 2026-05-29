@@ -113,7 +113,9 @@ export function AdminPropertiesClient({
   const [deleteRejectionInputReason, setDeleteRejectionInputReason] = useState("");
 
   // Sync state with URL searchParams
-  const activeTab = searchParams.get("status") || "";
+  const rawActiveTab = searchParams.get("propertyStatus") || searchParams.get("status") || "";
+  const tabKeys = new Set(["", "PENDING", "APPROVED", "ON_SALE", "REJECTED", "CLOSED_TEMP", "SUSPENDED", "DELETE_REQUESTED", "DELETED"]);
+  const activeTab = tabKeys.has(rawActiveTab) ? rawActiveTab : "";
   const pageParam = Number(searchParams.get("page")) || 1;
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -226,8 +228,10 @@ export function AdminPropertiesClient({
     if (newFilters.status !== undefined) {
       if (newFilters.status) {
         params.set("status", newFilters.status);
+        params.delete("propertyStatus");
       } else {
         params.delete("status");
+        params.delete("propertyStatus");
       }
       params.set("page", "1");
     }
@@ -284,7 +288,8 @@ export function AdminPropertiesClient({
     propertyId: string,
     successMsg: string,
     confirmMsg?: string,
-    customReason?: string
+    customReason?: string,
+    customFields?: Record<string, string>
   ) => {
     if (confirmMsg && !window.confirm(confirmMsg)) return;
 
@@ -296,6 +301,9 @@ export function AdminPropertiesClient({
       fd.set("id", propertyId);
       if (customReason) {
         fd.set("reason", customReason);
+      }
+      if (customFields) {
+        Object.entries(customFields).forEach(([key, value]) => fd.set(key, value));
       }
 
       try {
@@ -604,10 +612,7 @@ export function AdminPropertiesClient({
                                     <>
                                       <button
                                         onClick={() => {
-                                          const fd = new FormData();
-                                          fd.set("id", p.id);
-                                          fd.set("status", "CLOSED_TEMP");
-                                          triggerAction(updatePropertyStatus, p.id, "Đã tạm đóng chỗ nghỉ thành công.", "Tạm đóng chỗ nghỉ này khỏi thị trường?", undefined);
+                                          triggerAction(updatePropertyStatus, p.id, "Đã tạm đóng chỗ nghỉ thành công.", "Tạm đóng chỗ nghỉ này khỏi thị trường?", undefined, { status: "CLOSED_TEMP" });
                                         }}
                                         className="w-full text-left rounded px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
                                       >
@@ -869,10 +874,7 @@ export function AdminPropertiesClient({
                   {selectedProperty.is_active && (
                     <button
                       onClick={() => {
-                        const fd = new FormData();
-                        fd.set("id", selectedProperty.id);
-                        fd.set("status", "CLOSED_TEMP");
-                        triggerAction(updatePropertyStatus, selectedProperty.id, "Đã tạm đóng chỗ nghỉ thành công.", "Tạm đóng chỗ nghỉ này?", undefined);
+                        triggerAction(updatePropertyStatus, selectedProperty.id, "Đã tạm đóng chỗ nghỉ thành công.", "Tạm đóng chỗ nghỉ này?", undefined, { status: "CLOSED_TEMP" });
                       }}
                       disabled={activeActionId !== null}
                       className="rounded bg-amber-500 text-white px-4 py-2 text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm cursor-pointer"

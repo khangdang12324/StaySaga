@@ -25,6 +25,19 @@ export function normalizeAppRole(role?: string | null): AppRole {
   return "USER";
 }
 
+/**
+ * Check app_metadata from Supabase auth user to determine partner status.
+ * This is a fallback for when the DB enum doesn't have PARTNER value yet.
+ */
+export function getRoleFromAppMetadata(
+  appMetadata?: Record<string, unknown> | null
+): AppRole | null {
+  if (!appMetadata) return null;
+  if (appMetadata.is_host === true) return "PARTNER";
+  if (appMetadata.role) return normalizeAppRole(String(appMetadata.role));
+  return null;
+}
+
 export async function getUserRole(
   supabase: SupabaseLike,
   userId: string,
@@ -35,7 +48,31 @@ export async function getUserRole(
     .eq("id", userId)
     .maybeSingle();
 
-  return normalizeAppRole(data?.role);
+  const dbRole = normalizeAppRole(data?.role);
+
+  // If DB says USER, check app_metadata via admin API as fallback
+  // (needed when PARTNER enum value isn't in the DB yet)
+  if (dbRole === "USER") {
+    try {
+      const { createClient } = await import("@supabase/supabase-js");
+      const key =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const adminClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        key!
+      );
+      const { data: userData } = await adminClient.auth.admin.getUserById(userId);
+      const metaRole = getRoleFromAppMetadata(
+        userData?.user?.app_metadata as Record<string, unknown>
+      );
+      if (metaRole && metaRole !== "USER") return metaRole;
+    } catch {
+      // silently fall through to dbRole
+    }
+  }
+
+  return dbRole;
 }
 
 export async function getProfileStatus(

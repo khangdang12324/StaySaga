@@ -8,6 +8,7 @@ import {
   canAccessPartner,
   getProfileStatus,
   getUserRole,
+  normalizeAppRole,
   type SupabaseLike,
 } from "@/lib/auth/roles";
 import { isPropertyStatus, type PropertyStatus } from "@/core/properties/status";
@@ -253,7 +254,7 @@ async function uploadImage(
     sort_order: sortOrder,
   };
 
-  let { error: imageError } = await supabase.from("homestay_images").insert(imagePayload);
+  const { error: imageError } = await supabase.from("homestay_images").insert(imagePayload);
 
   if (imageError) {
     await supabase.storage.from(IMAGE_BUCKET).remove([storagePath]);
@@ -314,10 +315,58 @@ async function insertHomestayWithFallback(
       beds: payload.beds,
       bathrooms: payload.bathrooms,
       is_active: payload.is_active,
+      status: payload.status,
+      registration_checklist: payload.registration_checklist,
     };
     const retry = await supabase
       .from("homestays")
       .insert(payloadWithoutStatus)
+      .select("id")
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
+
+  return { data, error };
+}
+
+async function updateHomestayWithFallback(
+  supabase: Awaited<ReturnType<typeof createClient>> | SupabaseClient,
+  propertyId: string,
+  ownerId: string,
+  payload: Record<string, unknown>,
+) {
+  let { data, error } = await supabase
+    .from("homestays")
+    .update(payload)
+    .eq("id", propertyId)
+    .eq("owner_id", ownerId)
+    .select("id")
+    .single();
+
+  if (error) {
+    const payloadWithoutStatus = {
+      owner_id: payload.owner_id,
+      slug: payload.slug,
+      name: payload.name,
+      description: payload.description,
+      address: payload.address,
+      city: payload.city,
+      country: payload.country,
+      price_per_night: payload.price_per_night,
+      max_guests: payload.max_guests,
+      bedrooms: payload.bedrooms,
+      beds: payload.beds,
+      bathrooms: payload.bathrooms,
+      is_active: payload.is_active,
+      status: payload.status,
+      registration_checklist: payload.registration_checklist,
+    };
+    const retry = await supabase
+      .from("homestays")
+      .update(payloadWithoutStatus)
+      .eq("id", propertyId)
+      .eq("owner_id", ownerId)
       .select("id")
       .single();
     data = retry.data;
@@ -497,7 +546,11 @@ export async function getHostDashboardData(): Promise<HostDashboardData> {
         avg_rating?: number | string | null;
         status?: string | null;
       };
-      const status = isPropertyStatus(row.status || "") ? row.status : "APPROVED";
+      const status = isPropertyStatus(row.status || "")
+        ? row.status
+        : row.is_active
+          ? "APPROVED"
+          : "DRAFT";
 
       return {
         ...row,
@@ -646,22 +699,10 @@ async function saveIncompleteHomestayDraft(
 
   let result;
   if (propertyId) {
-    const updateResult = await supabase
-      .from("homestays")
-      .update(draftPayload)
-      .eq("id", propertyId)
-      .eq("owner_id", userId)
-      .select("id")
-      .single();
+    const updateResult = await updateHomestayWithFallback(supabase, propertyId, userId, draftPayload);
     result =
       updateResult.error || !updateResult.data
-        ? await adminSupabase
-            .from("homestays")
-            .update(draftPayload)
-            .eq("id", propertyId)
-            .eq("owner_id", userId)
-            .select("id")
-            .single()
+        ? await updateHomestayWithFallback(adminSupabase, propertyId, userId, draftPayload)
         : updateResult;
   } else {
     const insertResult = await insertHomestayWithFallback(supabase, draftPayload);
@@ -700,7 +741,19 @@ export async function createHostHomestay(formData: FormData) {
         ? [fallbackImage]
         : [];
 
-  if (filesToUpload.length < 1) {
+  const propertyId = getString(formData, "id");
+  let existingImageCount = 0;
+  const adminSupabase = await createAdminClient();
+
+  if (propertyId) {
+    const { count } = await adminSupabase
+      .from("homestay_images")
+      .select("id", { count: "exact", head: true })
+      .eq("homestay_id", propertyId);
+    existingImageCount = count || 0;
+  }
+
+  if (filesToUpload.length < 1 && existingImageCount < 1) {
     await saveIncompleteHomestayDraft(supabase, user.id, formData, name, city, price);
     redirectToHostError("image_count");
   }
@@ -740,7 +793,7 @@ export async function createHostHomestay(formData: FormData) {
   const checklist = {
     basic: Boolean(name && getString(formData, "description")),
     location: Boolean(city && getString(formData, "address")),
-    images: filesToUpload.length >= 1,
+    images: filesToUpload.length >= 1 || existingImageCount >= 1,
     rooms: Boolean(roomName && price > 0),
     pricing: price > 0,
     amenities: amenities.length > 0,
@@ -800,33 +853,19 @@ export async function createHostHomestay(formData: FormData) {
     allow_pets: policies.allowPets,
     house_rules: getString(formData, "house_rules") || null,
     registration_checklist: checklist,
-    submitted_at: new Date().toISOString(),
+    submitted_at: null,
     rejection_reason: null,
     is_active: false,
-    status: "PENDING" as const,
+    status: "DRAFT" as const,
   };
 
-  const propertyId = getString(formData, "id");
   let data = null;
   let error = null;
 
-  const adminSupabase = await createAdminClient();
   if (propertyId) {
-    const updateResult = await supabase
-      .from("homestays")
-      .update(payload)
-      .eq("id", propertyId)
-      .eq("owner_id", user.id)
-      .select("id")
-      .single();
+    const updateResult = await updateHomestayWithFallback(supabase, propertyId, user.id, payload);
     if (updateResult.error || !updateResult.data) {
-      const adminUpdate = await adminSupabase
-        .from("homestays")
-        .update(payload)
-        .eq("id", propertyId)
-        .eq("owner_id", user.id)
-        .select("id")
-        .single();
+      const adminUpdate = await updateHomestayWithFallback(adminSupabase, propertyId, user.id, payload);
       data = adminUpdate.data;
       error = adminUpdate.error;
     } else {
@@ -856,6 +895,28 @@ export async function createHostHomestay(formData: FormData) {
       .map((file, index) => uploadImage(adminSupabase, user.id, data.id, file, index, index === 0 ? "cover" : "gallery")),
   );
 
+  const { count: savedImageCount } = await adminSupabase
+    .from("homestay_images")
+    .select("id", { count: "exact", head: true })
+    .eq("homestay_id", data.id);
+
+  if (!savedImageCount || savedImageCount < 1) {
+    await adminSupabase
+      .from("homestays")
+      .update({
+        status: "DRAFT",
+        is_active: false,
+        submitted_at: null,
+        registration_checklist: { ...checklist, images: false },
+        rejection_reason: "Cần ít nhất 1 ảnh đại diện trước khi gửi duyệt.",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.id);
+    revalidatePath("/host");
+    revalidatePath("/host/list");
+    redirectToHostError("image_count");
+  }
+
   await upsertRoomForProperty(adminSupabase, data.id, {
     name: roomName,
     max_guests: maxGuests,
@@ -869,6 +930,22 @@ export async function createHostHomestay(formData: FormData) {
   });
 
   await attachAmenities(adminSupabase, data.id, amenities);
+
+  const { error: submitError } = await adminSupabase
+    .from("homestays")
+    .update({
+      status: "PENDING",
+      is_active: false,
+      submitted_at: new Date().toISOString(),
+      registration_checklist: { ...checklist, images: true },
+      rejection_reason: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", data.id);
+
+  if (submitError) {
+    redirectToHostError("update_failed");
+  }
 
   revalidatePath("/host");
   revalidatePath("/host/list");
@@ -949,7 +1026,7 @@ export async function saveDatabaseDraftAction(draftJson: string) {
     title: name,
     description: draft.description || null,
     property_type: draft.propertyType || "homestay",
-    address: draft.address || null,
+    address: draft.address || "Chưa thiết lập",
     city,
     district: draft.district || null,
     country: draft.country || "Vietnam",
@@ -986,21 +1063,10 @@ export async function saveDatabaseDraftAction(draftJson: string) {
 
   let result;
   if (draft.id) {
-    const { data, error } = await supabase
-      .from("homestays")
-      .update(payload)
-      .eq("id", draft.id)
-      .eq("owner_id", user.id)
-      .select("id")
-      .single();
-      
-    result = error || !data ? await adminSupabase
-      .from("homestays")
-      .update(payload)
-      .eq("id", draft.id)
-      .eq("owner_id", user.id)
-      .select("id")
-      .single() : { data, error };
+    const updateResult = await updateHomestayWithFallback(supabase, draft.id, user.id, payload);
+    result = updateResult.error || !updateResult.data
+      ? await updateHomestayWithFallback(adminSupabase, draft.id, user.id, payload)
+      : updateResult;
   } else {
     result = await insertHomestayWithFallback(supabase, payload);
     if (result.error || !result.data) {
@@ -1009,7 +1075,8 @@ export async function saveDatabaseDraftAction(draftJson: string) {
   }
 
   if (result.error || !result.data) {
-    return { error: "Failed to save draft" };
+    console.error("[saveDatabaseDraftAction] database insertion error details:", result.error);
+    return { error: `Failed to save draft: ${result.error?.message || JSON.stringify(result.error)}` };
   }
 
   revalidatePath("/host");
@@ -1678,7 +1745,7 @@ export async function submitPropertyForReview(formData: FormData) {
 }
 
 export async function updateHostHomestay(formData: FormData) {
-  const { supabase, user } = await getCurrentPartner();
+  const { user, role } = await getCurrentPartner();
   const id = getString(formData, "id");
   const name = getString(formData, "name");
   const city = getString(formData, "city");
@@ -1688,20 +1755,27 @@ export async function updateHostHomestay(formData: FormData) {
     redirectToHostError("invalid");
   }
 
-  const { error } = await supabase
+  const property = await getOwnedProperty(id, user.id, role);
+  const adminSupabase = await createAdminClient();
+  const canChangeActiveState = property.status === "APPROVED";
+
+  const { error } = await adminSupabase
     .from("homestays")
     .update({
       name,
+      title: name,
       description: getString(formData, "description") || null,
       address: getString(formData, "address") || null,
       city,
       country: getString(formData, "country") || "Vietnam",
       price_per_night: price,
+      base_price_per_night: price,
       max_guests: Math.max(1, getNumber(formData, "max_guests", 2)),
       bedrooms: Math.max(0, getNumber(formData, "bedrooms", 1)),
       beds: Math.max(0, getNumber(formData, "beds", 1)),
       bathrooms: Math.max(0, getNumber(formData, "bathrooms", 1)),
-      is_active: formData.get("is_active") === "on",
+      is_active: canChangeActiveState ? formData.get("is_active") === "on" : false,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", id)
     .eq("owner_id", user.id);
@@ -1710,9 +1784,19 @@ export async function updateHostHomestay(formData: FormData) {
     redirectToHostError("update_failed");
   }
 
+  await adminSupabase
+    .from("rooms")
+    .update({
+      price_per_night: price,
+      max_guests: Math.max(1, getNumber(formData, "max_guests", 2)),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("homestay_id", id)
+    .neq("status", "DELETED");
+
   const image = formData.get("image");
   await uploadImage(
-    supabase,
+    adminSupabase,
     user.id,
     id,
     image instanceof File ? image : null,
@@ -1850,28 +1934,46 @@ export async function deleteHostHomestay(formData: FormData) {
 }
 
 export async function promoteToHost() {
-  const { supabase, user } = await getCurrentUser();
+  const { user } = await getCurrentUser();
   const adminSupabase = await createAdminClient();
 
-  const { error } = await adminSupabase
-    .from("profiles")
-    .update({ role: "PARTNER" })
-    .eq("id", user.id);
-
-  if (error) {
-    const { error: fallbackError } = await supabase
-      .from("profiles")
-      .update({ role: "PARTNER" })
-      .eq("id", user.id);
-
-    if (fallbackError) {
-      redirect("/host/onboard?error=partner_failed");
+  // Primary strategy: set app_metadata.is_host = true via admin API.
+  // This bypasses the DB enum constraint entirely.
+  // getUserRole() will read this and return PARTNER as fallback.
+  const { error: metaError } = await adminSupabase.auth.admin.updateUserById(
+    user.id,
+    {
+      app_metadata: {
+        ...(user.app_metadata ?? {}),
+        is_host: true,
+        role: "PARTNER",
+      },
     }
+  );
+
+  if (metaError) {
+    console.error("[promoteToHost] failed to set app_metadata", { metaError });
+    redirect("/host/onboard?error=partner_failed");
+  }
+
+  // Secondary (best-effort): try to update profiles.role too
+  const profileBase = {
+    id: user.id,
+    email: user.email || null,
+    full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+    avatar_url: user.user_metadata?.avatar_url || null,
+  };
+  for (const roleValue of ["PARTNER", "host"]) {
+    const { error } = await adminSupabase
+      .from("profiles")
+      .upsert({ ...profileBase, role: roleValue }, { onConflict: "id" });
+    if (!error) break;
   }
 
   revalidatePath("/", "layout");
   revalidatePath("/host");
-  redirect("/host/register");
+  revalidatePath("/host/list");
+  redirect("/host/onboard?success=partner");
 }
 
 export async function requestClosePropertyAction(propertyId: string) {

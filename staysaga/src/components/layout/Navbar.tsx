@@ -228,10 +228,7 @@ export default function Navbar() {
 
   const t = (vi: string, en: string) => (lang === "EN" ? en : vi);
 
-  if (
-    pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/host")
-  ) {
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/host")) {
     return null;
   }
 
@@ -366,11 +363,11 @@ export default function Navbar() {
                       </span>
                     </div>
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative">
-                      <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
-                      <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
-                      <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
-                      <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
+                    <div className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center border border-rose-700 overflow-hidden relative">
+                      <div className="absolute w-full h-1 bg-white top-1/2 -translate-y-1/2 z-10" />
+                      <div className="absolute h-full w-1 bg-white left-1/2 -translate-x-1/2 z-10" />
+                      <div className="absolute w-full h-2 bg-rose-100 top-1/2 -translate-y-1/2 z-0" />
+                      <div className="absolute h-full w-2 bg-rose-100 left-1/2 -translate-x-1/2 z-0" />
                     </div>
                   )}
                 </button>
@@ -408,11 +405,11 @@ export default function Navbar() {
                         }}
                         className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${lang === "EN" ? "text-rose-600 font-bold bg-rose-50" : "text-gray-700"}`}
                       >
-                        <div className="w-5 h-5 rounded-full bg-blue-800 flex items-center justify-center border border-blue-900 overflow-hidden relative shrink-0">
-                          <div className="absolute w-full h-1 bg-red-600 top-1/2 -translate-y-1/2 z-10" />
-                          <div className="absolute h-full w-1 bg-red-600 left-1/2 -translate-x-1/2 z-10" />
-                          <div className="absolute w-full h-2 bg-white top-1/2 -translate-y-1/2 z-0" />
-                          <div className="absolute h-full w-2 bg-white left-1/2 -translate-x-1/2 z-0" />
+                        <div className="w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center border border-rose-700 overflow-hidden relative shrink-0">
+                          <div className="absolute w-full h-1 bg-white top-1/2 -translate-y-1/2 z-10" />
+                          <div className="absolute h-full w-1 bg-white left-1/2 -translate-x-1/2 z-10" />
+                          <div className="absolute w-full h-2 bg-rose-100 top-1/2 -translate-y-1/2 z-0" />
+                          <div className="absolute h-full w-2 bg-rose-100 left-1/2 -translate-x-1/2 z-0" />
                         </div>
                         English
                       </button>
@@ -482,7 +479,7 @@ export default function Navbar() {
                           <User className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
                           <span>{t("Tài khoản", "Manage account")}</span>
                         </Link>
-                        
+
                         <Link
                           href="/bookings"
                           onClick={() => setDropdownOpen(false)}
@@ -493,16 +490,18 @@ export default function Navbar() {
                             {t("Đặt chỗ & Chuyến đi", "Bookings & Trips")}
                           </span>
                         </Link>
-                        
+
                         <Link
                           href="/favorites"
                           onClick={() => setDropdownOpen(false)}
                           className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
                         >
                           <Wallet className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
-                          <span>{t("Tặng thưởng & Ví", "Rewards & Wallet")}</span>
+                          <span>
+                            {t("Tặng thưởng & Ví", "Rewards & Wallet")}
+                          </span>
                         </Link>
-                        
+
                         <Link
                           href="/reviews"
                           onClick={() => setDropdownOpen(false)}
@@ -511,7 +510,7 @@ export default function Navbar() {
                           <MessageSquare className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
                           <span>{t("Đánh giá", "Reviews")}</span>
                         </Link>
-                        
+
                         <Link
                           href="/favorites"
                           onClick={() => setDropdownOpen(false)}
@@ -536,23 +535,17 @@ export default function Navbar() {
                                 >
                                   <Home className="w-4 h-4 text-rose-500 shrink-0" />
                                   <span>
-                                    {t(
-                                      "Quản lý chỗ nghỉ",
-                                      "Manage Properties",
-                                    )}
+                                    {t("Quản lý chỗ nghỉ", "Manage Properties")}
                                   </span>
                                 </Link>
                                 <Link
-                                  href="/host/register"
+                                  href="/host/register?new=1"
                                   onClick={() => setDropdownOpen(false)}
                                   className="group flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:text-rose-600 hover:bg-rose-50/40 transition-all border-y border-transparent hover:border-rose-100/50"
                                 >
                                   <Plus className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
                                   <span>
-                                    {t(
-                                      "Thêm chỗ nghỉ mới",
-                                      "Add New Property",
-                                    )}
+                                    {t("Thêm chỗ nghỉ mới", "Add New Property")}
                                   </span>
                                 </Link>
                               </>
@@ -591,10 +584,7 @@ export default function Navbar() {
                                 >
                                   <Home className="w-4 h-4 text-zinc-400 group-hover:text-rose-600 transition-colors shrink-0" />
                                   <span>
-                                    {t(
-                                      "Quản lý chỗ nghỉ",
-                                      "Manage Properties",
-                                    )}
+                                    {t("Quản lý chỗ nghỉ", "Manage Properties")}
                                   </span>
                                 </Link>
                               </>
@@ -792,7 +782,7 @@ export default function Navbar() {
                         {t("Quản lý chỗ nghỉ", "Manage Properties")}
                       </Link>
                       <Link
-                        href="/host/register"
+                        href="/host/register?new=1"
                         onClick={() => setMobileMenuOpen(false)}
                         className="flex items-center gap-3 py-3 text-lg font-medium"
                       >

@@ -71,30 +71,62 @@ export default async function HostBookingsSubPage({ params }: { params: Params }
   if (!canAccessPartner(role)) redirect("/host/onboard");
 
   // Fetch bookings from database
-  const { data: bookings } = await supabase
+  const { data: bookings, error } = await supabase
     .from("bookings")
     .select(`
       id,
-      booking_code,
-      guest_name,
-      guest_email,
-      guest_phone,
       check_in_date,
       check_out_date,
       guests,
-      nights,
-      price_per_night,
       total_price,
       status,
-      payment_status,
-      special_request,
       created_at,
-      homestay:homestays!bookings_homestay_id_fkey(id, name, city, owner_id)
+      guest:profiles!bookings_user_id_fkey(id, full_name, email),
+      homestay:homestays!bookings_homestay_id_fkey!inner(id, name, city, owner_id)
     `)
     .eq("homestay.owner_id", session.user.id)
     .order("created_at", { ascending: false });
 
-  const rawBookings = (bookings || []) as unknown as HostBooking[];
+  if (error) {
+    console.error("Loi lay booking cho host subpage:", error);
+  }
+
+  const rawBookings: HostBooking[] = (bookings || []).map((booking: any) => {
+    const guestData = Array.isArray(booking.guest) ? booking.guest[0] : booking.guest;
+    const homestayData = Array.isArray(booking.homestay) ? booking.homestay[0] : booking.homestay;
+
+    // Calculate nights
+    let nights = 1;
+    if (booking.check_in_date && booking.check_out_date) {
+      const checkIn = new Date(booking.check_in_date);
+      const checkOut = new Date(booking.check_out_date);
+      const diffTime = checkOut.getTime() - checkIn.getTime();
+      if (diffTime > 0) {
+        nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+    }
+
+    const price_per_night = booking.total_price && nights > 0 ? booking.total_price / nights : booking.total_price;
+
+    return {
+      id: booking.id,
+      booking_code: `BK-${booking.id.slice(0, 8).toUpperCase()}`,
+      guest_name: guestData?.full_name || "Khách StaySaga",
+      guest_email: guestData?.email || null,
+      guest_phone: null,
+      check_in_date: booking.check_in_date,
+      check_out_date: booking.check_out_date,
+      guests: booking.guests,
+      nights,
+      price_per_night,
+      total_price: booking.total_price,
+      status: booking.status,
+      payment_status: booking.status === "CONFIRMED" || booking.status === "COMPLETED" ? "PAID" : "UNPAID",
+      special_request: null,
+      created_at: booking.created_at,
+      homestay: homestayData || null,
+    };
+  });
 
   // Filter bookings based on sub segment
   let filteredBookings = rawBookings;

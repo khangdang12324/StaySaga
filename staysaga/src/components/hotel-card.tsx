@@ -19,13 +19,17 @@ export default function HotelCard({ hotel, className = "" }: HotelCardProps) {
 
   const handleCardClick = () => {
     const canonical = resolveToCanonicalSlug(hotel.slug || String(hotel.id));
-    const href = canonical ? `/homestays/${canonical}` : `/homestays?location=${encodeURIComponent(hotel.city)}`;
+    const href = canonical
+      ? `/homestays/${canonical}`
+      : `/homestays?location=${encodeURIComponent(hotel.city)}`;
     router.push(href);
   };
 
   const handleBookingClick = () => {
     const canonical = resolveToCanonicalSlug(hotel.slug || String(hotel.id));
-    const href = canonical ? `/homestays/${canonical}#booking` : `/homestays?location=${encodeURIComponent(hotel.city)}#booking`;
+    const href = canonical
+      ? `/homestays/${canonical}#booking`
+      : `/homestays?location=${encodeURIComponent(hotel.city)}#booking`;
     router.push(href);
   };
 
@@ -76,7 +80,7 @@ export default function HotelCard({ hotel, className = "" }: HotelCardProps) {
             {hotel.city}
           </span>
           <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1">
-            <Bed className="h-4 w-4 text-sky-500" />
+            <Bed className="h-4 w-4 text-rose-500" />
             {hotel.roomTypeLabel}
           </span>
         </div>
@@ -85,13 +89,17 @@ export default function HotelCard({ hotel, className = "" }: HotelCardProps) {
           <div>
             <div className="flex items-center gap-2 text-sm text-zinc-600">
               <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-              <span>{hotel.displayRating ? hotel.displayRating.toFixed(1) : "Mới"}</span>
+              <span>
+                {hotel.displayRating ? hotel.displayRating.toFixed(1) : "Mới"}
+              </span>
               <span className="text-zinc-400">•</span>
               <span>{hotel.reviews_count ?? 0} đánh giá</span>
             </div>
             <div className="mt-1 text-lg font-bold text-zinc-950">
               {hotel.priceFormatted}
-              <span className="ml-1 text-sm font-medium text-zinc-500">/ đêm</span>
+              <span className="ml-1 text-sm font-medium text-zinc-500">
+                / đêm
+              </span>
             </div>
             {hotel.originalPriceFormatted ? (
               <div className="text-xs text-zinc-400 line-through">

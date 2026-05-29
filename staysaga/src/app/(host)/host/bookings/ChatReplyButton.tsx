@@ -20,7 +20,9 @@ export default function ChatReplyButton({
   bookingStatus,
 }: ChatReplyButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [responseType, setResponseType] = useState<"accept" | "decline" | null>(null);
+  const [responseType, setResponseType] = useState<"accept" | "decline" | null>(
+    null,
+  );
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "success">("idle");
   const router = useRouter();
@@ -43,7 +45,7 @@ export default function ChatReplyButton({
       const res = await respondToCancellationRequest(
         bookingId,
         responseType === "accept",
-        note
+        note,
       );
       if (res?.error) {
         toast.error(res.error);
@@ -97,15 +99,19 @@ export default function ChatReplyButton({
                 </h3>
 
                 <div className="text-[13px] leading-relaxed text-slate-600 bg-slate-50 p-3.5 rounded border border-slate-150">
-                  <span className="block font-bold text-slate-500 uppercase text-[10px] tracking-wider mb-1">Tin nhắn của khách:</span>
-                  <p className="italic text-slate-800 font-medium">"{messageText}"</p>
+                  <span className="block font-bold text-slate-500 uppercase text-[10px] tracking-wider mb-1">
+                    Tin nhắn của khách:
+                  </span>
+                  <p className="italic text-slate-800 font-medium">
+                    "{messageText}"
+                  </p>
                 </div>
 
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-slate-800">
                     Quý vị muốn trả lời như thế nào?
                   </h4>
-                  
+
                   <div className="space-y-2">
                     <label className="flex items-center gap-3 cursor-pointer group text-sm font-medium text-slate-800 select-none">
                       <input
@@ -113,9 +119,11 @@ export default function ChatReplyButton({
                         name="response_type"
                         checked={responseType === "accept"}
                         onChange={() => setResponseType("accept")}
-                        className="h-4.5 w-4.5 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        className="h-4.5 w-4.5 text-rose-600 border-slate-300 focus:ring-rose-500 cursor-pointer"
                       />
-                      <span className="group-hover:text-blue-600 transition-colors">Xác nhận miễn phí</span>
+                      <span className="group-hover:text-rose-600 transition-colors">
+                        Xác nhận miễn phí
+                      </span>
                     </label>
 
                     <label className="flex items-center gap-3 cursor-pointer group text-sm font-medium text-slate-800 select-none">
@@ -124,9 +132,11 @@ export default function ChatReplyButton({
                         name="response_type"
                         checked={responseType === "decline"}
                         onChange={() => setResponseType("decline")}
-                        className="h-4.5 w-4.5 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                        className="h-4.5 w-4.5 text-rose-600 border-slate-300 focus:ring-rose-500 cursor-pointer"
                       />
-                      <span className="group-hover:text-blue-600 transition-colors">Từ chối</span>
+                      <span className="group-hover:text-rose-600 transition-colors">
+                        Từ chối
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -141,7 +151,7 @@ export default function ChatReplyButton({
                       onChange={(e) => setNote(e.target.value)}
                       placeholder="Nhập ghi chú phản hồi cho khách..."
                       rows={3}
-                      className="w-full bg-white border border-slate-350 rounded-sm p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium resize-none"
+                      className="w-full bg-white border border-slate-350 rounded-sm p-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all font-medium resize-none"
                     />
                   </div>
                 )}
@@ -155,7 +165,7 @@ export default function ChatReplyButton({
                       setNote("");
                       setStatus("idle");
                     }}
-                    className="border border-blue-600 text-blue-600 hover:bg-blue-50 font-bold px-5 py-2 text-sm transition-colors cursor-pointer rounded-sm"
+                    className="border border-rose-600 text-rose-600 hover:bg-rose-50 font-bold px-5 py-2 text-sm transition-colors cursor-pointer rounded-sm"
                   >
                     Hủy
                   </button>
@@ -165,7 +175,7 @@ export default function ChatReplyButton({
                     onClick={handleSubmit}
                     className={`font-bold px-5 py-2 text-sm transition-all rounded-sm shadow-sm ${
                       responseType
-                        ? "bg-[#006ce4] hover:bg-[#005bb8] text-white cursor-pointer"
+                        ? "bg-[#f60057] hover:bg-[#d9004e] text-white cursor-pointer"
                         : "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300"
                     }`}
                   >
@@ -180,10 +190,10 @@ export default function ChatReplyButton({
                 <h3 className="text-lg font-bold text-slate-900">
                   Yêu cầu hủy miễn phí
                 </h3>
-                
+
                 {/* Spinning Loader */}
-                <div className="h-10 w-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin my-4" />
-                
+                <div className="h-10 w-10 border-4 border-rose-100 border-t-rose-600 rounded-full animate-spin my-4" />
+
                 <p className="text-sm font-bold text-slate-600">
                   Đang gửi phản hồi của Quý vị...
                 </p>
@@ -195,10 +205,14 @@ export default function ChatReplyButton({
                 <h3 className="text-[17px] font-extrabold text-slate-900 border-b border-slate-150 pb-3">
                   Yêu cầu hủy miễn phí
                 </h3>
-                
+
                 <div className="text-[13px] leading-relaxed text-slate-600 bg-slate-50 p-3.5 rounded border border-slate-150">
-                  <span className="block font-bold text-slate-500 uppercase text-[10px] tracking-wider mb-1">Tin nhắn của khách:</span>
-                  <p className="italic text-slate-800 font-medium">"{messageText}"</p>
+                  <span className="block font-bold text-slate-500 uppercase text-[10px] tracking-wider mb-1">
+                    Tin nhắn của khách:
+                  </span>
+                  <p className="italic text-slate-800 font-medium">
+                    "{messageText}"
+                  </p>
                 </div>
 
                 <div className="py-4 text-center">
@@ -217,7 +231,7 @@ export default function ChatReplyButton({
                       setStatus("idle");
                       router.refresh();
                     }}
-                    className="border border-blue-600 text-blue-600 hover:bg-blue-50 font-bold px-7 py-2 text-sm transition-all cursor-pointer rounded-sm"
+                    className="border border-rose-600 text-rose-600 hover:bg-rose-50 font-bold px-7 py-2 text-sm transition-all cursor-pointer rounded-sm"
                   >
                     Đóng
                   </button>

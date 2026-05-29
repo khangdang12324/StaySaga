@@ -39,13 +39,23 @@ type BookingRow = {
   cancel_reason: string | null;
   special_requests: string | null;
   created_at: string;
-  guest: { id: string; full_name: string | null; email: string | null; phone: string | null } | null;
+  guest: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    phone: string | null;
+  } | null;
   homestay: {
     id: string;
     name: string | null;
     city: string | null;
     owner_id: string | null;
-    owner: { id: string; full_name: string | null; email: string | null; phone: string | null } | null;
+    owner: {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      phone: string | null;
+    } | null;
   } | null;
 };
 
@@ -79,7 +89,9 @@ export function AdminBookingsClient({
   const [isPending, startTransition] = useTransition();
 
   // Selected Booking for Detail Drawer
-  const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(
+    null,
+  );
   const [cancelReason, setCancelReason] = useState("");
   const [showCancelInput, setShowCancelInput] = useState(false);
 
@@ -106,7 +118,7 @@ export function AdminBookingsClient({
         (payload) => {
           console.log("Realtime INSERT detected in bookings:", payload);
           setHasNewBookings(true);
-        }
+        },
       )
       .subscribe();
 
@@ -172,7 +184,7 @@ export function AdminBookingsClient({
         );
       case "COMPLETED":
         return (
-          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
             ĐÃ HOÀN TẤT
           </span>
         );
@@ -214,7 +226,7 @@ export function AdminBookingsClient({
         );
       case "PAY_AT_PROPERTY":
         return (
-          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black bg-blue-100 text-blue-800 whitespace-nowrap">
+          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black bg-rose-100 text-rose-800 whitespace-nowrap">
             THANH TOÁN TẠI CHỖ
           </span>
         );
@@ -247,7 +259,7 @@ export function AdminBookingsClient({
   const executeStatusChange = (
     bookingId: string,
     newStatus: string,
-    reason?: string
+    reason?: string,
   ) => {
     const loadingToastId = toast.loading("Đang cập nhật trạng thái đơn...");
     startTransition(async () => {
@@ -260,7 +272,9 @@ export function AdminBookingsClient({
 
       try {
         await updateBookingStatus(fd);
-        toast.success("Cập nhật trạng thái thành công!", { id: loadingToastId });
+        toast.success("Cập nhật trạng thái thành công!", {
+          id: loadingToastId,
+        });
         setShowCancelInput(false);
         setCancelReason("");
         router.refresh();
@@ -268,12 +282,16 @@ export function AdminBookingsClient({
         console.error("Lỗi cập nhật trạng thái đơn:", err);
         const errMsg = err instanceof Error ? err.message : String(err);
         if (errMsg.includes("NEXT_REDIRECT")) {
-          toast.success("Cập nhật trạng thái thành công!", { id: loadingToastId });
+          toast.success("Cập nhật trạng thái thành công!", {
+            id: loadingToastId,
+          });
           setShowCancelInput(false);
           setCancelReason("");
           router.refresh();
         } else {
-          toast.error("Thao tác thất bại. Vui lòng thử lại.", { id: loadingToastId });
+          toast.error("Thao tác thất bại. Vui lòng thử lại.", {
+            id: loadingToastId,
+          });
         }
       }
     });
@@ -425,10 +443,14 @@ export function AdminBookingsClient({
       >
         {/* Pass hidden values for tab & page settings */}
         <input type="hidden" name="status" value={currentStatusTab} />
-        {ownerIdParam && <input type="hidden" name="ownerId" value={ownerIdParam} />}
+        {ownerIdParam && (
+          <input type="hidden" name="ownerId" value={ownerIdParam} />
+        )}
 
         <div className="block md:col-span-2">
-          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">Tìm kiếm đơn đặt</span>
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">
+            Tìm kiếm đơn đặt
+          </span>
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
             <input
@@ -441,7 +463,9 @@ export function AdminBookingsClient({
         </div>
 
         <div className="block">
-          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">Thành phố</span>
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">
+            Thành phố
+          </span>
           <select
             name="city"
             defaultValue={cityParam}
@@ -457,7 +481,9 @@ export function AdminBookingsClient({
         </div>
 
         <div className="block">
-          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">Thanh toán</span>
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">
+            Thanh toán
+          </span>
           <select
             name="paymentStatus"
             defaultValue={paymentStatusParam}
@@ -472,7 +498,9 @@ export function AdminBookingsClient({
         </div>
 
         <div className="block">
-          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">Ngày nhận phòng</span>
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">
+            Ngày nhận phòng
+          </span>
           <input
             type="date"
             name="checkInDate"
@@ -482,7 +510,9 @@ export function AdminBookingsClient({
         </div>
 
         <div className="block">
-          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">Ngày đặt phòng</span>
+          <span className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-600">
+            Ngày đặt phòng
+          </span>
           <input
             type="date"
             name="createdDate"
@@ -516,20 +546,31 @@ export function AdminBookingsClient({
                 <th className="px-6 py-4 whitespace-nowrap">Mã đơn</th>
                 <th className="px-6 py-4 whitespace-nowrap">Khách hàng</th>
                 <th className="px-6 py-4 whitespace-nowrap">Chỗ nghỉ</th>
-                <th className="px-6 py-4 text-center whitespace-nowrap">Nhận phòng</th>
-                <th className="px-6 py-4 text-center whitespace-nowrap">Trả phòng</th>
-                <th className="px-6 py-4 text-center whitespace-nowrap">Khách</th>
+                <th className="px-6 py-4 text-center whitespace-nowrap">
+                  Nhận phòng
+                </th>
+                <th className="px-6 py-4 text-center whitespace-nowrap">
+                  Trả phòng
+                </th>
+                <th className="px-6 py-4 text-center whitespace-nowrap">
+                  Khách
+                </th>
                 <th className="px-6 py-4 whitespace-nowrap">Tổng tiền</th>
                 <th className="px-6 py-4 whitespace-nowrap">Thanh toán</th>
                 <th className="px-6 py-4 whitespace-nowrap">Trạng thái đơn</th>
                 <th className="px-6 py-4 whitespace-nowrap">Ngày đặt</th>
-                <th className="px-6 py-4 text-right whitespace-nowrap">Thao tác</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap">
+                  Thao tác
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-6 py-16 text-center text-slate-500 font-bold">
+                  <td
+                    colSpan={11}
+                    className="px-6 py-16 text-center text-slate-500 font-bold"
+                  >
                     Chưa có đơn đặt phòng nào.
                   </td>
                 </tr>
@@ -547,7 +588,10 @@ export function AdminBookingsClient({
                     <td className="px-6 py-4 font-mono text-xs font-black text-slate-900 whitespace-nowrap">
                       {bk.booking_code}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="px-6 py-4 whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
                           <User className="h-4 w-4" />
@@ -556,11 +600,16 @@ export function AdminBookingsClient({
                           <p className="font-bold text-slate-900 text-sm leading-snug">
                             {bk.guest?.full_name || "Khách Vãng Lai"}
                           </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">{bk.guest?.email || "-"}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            {bk.guest?.email || "-"}
+                          </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="px-6 py-4 whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500">
                           <Home className="h-4 w-4" />
@@ -569,7 +618,9 @@ export function AdminBookingsClient({
                           <p className="font-bold text-slate-900 text-sm leading-snug max-w-[200px] truncate">
                             {bk.homestay?.name || "Chỗ nghỉ bị xóa"}
                           </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">{bk.homestay?.city || "-"}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            {bk.homestay?.city || "-"}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -587,12 +638,19 @@ export function AdminBookingsClient({
                         ? formatVND(bk.total_price)
                         : bk.total_price || "0 đ"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{getPaymentStatusBadge(bk.payment_status)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(bk.status)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getPaymentStatusBadge(bk.payment_status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(bk.status)}
+                    </td>
                     <td className="px-6 py-4 text-xs font-semibold text-slate-500 whitespace-nowrap">
                       {formatShortDate(bk.created_at)}
                     </td>
-                    <td className="px-6 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="px-6 py-4 text-right whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <button
                         onClick={() => {
                           setSelectedBooking(bk);
@@ -627,9 +685,14 @@ export function AdminBookingsClient({
             {/* Drawer Header */}
             <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div>
-                <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Chi tiết đơn đặt</p>
+                <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">
+                  Chi tiết đơn đặt
+                </p>
                 <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-1.5 mt-0.5">
-                  Mã: <span className="font-mono text-slate-700">{selectedBooking.booking_code}</span>
+                  Mã:{" "}
+                  <span className="font-mono text-slate-700">
+                    {selectedBooking.booking_code}
+                  </span>
                 </h3>
               </div>
               <button
@@ -645,41 +708,55 @@ export function AdminBookingsClient({
               {/* Status Section */}
               <div className="p-4 rounded-xl border bg-slate-50/50 flex flex-col gap-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-wide">Trạng thái đơn</span>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wide">
+                    Trạng thái đơn
+                  </span>
                   {getStatusBadge(selectedBooking.status)}
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-wide">Thanh toán</span>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wide">
+                    Thanh toán
+                  </span>
                   {getPaymentStatusBadge(selectedBooking.payment_status)}
                 </div>
-                {selectedBooking.status === "CANCELLED" && selectedBooking.cancel_reason && (
-                  <div className="mt-2 p-2.5 rounded bg-rose-50 border border-rose-100 text-xs font-bold text-rose-800">
-                    <p className="font-black uppercase tracking-wider text-[9px] text-rose-500 mb-0.5">Lý do hủy:</p>
-                    {selectedBooking.cancel_reason}
-                  </div>
-                )}
+                {selectedBooking.status === "CANCELLED" &&
+                  selectedBooking.cancel_reason && (
+                    <div className="mt-2 p-2.5 rounded bg-rose-50 border border-rose-100 text-xs font-bold text-rose-800">
+                      <p className="font-black uppercase tracking-wider text-[9px] text-rose-500 mb-0.5">
+                        Lý do hủy:
+                      </p>
+                      {selectedBooking.cancel_reason}
+                    </div>
+                  )}
               </div>
 
               {/* Guest Profile Section */}
               <div className="space-y-3">
                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <User className="h-4 w-4 text-slate-400" /> Thông tin khách hàng
+                  <User className="h-4 w-4 text-slate-400" /> Thông tin khách
+                  hàng
                 </h4>
                 <div className="p-3 border rounded-xl space-y-2 bg-white text-slate-800">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-slate-500">Tên khách:</span>
-                    <span className="font-extrabold text-slate-900">{selectedBooking.guest?.full_name || "Khách Vãng Lai"}</span>
+                    <span className="font-extrabold text-slate-900">
+                      {selectedBooking.guest?.full_name || "Khách Vãng Lai"}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-slate-500">Email:</span>
                     <span className="font-mono font-bold text-slate-900 flex items-center gap-1">
-                      <Mail className="h-3 w-3 text-slate-400" /> {selectedBooking.guest?.email || "-"}
+                      <Mail className="h-3 w-3 text-slate-400" />{" "}
+                      {selectedBooking.guest?.email || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-slate-500">Số điện thoại:</span>
+                    <span className="font-bold text-slate-500">
+                      Số điện thoại:
+                    </span>
                     <span className="font-bold text-slate-900 flex items-center gap-1">
-                      <Phone className="h-3 w-3 text-slate-400" /> {selectedBooking.guest?.phone || "Chưa cung cấp"}
+                      <Phone className="h-3 w-3 text-slate-400" />{" "}
+                      {selectedBooking.guest?.phone || "Chưa cung cấp"}
                     </span>
                   </div>
                 </div>
@@ -692,18 +769,27 @@ export function AdminBookingsClient({
                 </h4>
                 <div className="p-3 border rounded-xl space-y-2 bg-white text-slate-800">
                   <div className="flex justify-between items-start text-xs">
-                    <span className="font-bold text-slate-500 shrink-0">Tên chỗ nghỉ:</span>
-                    <span className="font-extrabold text-slate-900 text-right">{selectedBooking.homestay?.name || "Chỗ nghỉ bị xóa"}</span>
+                    <span className="font-bold text-slate-500 shrink-0">
+                      Tên chỗ nghỉ:
+                    </span>
+                    <span className="font-extrabold text-slate-900 text-right">
+                      {selectedBooking.homestay?.name || "Chỗ nghỉ bị xóa"}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-slate-500">Thành phố:</span>
-                    <span className="font-bold text-slate-900">{selectedBooking.homestay?.city || "-"}</span>
+                    <span className="font-bold text-slate-900">
+                      {selectedBooking.homestay?.city || "-"}
+                    </span>
                   </div>
                   <div className="border-t border-slate-100 my-2 pt-2" />
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-slate-500">Chủ homestay:</span>
+                    <span className="font-bold text-slate-500">
+                      Chủ homestay:
+                    </span>
                     <span className="font-extrabold text-slate-950 flex items-center gap-1">
-                      <UserCheck className="h-3.5 w-3.5 text-slate-400" /> {selectedBooking.homestay?.owner?.full_name || "Chưa rõ"}
+                      <UserCheck className="h-3.5 w-3.5 text-slate-400" />{" "}
+                      {selectedBooking.homestay?.owner?.full_name || "Chưa rõ"}
                     </span>
                   </div>
                   {selectedBooking.homestay?.owner?.email && (
@@ -718,33 +804,53 @@ export function AdminBookingsClient({
               {/* Schedule and Pricing details */}
               <div className="space-y-3">
                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-slate-400" /> Thời gian lưu trú & Giá
+                  <Calendar className="h-4 w-4 text-slate-400" /> Thời gian lưu
+                  trú & Giá
                 </h4>
                 <div className="p-3 border rounded-xl space-y-2.5 bg-white text-slate-800">
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div className="p-2 bg-slate-50 rounded-lg">
-                      <p className="text-[10px] font-black text-slate-400 uppercase">Check-In</p>
-                      <p className="text-xs font-black text-slate-900 mt-0.5">{formatShortDate(selectedBooking.check_in_date)}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">
+                        Check-In
+                      </p>
+                      <p className="text-xs font-black text-slate-900 mt-0.5">
+                        {formatShortDate(selectedBooking.check_in_date)}
+                      </p>
                     </div>
                     <div className="p-2 bg-slate-50 rounded-lg">
-                      <p className="text-[10px] font-black text-slate-400 uppercase">Check-Out</p>
-                      <p className="text-xs font-black text-slate-900 mt-0.5">{formatShortDate(selectedBooking.check_out_date)}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">
+                        Check-Out
+                      </p>
+                      <p className="text-xs font-black text-slate-900 mt-0.5">
+                        {formatShortDate(selectedBooking.check_out_date)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-slate-500">Số đêm lưu trú:</span>
+                    <span className="font-bold text-slate-500">
+                      Số đêm lưu trú:
+                    </span>
                     <span className="font-extrabold text-slate-900">
-                      {getDaysDiff(selectedBooking.check_in_date, selectedBooking.check_out_date)} đêm
+                      {getDaysDiff(
+                        selectedBooking.check_in_date,
+                        selectedBooking.check_out_date,
+                      )}{" "}
+                      đêm
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-slate-500">Số lượng khách:</span>
-                    <span className="font-extrabold text-slate-900">{selectedBooking.guests} khách</span>
+                    <span className="font-bold text-slate-500">
+                      Số lượng khách:
+                    </span>
+                    <span className="font-extrabold text-slate-900">
+                      {selectedBooking.guests} khách
+                    </span>
                   </div>
                   <div className="border-t border-slate-100 my-2 pt-2" />
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-slate-500 flex items-center gap-1">
-                      <DollarSign className="h-3.5 w-3.5 text-slate-400" /> Tổng tiền:
+                      <DollarSign className="h-3.5 w-3.5 text-slate-400" /> Tổng
+                      tiền:
                     </span>
                     <span className="font-black text-sm text-rose-600">
                       {typeof selectedBooking.total_price === "number"
@@ -758,24 +864,32 @@ export function AdminBookingsClient({
               {/* Special Requests */}
               <div className="space-y-3">
                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText className="h-4 w-4 text-slate-400" /> Yêu cầu đặc biệt
+                  <FileText className="h-4 w-4 text-slate-400" /> Yêu cầu đặc
+                  biệt
                 </h4>
                 <div className="p-3 border rounded-xl bg-white text-xs font-bold text-slate-700 min-h-[60px]">
-                  {selectedBooking.special_requests || "Không có yêu cầu đặc biệt."}
+                  {selectedBooking.special_requests ||
+                    "Không có yêu cầu đặc biệt."}
                 </div>
               </div>
 
               {/* Booking Logs */}
               <div className="space-y-3">
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Lịch sử giao dịch</h4>
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                  Lịch sử giao dịch
+                </h4>
                 <div className="p-3 border rounded-xl bg-white space-y-2 text-[10px] text-slate-500 font-semibold">
                   <div className="flex justify-between">
                     <span>Đơn được tạo lúc:</span>
-                    <span className="font-mono">{formatDateTime(selectedBooking.created_at)}</span>
+                    <span className="font-mono">
+                      {formatDateTime(selectedBooking.created_at)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Cập nhật cuối lúc:</span>
-                    <span className="font-mono">{formatDateTime(selectedBooking.created_at)}</span>
+                    <span className="font-mono">
+                      {formatDateTime(selectedBooking.created_at)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -785,7 +899,8 @@ export function AdminBookingsClient({
             <div className="p-5 border-t border-slate-200 bg-slate-50">
               {isPending && (
                 <div className="mb-3 flex items-center justify-center gap-2 text-xs font-bold text-rose-600">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Đang cập nhật hệ thống...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Đang cập nhật hệ
+                  thống...
                 </div>
               )}
 
@@ -795,10 +910,7 @@ export function AdminBookingsClient({
                   <div className="flex gap-2">
                     <button
                       onClick={() =>
-                        executeStatusChange(
-                          selectedBooking.id,
-                          "CONFIRMED"
-                        )
+                        executeStatusChange(selectedBooking.id, "CONFIRMED")
                       }
                       disabled={isPending}
                       className="flex-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 text-xs font-black transition-colors flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-800/10 disabled:opacity-50"
@@ -807,7 +919,9 @@ export function AdminBookingsClient({
                     </button>
                     <button
                       onClick={() => {
-                        const confirmReject = window.confirm("Bạn có chắc chắn muốn Từ chối đơn đặt phòng này?");
+                        const confirmReject = window.confirm(
+                          "Bạn có chắc chắn muốn Từ chối đơn đặt phòng này?",
+                        );
                         if (confirmReject) {
                           executeStatusChange(selectedBooking.id, "REJECTED");
                         }
@@ -824,15 +938,13 @@ export function AdminBookingsClient({
                 {selectedBooking.status === "CONFIRMED" && (
                   <button
                     onClick={() =>
-                      executeStatusChange(
-                        selectedBooking.id,
-                        "CHECKED_IN"
-                      )
+                      executeStatusChange(selectedBooking.id, "CHECKED_IN")
                     }
                     disabled={isPending}
                     className="w-full rounded-lg bg-purple-600 hover:bg-purple-700 text-white py-2.5 text-xs font-black transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
                   >
-                    <CheckCircle className="h-4 w-4" /> Khách đã nhận phòng (CHECKED_IN)
+                    <CheckCircle className="h-4 w-4" /> Khách đã nhận phòng
+                    (CHECKED_IN)
                   </button>
                 )}
 
@@ -840,13 +952,10 @@ export function AdminBookingsClient({
                 {selectedBooking.status === "CHECKED_IN" && (
                   <button
                     onClick={() =>
-                      executeStatusChange(
-                        selectedBooking.id,
-                        "COMPLETED"
-                      )
+                      executeStatusChange(selectedBooking.id, "COMPLETED")
                     }
                     disabled={isPending}
-                    className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white py-2.5 text-xs font-black transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                    className="w-full rounded-lg bg-rose-600 hover:bg-rose-700 text-white py-2.5 text-xs font-black transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
                   >
                     <Check className="h-4 w-4" /> Đơn hoàn tất (COMPLETED)
                   </button>
@@ -856,7 +965,9 @@ export function AdminBookingsClient({
                 {selectedBooking.status === "CONFIRMED" && (
                   <button
                     onClick={() => {
-                      const confirmNoShow = window.confirm("Xác nhận khách không đến nhận phòng (NO_SHOW)?");
+                      const confirmNoShow = window.confirm(
+                        "Xác nhận khách không đến nhận phòng (NO_SHOW)?",
+                      );
                       if (confirmNoShow) {
                         executeStatusChange(selectedBooking.id, "NO_SHOW");
                       }
@@ -900,7 +1011,7 @@ export function AdminBookingsClient({
                               executeStatusChange(
                                 selectedBooking.id,
                                 "CANCELLED",
-                                cancelReason
+                                cancelReason,
                               )
                             }
                             disabled={isPending || !cancelReason.trim()}
@@ -923,7 +1034,7 @@ export function AdminBookingsClient({
 
                 {/* Finalized states info */}
                 {selectedBooking.status === "COMPLETED" && (
-                  <div className="p-3 bg-blue-50 border border-blue-100 text-xs font-bold text-blue-700 text-center rounded-xl">
+                  <div className="p-3 bg-rose-50 border border-rose-100 text-xs font-bold text-rose-700 text-center rounded-xl">
                     Đơn đặt đã hoàn thành. Không thể chỉnh sửa trạng thái.
                   </div>
                 )}

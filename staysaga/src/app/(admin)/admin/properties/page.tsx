@@ -2,10 +2,12 @@ import { AdminShell, requireAdmin } from "../_components/AdminShell";
 import { createAdminClient } from "@/lib/supabase/server";
 import { AdminPropertiesClient } from "./AdminPropertiesClient";
 import { RealtimeSubscription } from "@/components/realtime/RealtimeSubscription";
+import { isPropertyStatus } from "@/core/properties/status";
 
 type AdminPropertiesPageProps = {
   searchParams?: Promise<{
     status?: string;
+    propertyStatus?: string;
     error?: string;
     page?: string;
     limit?: string;
@@ -15,6 +17,11 @@ type AdminPropertiesPageProps = {
     ownerId?: string;
   }>;
 };
+
+function getStatusFilter(value?: string) {
+  const status = value || "";
+  return isPropertyStatus(status) || status === "ON_SALE" ? status : "";
+}
 
 const errorMessages: Record<string, string> = {
   invalid: "Dữ liệu thao tác không hợp lệ.",
@@ -35,7 +42,7 @@ export default async function AdminPropertiesPage({ searchParams }: AdminPropert
   await requireAdmin();
   const params = searchParams ? await searchParams : {};
   
-  const statusFilter = params.status || "";
+  const statusFilter = getStatusFilter(params.propertyStatus || params.status);
   const q = params.q?.trim() || "";
   const cityFilter = params.city || "";
   const ownerFilter = params.owner?.trim() || "";

@@ -33,7 +33,14 @@ import {
   X,
 } from "lucide-react";
 import { PendingSubmitButton } from "@/components/ui/PendingSubmitButton";
-import { createHostHomestay, saveDatabaseDraftAction, savePhotosStepAction, saveRegistrationStepAction, deleteHomestayImagesAction, updateImagesSortOrderAction } from "@/core/host/actions";
+import {
+  createHostHomestay,
+  saveDatabaseDraftAction,
+  savePhotosStepAction,
+  saveRegistrationStepAction,
+  deleteHomestayImagesAction,
+  updateImagesSortOrderAction,
+} from "@/core/host/actions";
 
 const DB_NAME = "staysaga-host-register";
 const FILE_STORE = "files";
@@ -357,9 +364,14 @@ const mergeDraftWithDefault = (draft?: Draft | null): Draft => {
   const base = createDefaultDraft();
   if (!draft) return base;
 
+  const address = draft.address === "Chưa thiết lập" ? "" : draft.address || "";
+  const city = draft.city === "Chưa thiết lập" ? "" : draft.city || "";
+
   return {
     ...base,
     ...draft,
+    address,
+    city,
     bedrooms: draft.bedrooms?.length ? draft.bedrooms : base.bedrooms,
     amenities: draft.amenities ?? base.amenities,
     languages: draft.languages?.length ? draft.languages : base.languages,
@@ -382,29 +394,52 @@ const stageForStep = (index: number) => {
 function getStepKey(stepIndex: number): string {
   const stepName = steps[stepIndex];
   switch (stepName) {
-    case "category": return "propertyType";
-    case "units": return "unitMode";
-    case "confirm": return "confirm";
-    case "name": return "basicInfo";
-    case "address": return "address";
-    case "channel": return "channel";
-    case "details": return "details";
-    case "bedroom": return "rooms";
-    case "amenities": return "amenities";
-    case "services": return "services";
-    case "languages": return "languages";
-    case "policies": return "policies";
-    case "partner-profile": return "partnerProfile";
-    case "photos": return "photos";
-    case "booking": return "booking";
-    case "price": return "price";
-    case "availability": return "availability";
-    case "rates": return "rates";
-    case "non-refundable": return "nonRefundable";
-    case "group-pricing": return "groupPricing";
-    case "legal": return "verification";
-    case "review": return "review";
-    default: return String(stepName);
+    case "category":
+      return "propertyType";
+    case "units":
+      return "unitMode";
+    case "confirm":
+      return "confirm";
+    case "name":
+      return "basicInfo";
+    case "address":
+      return "address";
+    case "channel":
+      return "channel";
+    case "details":
+      return "details";
+    case "bedroom":
+      return "rooms";
+    case "amenities":
+      return "amenities";
+    case "services":
+      return "services";
+    case "languages":
+      return "languages";
+    case "policies":
+      return "policies";
+    case "partner-profile":
+      return "partnerProfile";
+    case "photos":
+      return "photos";
+    case "booking":
+      return "booking";
+    case "price":
+      return "price";
+    case "availability":
+      return "availability";
+    case "rates":
+      return "rates";
+    case "non-refundable":
+      return "nonRefundable";
+    case "group-pricing":
+      return "groupPricing";
+    case "legal":
+      return "verification";
+    case "review":
+      return "review";
+    default:
+      return String(stepName);
   }
 }
 
@@ -440,14 +475,19 @@ const photoWarning = (file: File, existing: StoredPhoto[]) => {
   if (file.size < 20 * 1024) return "Ảnh quá nhỏ";
   if (
     existing.some(
-      (photo) => photo.file && photo.file.name === file.name && photo.file.size === file.size,
+      (photo) =>
+        photo.file &&
+        photo.file.name === file.name &&
+        photo.file.size === file.size,
     )
   )
     return "Ảnh bị trùng";
   return undefined;
 };
 
-const checkImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+const checkImageDimensions = (
+  file: File,
+): Promise<{ width: number; height: number }> => {
   return new Promise((resolve) => {
     if (typeof window === "undefined" || !window.URL) {
       resolve({ width: 0, height: 0 });
@@ -559,20 +599,20 @@ function getStepValidation(
     }
     if (draft.legalOwnerType === "business") {
       if (!draft.businessName.trim())
-    errors.push("Vui lòng nhập tên đầy đủ của pháp nhân doanh nghiệp.");
+        errors.push("Vui lòng nhập tên đầy đủ của pháp nhân doanh nghiệp.");
       if (!draft.businessAddress.trim())
-    errors.push("Vui lòng nhập địa chỉ của pháp nhân doanh nghiệp.");
+        errors.push("Vui lòng nhập địa chỉ của pháp nhân doanh nghiệp.");
       if (!draft.businessPostalCode.trim())
-    errors.push("Vui lòng nhập mã bưu điện.");
+        errors.push("Vui lòng nhập mã bưu điện.");
       if (!draft.businessCity.trim())
-    errors.push("Vui lòng nhập thành phố của pháp nhân doanh nghiệp.");
+        errors.push("Vui lòng nhập thành phố của pháp nhân doanh nghiệp.");
     }
     draft.owners.forEach((owner, idx) => {
       if (!owner.firstName.trim() || !owner.lastName.trim()) {
-      errors.push(`Vui lòng điền đầy đủ họ và tên cho cá nhân #${idx + 1}.`);
+        errors.push(`Vui lòng điền đầy đủ họ và tên cho cá nhân #${idx + 1}.`);
       }
       if (!owner.dateOfBirth) {
-      errors.push(`Vui lòng điền ngày sinh cho cá nhân #${idx + 1}.`);
+        errors.push(`Vui lòng điền ngày sinh cho cá nhân #${idx + 1}.`);
       }
     });
   }
@@ -604,7 +644,7 @@ function getFinalErrors(draft: Draft, photos: StoredPhoto[]) {
       !draft.businessPostalCode.trim() ||
       !draft.businessCity.trim()
     ) {
-    errors.push("Thiếu thông tin pháp nhân doanh nghiệp.");
+      errors.push("Thiếu thông tin pháp nhân doanh nghiệp.");
     }
   }
   const hasIncompleteOwner = draft.owners.some(
@@ -647,12 +687,14 @@ export default function PropertyRegistrationWizard({
   );
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [restored, setRestored] = useState(false);
-  const [lastLoadedId, setLastLoadedId] = useState<string | undefined>(undefined);
+  const [lastLoadedId, setLastLoadedId] = useState<string | undefined>(
+    undefined,
+  );
   const isInitializingRef = useRef(false);
   const [dragActive, setDragActive] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  
+
   // New States for Confirmation / Warning modals
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [targetStepIndex, setTargetStepIndex] = useState<number | null>(null);
@@ -761,7 +803,10 @@ export default function PropertyRegistrationWizard({
 
     // 1. Determine DB draft and DB current step
     const dbDraft = initialDraft ? mergeDraftWithDefault(initialDraft) : null;
-    const dbCurrentStep = dbDraft && typeof dbDraft.currentStep === "number" ? dbDraft.currentStep : 0;
+    const dbCurrentStep =
+      dbDraft && typeof dbDraft.currentStep === "number"
+        ? dbDraft.currentStep
+        : 0;
 
     let finalDraft = dbDraft || createDefaultDraft();
     let finalCurrentStep = dbCurrentStep;
@@ -800,9 +845,12 @@ export default function PropertyRegistrationWizard({
 
     // 3. Merge local draft if it is newer and belongs to the same property
     if (localDraft && dbDraft && dbDraft.id === localDraft.id) {
-      const dbUpdatedAt = (initialDraft as any)?.registration_checklist?.updatedAt || "";
+      const dbUpdatedAt =
+        (initialDraft as any)?.registration_checklist?.updatedAt || "";
       const localUpdatedAt = (localDraft as any).updatedAt || "";
-      const isLocalNewer = !dbUpdatedAt || (localUpdatedAt && new Date(localUpdatedAt) > new Date(dbUpdatedAt));
+      const isLocalNewer =
+        !dbUpdatedAt ||
+        (localUpdatedAt && new Date(localUpdatedAt) > new Date(dbUpdatedAt));
 
       if (isLocalNewer) {
         finalDraft = {
@@ -810,7 +858,10 @@ export default function PropertyRegistrationWizard({
           ...localDraft,
           id: dbDraft.id, // preserve DB ID
         };
-        const localCurrentStep = typeof localDraft.currentStep === "number" ? localDraft.currentStep : 0;
+        const localCurrentStep =
+          typeof localDraft.currentStep === "number"
+            ? localDraft.currentStep
+            : 0;
         finalCurrentStep = Math.max(dbCurrentStep, localCurrentStep);
       }
     } else if (localDraft && !dbDraft) {
@@ -824,18 +875,26 @@ export default function PropertyRegistrationWizard({
     }
 
     // Sanitize finalDraft fields
-    if (finalDraft.address) finalDraft.address = sanitizeText(finalDraft.address);
+    if (finalDraft.address)
+      finalDraft.address = sanitizeText(finalDraft.address);
     if (finalDraft.city) finalDraft.city = sanitizeText(finalDraft.city);
-    if (finalDraft.district) finalDraft.district = sanitizeText(finalDraft.district);
-    if (finalDraft.country) finalDraft.country = sanitizeText(finalDraft.country);
+    if (finalDraft.district)
+      finalDraft.district = sanitizeText(finalDraft.district);
+    if (finalDraft.country)
+      finalDraft.country = sanitizeText(finalDraft.country);
     if (finalDraft.name) finalDraft.name = sanitizeText(finalDraft.name);
-    if (finalDraft.description) finalDraft.description = sanitizeText(finalDraft.description);
-    if (finalDraft.businessName) finalDraft.businessName = sanitizeText(finalDraft.businessName);
-    if (finalDraft.businessAddress) finalDraft.businessAddress = sanitizeText(finalDraft.businessAddress);
-    if (finalDraft.businessCity) finalDraft.businessCity = sanitizeText(finalDraft.businessCity);
-    if (finalDraft.businessCountry) finalDraft.businessCountry = sanitizeText(finalDraft.businessCountry);
+    if (finalDraft.description)
+      finalDraft.description = sanitizeText(finalDraft.description);
+    if (finalDraft.businessName)
+      finalDraft.businessName = sanitizeText(finalDraft.businessName);
+    if (finalDraft.businessAddress)
+      finalDraft.businessAddress = sanitizeText(finalDraft.businessAddress);
+    if (finalDraft.businessCity)
+      finalDraft.businessCity = sanitizeText(finalDraft.businessCity);
+    if (finalDraft.businessCountry)
+      finalDraft.businessCountry = sanitizeText(finalDraft.businessCountry);
     if (Array.isArray(finalDraft.owners)) {
-      finalDraft.owners = finalDraft.owners.map(owner => ({
+      finalDraft.owners = finalDraft.owners.map((owner) => ({
         ...owner,
         firstName: sanitizeText(owner.firstName || ""),
         lastName: sanitizeText(owner.lastName || ""),
@@ -881,10 +940,13 @@ export default function PropertyRegistrationWizard({
         );
       } else if (initialImages && initialImages.length > 0) {
         setPhotos(
-          initialImages.map((img) => ({
-            id: img.id,
-            url: img.url,
-          }) as any)
+          initialImages.map(
+            (img) =>
+              ({
+                id: img.id,
+                url: img.url,
+              }) as any,
+          ),
         );
       }
       setLastLoadedId(currentId);
@@ -928,7 +990,11 @@ export default function PropertyRegistrationWizard({
     if (!restored) return;
     localStorage.setItem(
       DRAFT_KEY,
-      JSON.stringify({ ...draft, currentStep, updatedAt: new Date().toISOString() }),
+      JSON.stringify({
+        ...draft,
+        currentStep,
+        updatedAt: new Date().toISOString(),
+      }),
     );
   }, [draft, restored, currentStep]);
 
@@ -939,9 +1005,11 @@ export default function PropertyRegistrationWizard({
     const timer = setTimeout(async () => {
       try {
         const draftWithStep = { ...draft, currentStep };
-        const result = await saveDatabaseDraftAction(JSON.stringify(draftWithStep));
-        if (result && 'id' in result && result.id && result.id !== draft.id) {
-          setDraft(prev => ({ ...prev, id: result.id }));
+        const result = await saveDatabaseDraftAction(
+          JSON.stringify(draftWithStep),
+        );
+        if (result && "id" in result && result.id && result.id !== draft.id) {
+          setDraft((prev) => ({ ...prev, id: result.id }));
         }
       } catch (err) {
         console.error("Failed to save database draft:", err);
@@ -953,7 +1021,10 @@ export default function PropertyRegistrationWizard({
 
   useEffect(() => {
     if (!restored) return;
-    void saveFiles(photos.map((photo) => photo.file).filter(Boolean) as File[], userId);
+    void saveFiles(
+      photos.map((photo) => photo.file).filter(Boolean) as File[],
+      userId,
+    );
   }, [photos, restored, userId]);
 
   const updateDraft = <K extends keyof Draft>(key: K, value: Draft[K]) => {
@@ -1043,12 +1114,18 @@ export default function PropertyRegistrationWizard({
       let currentId = draft.id;
       if (!currentId) {
         const draftWithStep = { ...draft, currentStep };
-        const result = await saveDatabaseDraftAction(JSON.stringify(draftWithStep));
-        if (result && 'id' in result && result.id) {
+        const result = await saveDatabaseDraftAction(
+          JSON.stringify(draftWithStep),
+        );
+        if (result && "id" in result && result.id) {
           currentId = result.id;
           setDraft((prev) => ({ ...prev, id: result.id }));
         } else {
-          throw new Error("Không thể khởi tạo bản nháp chỗ nghỉ trên hệ thống.");
+          throw new Error(
+            result && "error" in result && result.error
+              ? String(result.error)
+              : "Không thể khởi tạo bản nháp chỗ nghỉ trên hệ thống.",
+          );
         }
       }
 
@@ -1069,7 +1146,7 @@ export default function PropertyRegistrationWizard({
           .filter((id) => !currentIds.includes(id));
         if (deletedIds.length > 0) {
           const delRes = await deleteHomestayImagesAction(activeId, deletedIds);
-          if (delRes && 'error' in delRes && delRes.error) {
+          if (delRes && "error" in delRes && delRes.error) {
             throw new Error(String(delRes.error));
           }
         }
@@ -1082,7 +1159,9 @@ export default function PropertyRegistrationWizard({
             if (photo.file) {
               const dims = await checkImageDimensions(photo.file);
               if (dims.width > 0 && (dims.width < 800 || dims.height < 600)) {
-                throw new Error(`Ảnh "${photo.file.name}" quá nhỏ (${dims.width}x${dims.height}). Tối thiểu phải là 800x600 pixels.`);
+                throw new Error(
+                  `Ảnh "${photo.file.name}" quá nhỏ (${dims.width}x${dims.height}). Tối thiểu phải là 800x600 pixels.`,
+                );
               }
             }
           }
@@ -1095,17 +1174,21 @@ export default function PropertyRegistrationWizard({
               const fd = new FormData();
               fd.append("property_id", activeId);
               fd.append("image", photo.file);
-              
-              const sortOrder = validPhotos.findIndex(p => p.id === photo.id);
+
+              const sortOrder = validPhotos.findIndex((p) => p.id === photo.id);
               fd.append("sort_order", String(sortOrder >= 0 ? sortOrder : i));
               fd.append("category", sortOrder === 0 ? "cover" : "gallery");
 
               const uploadResult = await savePhotosStepAction(fd);
-              if (uploadResult && 'error' in uploadResult && uploadResult.error) {
+              if (
+                uploadResult &&
+                "error" in uploadResult &&
+                uploadResult.error
+              ) {
                 throw new Error(String(uploadResult.error));
               }
               if (uploadResult && uploadResult.id && uploadResult.url) {
-                const idx = updatedPhotos.findIndex(p => p.id === photo.id);
+                const idx = updatedPhotos.findIndex((p) => p.id === photo.id);
                 if (idx >= 0) {
                   updatedPhotos[idx] = {
                     id: uploadResult.id,
@@ -1118,22 +1201,30 @@ export default function PropertyRegistrationWizard({
           setPhotos(updatedPhotos);
 
           // Update sort order for all remaining images
-          const remainingIds = updatedPhotos.map(p => p.id);
-          const sortRes = await updateImagesSortOrderAction(activeId, remainingIds);
-          if (sortRes && 'error' in sortRes && sortRes.error) {
+          const remainingIds = updatedPhotos.map((p) => p.id);
+          const sortRes = await updateImagesSortOrderAction(
+            activeId,
+            remainingIds,
+          );
+          if (sortRes && "error" in sortRes && sortRes.error) {
             console.error("Failed to update sort order:", sortRes.error);
           }
         } else {
           // If no local files are being uploaded, check if we already have images in the DB
           const dbImagesCount = validPhotos.length;
           if (dbImagesCount === 0) {
-            throw new Error("Ảnh chưa được lưu lên hệ thống, vui lòng tải lại ảnh.");
+            throw new Error(
+              "Ảnh chưa được lưu lên hệ thống, vui lòng tải lại ảnh.",
+            );
           }
-          
+
           // Re-sort existing images if order changed
-          const remainingIds = validPhotos.map(p => p.id);
-          const sortRes = await updateImagesSortOrderAction(activeId, remainingIds);
-          if (sortRes && 'error' in sortRes && sortRes.error) {
+          const remainingIds = validPhotos.map((p) => p.id);
+          const sortRes = await updateImagesSortOrderAction(
+            activeId,
+            remainingIds,
+          );
+          if (sortRes && "error" in sortRes && sortRes.error) {
             console.error("Failed to update sort order:", sortRes.error);
           }
         }
@@ -1156,7 +1247,7 @@ export default function PropertyRegistrationWizard({
         draftPatch,
       });
 
-      if (result && 'error' in result && result.error) {
+      if (result && "error" in result && result.error) {
         throw new Error(String(result.error));
       }
 
@@ -1175,12 +1266,15 @@ export default function PropertyRegistrationWizard({
       setDraft((prev) => ({ ...prev, currentStep: nextStepVal }));
       setCurrentStep(nextStepVal);
       window.scrollTo({ top: 0, behavior: "smooth" });
-
     } catch (err: any) {
       console.error("[Wizard] Failed to go to next step:", err);
       let errMsg = err?.message || "Đã xảy ra lỗi khi lưu tiến độ.";
-      if (errMsg.includes("Failed to parse body") || errMsg.includes("Unexpected end of form")) {
-        errMsg = "Không thể tải ảnh lên. Vui lòng thử ảnh nhỏ hơn hoặc tải lại trang.";
+      if (
+        errMsg.includes("Failed to parse body") ||
+        errMsg.includes("Unexpected end of form")
+      ) {
+        errMsg =
+          "Không thể tải ảnh lên. Vui lòng thử ảnh nhỏ hơn hoặc tải lại trang.";
       }
       setSaveError(errMsg);
     } finally {
@@ -1204,7 +1298,11 @@ export default function PropertyRegistrationWizard({
   const addBedroom = () => {
     const bedroom = makeBedroom({ single: 0 });
     setShowAllBedOptions(false);
-    setDraft((prev) => ({ ...prev, bedrooms: [...prev.bedrooms, bedroom], currentStep: 7 }));
+    setDraft((prev) => ({
+      ...prev,
+      bedrooms: [...prev.bedrooms, bedroom],
+      currentStep: 7,
+    }));
     setActiveBedroomId(bedroom.id);
     setCurrentStep(7);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1248,10 +1346,12 @@ export default function PropertyRegistrationWizard({
                 <ChevronDown className="h-4 w-4" />
               </div>
               <span className="text-[12px] text-rose-100 truncate max-w-[280px]">
-                {[draft.address, draft.district, draft.city].filter(Boolean).join(", ") || "Chưa cập nhật địa chỉ"}
+                {[draft.address, draft.district, draft.city]
+                  .filter(Boolean)
+                  .join(", ") || "Chưa cập nhật địa chỉ"}
               </span>
             </div>
-            
+
             {/* Language */}
             <div className="flex items-center gap-1.5 cursor-pointer font-semibold">
               <Globe className="h-5 w-5 text-white" />
@@ -1272,10 +1372,13 @@ export default function PropertyRegistrationWizard({
         </div>
       </header>
 
-      <form action={createHostHomestay} className="flex min-h-0 flex-1 flex-col">
-        <ProgressHeader 
-          currentStep={currentStep} 
-          stageIndex={stageIndex} 
+      <form
+        action={createHostHomestay}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <ProgressHeader
+          currentStep={currentStep}
+          stageIndex={stageIndex}
           onSelectStage={onSelectStage}
           isStageAccessible={isStageAccessible}
         />
@@ -1314,8 +1417,8 @@ export default function PropertyRegistrationWizard({
           {current === "category" ? (
             <section className="max-w-[1180px] py-6">
               <h1 className="max-w-[900px] text-[34px] font-bold leading-tight tracking-tight text-gray-950">
-                Đăng chỗ nghỉ của Quý vị trên StaySaga và bắt đầu đón khách nhanh
-                chóng!
+                Đăng chỗ nghỉ của Quý vị trên StaySaga và bắt đầu đón khách
+                nhanh chóng!
               </h1>
               <p className="mt-4 text-xl text-gray-800">
                 Để bắt đầu, chọn loại chỗ nghỉ Quý vị muốn đăng trên StaySaga.
@@ -1373,7 +1476,9 @@ export default function PropertyRegistrationWizard({
             <div className="grid max-w-[980px] grid-cols-1 gap-7 lg:grid-cols-[560px_340px]">
               <section
                 className={
-                  current === "photos" || current === "price" || current === "review"
+                  current === "photos" ||
+                  current === "price" ||
+                  current === "review"
                     ? "lg:col-span-2"
                     : ""
                 }
@@ -1386,12 +1491,20 @@ export default function PropertyRegistrationWizard({
                     onNext={current === "bedroom" ? saveBedroom : goNext}
                     isLast={current === "review"}
                     canContinue={
-                      (current === "review" ? finalErrors.length === 0 : canContinue) && !isSaving
+                      (current === "review"
+                        ? finalErrors.length === 0
+                        : canContinue) && !isSaving
                     }
                     pendingText="Đang gửi duyệt..."
                     confirmMessage="Sau khi gửi duyệt, quản trị viên StaySaga sẽ kiểm tra thông tin chỗ nghỉ trước khi hiển thị công khai."
                     onNotReady={() => setShowNotReadyModal(true)}
-                    nextLabel={isSaving ? "Đang lưu..." : (current === "bedroom" ? "Lưu" : "Tiếp tục")}
+                    nextLabel={
+                      isSaving
+                        ? "Đang lưu..."
+                        : current === "bedroom"
+                          ? "Lưu"
+                          : "Tiếp tục"
+                    }
                     backLabel={current === "bedroom" ? "Hủy" : undefined}
                   />
                 ) : null}
@@ -1416,7 +1529,8 @@ export default function PropertyRegistrationWizard({
               Trước khi Quý vị rời đi
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-gray-600">
-              Quý vị đã thực hiện một số thay đổi trong trang này. Nếu Quý vị rời đi bây giờ, những thay đổi đó sẽ bị mất.
+              Quý vị đã thực hiện một số thay đổi trong trang này. Nếu Quý vị
+              rời đi bây giờ, những thay đổi đó sẽ bị mất.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -1462,13 +1576,18 @@ export default function PropertyRegistrationWizard({
               ].map((reason) => {
                 const checked = notReadyReasons.includes(reason);
                 return (
-                  <label key={reason} className="flex cursor-pointer items-start gap-3">
+                  <label
+                    key={reason}
+                    className="flex cursor-pointer items-start gap-3"
+                  >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => {
                         if (checked) {
-                          setNotReadyReasons(notReadyReasons.filter((r) => r !== reason));
+                          setNotReadyReasons(
+                            notReadyReasons.filter((r) => r !== reason),
+                          );
                         } else {
                           setNotReadyReasons([...notReadyReasons, reason]);
                         }
@@ -1482,7 +1601,9 @@ export default function PropertyRegistrationWizard({
                           : "border-gray-400 bg-white"
                       }`}
                     >
-                      {checked ? <Check className="h-4 w-4 text-white" /> : null}
+                      {checked ? (
+                        <Check className="h-4 w-4 text-white" />
+                      ) : null}
                     </span>
                     <span className="text-[15px] leading-relaxed text-gray-700 select-none">
                       {reason}
@@ -1720,16 +1841,14 @@ export default function PropertyRegistrationWizard({
           ["single", "Giường đơn", "Rộng 90 - 130 cm"],
           ["double", "Giường đôi", "Rộng 131 - 150 cm"],
           ["king", "Giường lớn (cỡ King)", "Rộng 151 - 180 cm"],
-          [
-            "superKing",
-            "Giường cực lớn (cỡ Super-king)",
-            "Rộng 181 - 210 cm",
-          ],
+          ["superKing", "Giường cực lớn (cỡ Super-king)", "Rộng 181 - 210 cm"],
           ["bunk", "Giường tầng", "Nhiều kích cỡ"],
           ["sofa", "Giường sofa", "Nhiều kích cỡ"],
           ["futon", "Nệm Futon", "Nhiều kích cỡ"],
         ];
-        const visibleBedOptions = showAllBedOptions ? bedOptions : bedOptions.slice(0, 4);
+        const visibleBedOptions = showAllBedOptions
+          ? bedOptions
+          : bedOptions.slice(0, 4);
         return (
           <Question
             title={`Phòng ngủ ${Math.max(1, draft.bedrooms.findIndex((room) => room.id === activeBedroom.id) + 1)}`}
@@ -2270,7 +2389,9 @@ export default function PropertyRegistrationWizard({
                       <input
                         type="radio"
                         checked={draft.availabilityStart === "asap"}
-                        onChange={() => updateDraft("availabilityStart", "asap")}
+                        onChange={() =>
+                          updateDraft("availabilityStart", "asap")
+                        }
                         className="h-5 w-5 accent-[#f60057]"
                       />
                       Càng sớm càng tốt
@@ -2307,7 +2428,10 @@ export default function PropertyRegistrationWizard({
                   <select
                     value={draft.availabilityOpenDays}
                     onChange={(event) =>
-                      updateDraft("availabilityOpenDays", Number(event.target.value))
+                      updateDraft(
+                        "availabilityOpenDays",
+                        Number(event.target.value),
+                      )
                     }
                     className="ml-8 mt-3 h-11 w-[260px] rounded-sm border border-gray-500 bg-white px-3 outline-none"
                   >
@@ -2399,7 +2523,10 @@ export default function PropertyRegistrationWizard({
                       <select
                         value={draft.maxStayNights}
                         onChange={(event) =>
-                          updateDraft("maxStayNights", Number(event.target.value))
+                          updateDraft(
+                            "maxStayNights",
+                            Number(event.target.value),
+                          )
                         }
                         className="mt-2 block h-11 w-full max-w-[410px] rounded-sm border border-gray-500 bg-white px-3 font-normal outline-none"
                       >
@@ -2489,12 +2616,12 @@ export default function PropertyRegistrationWizard({
                       </div>
                     ) : null}
                     <div className="mt-6 flex gap-3">
-                      <Info className="mt-1 h-5 w-5 shrink-0 text-blue-600" />
+                      <Info className="mt-1 h-5 w-5 shrink-0 text-rose-600" />
                       <p>
                         Khách thích sự linh hoạt - giá hủy miễn phí thường là
                         giá được đặt nhiều nhất trên trang web của chúng tôi.
-                        Nhận đặt phòng đầu tiên của Quý vị sớm hơn bằng cách
-                        cho phép khách hủy muộn nhất {draft.cancellationFreeDays}{" "}
+                        Nhận đặt phòng đầu tiên của Quý vị sớm hơn bằng cách cho
+                        phép khách hủy muộn nhất {draft.cancellationFreeDays}{" "}
                         ngày trước thời điểm nhận phòng.
                       </p>
                     </div>
@@ -2764,7 +2891,8 @@ export default function PropertyRegistrationWizard({
                 >
                   <option value="">Chọn một lựa chọn</option>
                   <option value="individual">
-                    Tôi là cá nhân riêng lẻ tự điều hành việc kinh doanh của mình
+                    Tôi là cá nhân riêng lẻ tự điều hành việc kinh doanh của
+                    mình
                   </option>
                   <option value="business">
                     Tôi là đại diện cho pháp nhân doanh nghiệp
@@ -2896,139 +3024,139 @@ export default function PropertyRegistrationWizard({
               )}
 
               {draft.legalOwnerType ? (
-              <>
-              <div className="pt-4 border-t border-gray-100 space-y-4">
-                <p className="text-sm font-semibold text-gray-800 leading-relaxed">
-                  Vui lòng cung cấp tên đầy đủ và ngày sinh của tất cả cá nhân,
-                  những người sở hữu từ 25% trở lên của chỗ nghỉ.
-                </p>
+                <>
+                  <div className="pt-4 border-t border-gray-100 space-y-4">
+                    <p className="text-sm font-semibold text-gray-800 leading-relaxed">
+                      Vui lòng cung cấp tên đầy đủ và ngày sinh của tất cả cá
+                      nhân, những người sở hữu từ 25% trở lên của chỗ nghỉ.
+                    </p>
 
-                {draft.owners.map((owner, index) => (
-                  <div
-                    key={owner.id}
-                    className="p-4 rounded-md border border-gray-200 bg-gray-50 relative space-y-3"
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      Cá nhân #{index + 1}
-                      </span>
-                      {draft.owners.length > 1 ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateDraft(
-                              "owners",
-                              draft.owners.filter((o) => o.id !== owner.id),
-                            );
-                          }}
-                          className="text-xs font-bold text-[#f60057] hover:underline"
-                        >
-                          Xóa
-                        </button>
-                      ) : null}
-                    </div>
+                    {draft.owners.map((owner, index) => (
+                      <div
+                        key={owner.id}
+                        className="p-4 rounded-md border border-gray-200 bg-gray-50 relative space-y-3"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            Cá nhân #{index + 1}
+                          </span>
+                          {draft.owners.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateDraft(
+                                  "owners",
+                                  draft.owners.filter((o) => o.id !== owner.id),
+                                );
+                              }}
+                              className="text-xs font-bold text-[#f60057] hover:underline"
+                            >
+                              Xóa
+                            </button>
+                          ) : null}
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[13px] font-bold block mb-1">
-                          Tên *
-                        </label>
-                        <input
-                          value={owner.firstName}
-                          onChange={(e) => {
-                            const newOwners = draft.owners.map((o) =>
-                              o.id === owner.id
-                                ? { ...o, firstName: e.target.value }
-                                : o,
-                            );
-                            updateDraft("owners", newOwners);
-                          }}
-                          className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
-                          placeholder="Ví dụ: Dạng"
-                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[13px] font-bold block mb-1">
+                              Tên *
+                            </label>
+                            <input
+                              value={owner.firstName}
+                              onChange={(e) => {
+                                const newOwners = draft.owners.map((o) =>
+                                  o.id === owner.id
+                                    ? { ...o, firstName: e.target.value }
+                                    : o,
+                                );
+                                updateDraft("owners", newOwners);
+                              }}
+                              className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                              placeholder="Ví dụ: Dạng"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[13px] font-bold block mb-1">
+                              Họ *
+                            </label>
+                            <input
+                              value={owner.lastName}
+                              onChange={(e) => {
+                                const newOwners = draft.owners.map((o) =>
+                                  o.id === owner.id
+                                    ? { ...o, lastName: e.target.value }
+                                    : o,
+                                );
+                                updateDraft("owners", newOwners);
+                              }}
+                              className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                              placeholder="Ví dụ: Khang"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[13px] font-bold block mb-1">
+                            Ngày sinh *
+                          </label>
+                          <input
+                            type="date"
+                            value={owner.dateOfBirth}
+                            onChange={(e) => {
+                              const newOwners = draft.owners.map((o) =>
+                                o.id === owner.id
+                                  ? { ...o, dateOfBirth: e.target.value }
+                                  : o,
+                              );
+                              updateDraft("owners", newOwners);
+                            }}
+                            className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-[13px] font-bold block mb-1">
-                          Họ *
-                        </label>
-                        <input
-                          value={owner.lastName}
-                          onChange={(e) => {
-                            const newOwners = draft.owners.map((o) =>
-                              o.id === owner.id
-                                ? { ...o, lastName: e.target.value }
-                                : o,
-                            );
-                            updateDraft("owners", newOwners);
-                          }}
-                          className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
-                          placeholder="Ví dụ: Khang"
-                        />
-                      </div>
-                    </div>
+                    ))}
 
-                    <div>
-                      <label className="text-[13px] font-bold block mb-1">
-                        Ngày sinh *
-                      </label>
-                      <input
-                        type="date"
-                        value={owner.dateOfBirth}
-                        onChange={(e) => {
-                          const newOwners = draft.owners.map((o) =>
-                            o.id === owner.id
-                              ? { ...o, dateOfBirth: e.target.value }
-                              : o,
-                          );
-                          updateDraft("owners", newOwners);
-                        }}
-                        className="h-10 w-full rounded-sm border border-gray-400 bg-white px-3 text-sm outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
-                      />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateDraft("owners", [
+                          ...draft.owners,
+                          {
+                            id: makeId(),
+                            firstName: "",
+                            lastName: "",
+                            dateOfBirth: "",
+                          },
+                        ]);
+                      }}
+                      className="inline-flex items-center gap-2 text-sm font-bold text-[#f60057] hover:underline"
+                    >
+                      <Plus className="h-4 w-4" /> Thêm
+                    </button>
                   </div>
-                ))}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateDraft("owners", [
-                      ...draft.owners,
-                      {
-                        id: makeId(),
-                        firstName: "",
-                        lastName: "",
-                        dateOfBirth: "",
-                      },
-                    ]);
-                  }}
-                  className="inline-flex items-center gap-2 text-sm font-bold text-[#f60057] hover:underline"
-                >
-                  <Plus className="h-4 w-4" /> Thêm
-                </button>
-              </div>
-
-              <div className="pt-4 border-t border-gray-100">
-                <label
-                  className="text-sm font-bold block mb-1"
-                  htmlFor="other-owner-details"
-                >
-                  Nếu một chủ sở hữu nào đó có tên khác, vui lòng cung cấp chi
-                  tiết{" "}
-                  <span className="text-gray-500 font-normal">
-                    - không bắt buộc
-                  </span>
-                </label>
-                <textarea
-                  id="other-owner-details"
-                  value={draft.otherOwnerDetails}
-                  onChange={(e) =>
-                    updateDraft("otherOwnerDetails", e.target.value)
-                  }
-                  className="min-h-[80px] w-full rounded-sm border border-gray-500 px-3 py-2 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
-                  placeholder="Ví dụ: Tên khác hoặc chi tiết bổ sung..."
-                />
-              </div>
-              </>
+                  <div className="pt-4 border-t border-gray-100">
+                    <label
+                      className="text-sm font-bold block mb-1"
+                      htmlFor="other-owner-details"
+                    >
+                      Nếu một chủ sở hữu nào đó có tên khác, vui lòng cung cấp
+                      chi tiết{" "}
+                      <span className="text-gray-500 font-normal">
+                        - không bắt buộc
+                      </span>
+                    </label>
+                    <textarea
+                      id="other-owner-details"
+                      value={draft.otherOwnerDetails}
+                      onChange={(e) =>
+                        updateDraft("otherOwnerDetails", e.target.value)
+                      }
+                      className="min-h-[80px] w-full rounded-sm border border-gray-500 px-3 py-2 text-[15px] outline-none focus:border-[#f60057] focus:ring-1 focus:ring-[#f60057]"
+                      placeholder="Ví dụ: Tên khác hoặc chi tiết bổ sung..."
+                    />
+                  </div>
+                </>
               ) : null}
             </Panel>
           </Question>
@@ -3201,7 +3329,12 @@ export default function PropertyRegistrationWizard({
                       <span>
                         {draft.legalOwnerType === "business"
                           ? `Doanh nghiệp: ${draft.businessName || "Chưa nhập"}`
-                          : `Cá nhân: ${draft.owners.map((o) => `${o.lastName} ${o.firstName}`).filter(Boolean).join(", ") || "Chua nh?p"}`}
+                          : `Cá nhân: ${
+                              draft.owners
+                                .map((o) => `${o.lastName} ${o.firstName}`)
+                                .filter(Boolean)
+                                .join(", ") || "Chua nh?p"
+                            }`}
                       </span>
                     </div>
                   </div>
@@ -3279,7 +3412,8 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
     {
       title: "Gòn Home",
       subtitle: "Phước Thành, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
-      fullAddress: "Gòn Home, Phước Thành, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+      fullAddress:
+        "Gòn Home, Phước Thành, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
       city: "Đà Lạt",
       district: "Lang Biang",
       lat: 12.0126,
@@ -3288,7 +3422,8 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
     {
       title: "Gon Homestay",
       subtitle: "1 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
-      fullAddress: "Gon Homestay, 1 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+      fullAddress:
+        "Gon Homestay, 1 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
       city: "Đà Lạt",
       district: "Phường 8",
       lat: 11.9565,
@@ -3297,7 +3432,8 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
     {
       title: "Gon Homestay",
       subtitle: "17 Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
-      fullAddress: "Gon Homestay, 17 Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
+      fullAddress:
+        "Gon Homestay, 17 Hoàng Diệu, Phường 5 - Đà Lạt, Lâm Đồng, Việt Nam",
       city: "Đà Lạt",
       district: "Phường 5",
       lat: 11.9443,
@@ -3306,7 +3442,8 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
     {
       title: "Gòn Homestay",
       subtitle: "Bùi Thị Xuân, Phường 2 - Đà Lạt, Lâm Đồng, Việt Nam",
-      fullAddress: "Gòn Homestay, Bùi Thị Xuân, Phường 2 - Đà Lạt, Lâm Đồng, Việt Nam",
+      fullAddress:
+        "Gòn Homestay, Bùi Thị Xuân, Phường 2 - Đà Lạt, Lâm Đồng, Việt Nam",
       city: "Đà Lạt",
       district: "Phường 2",
       lat: 11.9492,
@@ -3314,7 +3451,11 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
     },
   ];
 
-  if (normalized.includes("gon") || normalized.includes("gion") || normalized.includes("gon home")) {
+  if (
+    normalized.includes("gon") ||
+    normalized.includes("gion") ||
+    normalized.includes("gon home")
+  ) {
     return homestaySuggestions;
   }
 
@@ -3357,7 +3498,8 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
       {
         title: "1 Phù Đổng Thiên Vương",
         subtitle: "Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
-        fullAddress: "1 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress:
+          "1 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
         city: "Đà Lạt",
         district: "Phường 8",
         lat: 11.9565,
@@ -3366,7 +3508,8 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
       {
         title: "17 Phù Đổng Thiên Vương",
         subtitle: "Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
-        fullAddress: "17 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress:
+          "17 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
         city: "Đà Lạt",
         district: "Phường 8",
         lat: 11.9585,
@@ -3375,10 +3518,11 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
       {
         title: "61 Phù Đổng Thiên Vương",
         subtitle: "Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
-        fullAddress: "61 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress:
+          "61 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
         city: "Đà Lạt",
         district: "Phường 8",
-        lat: 11.9610,
+        lat: 11.961,
         lon: 108.4432,
       },
     ];
@@ -3408,7 +3552,8 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
       {
         title: "17 Hẻm 19A Dankia",
         subtitle: "Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
-        fullAddress: "17 Hẻm 19A Dankia, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress:
+          "17 Hẻm 19A Dankia, Lang Biang - Đà Lạt, Lâm Đồng, Việt Nam",
         city: "Đà Lạt",
         district: "Lang Biang",
         lat: 12.0119,
@@ -3441,7 +3586,8 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
       {
         title: "17 Phù Đổng Thiên Vương",
         subtitle: "Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
-        fullAddress: "17 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
+        fullAddress:
+          "17 Phù Đổng Thiên Vương, Phường 8 - Đà Lạt, Lâm Đồng, Việt Nam",
         city: "Đà Lạt",
         district: "Phường 8",
         lat: 11.9585,
@@ -3462,7 +3608,9 @@ function getAddressSuggestions(value: string): AddressSuggestion[] {
   return [];
 }
 
-function resolveAddressCoords(address: string): { lat: number; lon: number } | null {
+function resolveAddressCoords(
+  address: string,
+): { lat: number; lon: number } | null {
   if (!address) return null;
   const normalized = address
     .normalize("NFD")
@@ -3490,28 +3638,36 @@ function resolveAddressCoords(address: string): { lat: number; lon: number } | n
       return { lat: 11.9585, lon: 108.4428 };
     }
     if (normalized.includes("61 phu dong")) {
-      return { lat: 11.9610, lon: 108.4432 };
+      return { lat: 11.961, lon: 108.4432 };
     }
     return { lat: 11.9565, lon: 108.4423 };
   }
 
-  if (normalized.includes("17 hem dankia") || normalized.includes("17 hem dan kia")) {
+  if (
+    normalized.includes("17 hem dankia") ||
+    normalized.includes("17 hem dan kia")
+  ) {
     return { lat: 12.0132, lon: 108.4022 };
   }
-  if (normalized.includes("hem 19a dankia") || normalized.includes("hem 19a dan kia")) {
+  if (
+    normalized.includes("hem 19a dankia") ||
+    normalized.includes("hem 19a dan kia")
+  ) {
     return { lat: 12.0119, lon: 108.4009 };
   }
   if (normalized.includes("dan kia") || normalized.includes("dankia")) {
     return { lat: 12.0126, lon: 108.4016 };
   }
 
-  if (normalized.includes("bui thi xuan") || normalized.includes("buithixuan")) {
+  if (
+    normalized.includes("bui thi xuan") ||
+    normalized.includes("buithixuan")
+  ) {
     return { lat: 11.9492, lon: 108.4398 };
   }
 
   return null;
 }
-
 
 function InteractiveMap({
   selectedCoords,
@@ -3556,7 +3712,13 @@ function InteractiveMap({
 
   // Initialize Map
   useEffect(() => {
-    if (!leafletLoaded || !containerRef.current || typeof window === "undefined" || !(window as any).L) return;
+    if (
+      !leafletLoaded ||
+      !containerRef.current ||
+      typeof window === "undefined" ||
+      !(window as any).L
+    )
+      return;
     const L = (window as any).L;
 
     // Use selected coordinates if available, otherwise default to Đà Lạt
@@ -3602,20 +3764,22 @@ function InteractiveMap({
       scrollWheelZoom: true,
     }).setView([initialLat, initialLon], initialZoom);
 
-    L.control.zoom({
-      position: 'bottomright'
-    }).addTo(map);
+    L.control
+      .zoom({
+        position: "bottomright",
+      })
+      .addTo(map);
 
     mapInstanceRef.current = map;
 
     // Google-style raster tiles keep the host address step closer to familiar map UX.
-    const tileUrl = mapType === "satellite"
-      ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-      : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+    const tileUrl =
+      mapType === "satellite"
+        ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+        : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
 
-    const attribution = mapType === "satellite"
-      ? "&copy; Google"
-      : "&copy; Google";
+    const attribution =
+      mapType === "satellite" ? "&copy; Google" : "&copy; Google";
 
     const tileLayer = L.tileLayer(tileUrl, { attribution }).addTo(map);
     tileLayerRef.current = tileLayer;
@@ -3691,12 +3855,21 @@ function InteractiveMap({
 
   // Sync coords from props
   useEffect(() => {
-    if (!mapInstanceRef.current || !markerRef.current || !selectedCoords || !leafletLoaded) return;
+    if (
+      !mapInstanceRef.current ||
+      !markerRef.current ||
+      !selectedCoords ||
+      !leafletLoaded
+    )
+      return;
     const { lat, lon } = selectedCoords;
     const currentLatLng = markerRef.current.getLatLng();
-    
+
     // Only update if coords actually changed significantly
-    if (Math.abs(currentLatLng.lat - lat) > 0.0001 || Math.abs(currentLatLng.lng - lon) > 0.0001) {
+    if (
+      Math.abs(currentLatLng.lat - lat) > 0.0001 ||
+      Math.abs(currentLatLng.lng - lon) > 0.0001
+    ) {
       markerRef.current.setLatLng([lat, lon]);
       mapInstanceRef.current.setView([lat, lon], 16);
       mapInstanceRef.current.invalidateSize({ animate: false, pan: false });
@@ -3705,19 +3878,22 @@ function InteractiveMap({
 
   // Sync mapType (Voyager vs Satellite)
   useEffect(() => {
-    if (!mapInstanceRef.current || !tileLayerRef.current || !leafletLoaded) return;
+    if (!mapInstanceRef.current || !tileLayerRef.current || !leafletLoaded)
+      return;
     const L = (window as any).L;
 
-    const tileUrl = mapType === "satellite"
-      ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
-      : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
+    const tileUrl =
+      mapType === "satellite"
+        ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+        : "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}";
 
-    const attribution = mapType === "satellite"
-      ? "&copy; Google"
-      : "&copy; Google";
+    const attribution =
+      mapType === "satellite" ? "&copy; Google" : "&copy; Google";
 
     mapInstanceRef.current.removeLayer(tileLayerRef.current);
-    const newTileLayer = L.tileLayer(tileUrl, { attribution }).addTo(mapInstanceRef.current);
+    const newTileLayer = L.tileLayer(tileUrl, { attribution }).addTo(
+      mapInstanceRef.current,
+    );
     tileLayerRef.current = newTileLayer;
     window.setTimeout(() => {
       mapInstanceRef.current?.invalidateSize({ animate: false, pan: false });
@@ -3726,13 +3902,18 @@ function InteractiveMap({
 
   return (
     <div className="absolute inset-0 h-full w-full select-none">
-      <div ref={containerRef} className="absolute inset-0 h-full w-full z-0 pointer-events-auto" />
-      
+      <div
+        ref={containerRef}
+        className="absolute inset-0 h-full w-full z-0 pointer-events-auto"
+      />
+
       {!leafletLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100/80 z-20">
           <div className="flex flex-col items-center gap-3">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#f60057] border-t-transparent"></div>
-            <span className="text-sm font-semibold text-gray-500">Đang tải bản đồ...</span>
+            <span className="text-sm font-semibold text-gray-500">
+              Đang tải bản đồ...
+            </span>
           </div>
         </div>
       )}
@@ -3740,24 +3921,30 @@ function InteractiveMap({
   );
 }
 
-function parseCityAndDistrict(fullAddress: string): { city: string; district: string } {
+function parseCityAndDistrict(fullAddress: string): {
+  city: string;
+  district: string;
+} {
   if (!fullAddress) return { city: "", district: "" };
-  const parts = fullAddress.split(",").map(p => p.trim()).filter(Boolean);
-  
+  const parts = fullAddress
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   if (parts.length > 0 && /viet\s*nam|vietnam/i.test(parts[parts.length - 1])) {
     parts.pop();
   }
-  
+
   let city = "";
   let district = "";
-  
+
   if (parts.length > 0) {
     city = parts.pop() || "";
   }
   if (parts.length > 0) {
     district = parts.pop() || "";
   }
-  
+
   return { city, district };
 }
 
@@ -3816,10 +4003,13 @@ function AddressStep({
     if (resolved) {
       const currentLat = parseFloat(draft.latitude || "0");
       const currentLon = parseFloat(draft.longitude || "0");
-      if (Math.abs(currentLat - resolved.lat) > 0.0001 || Math.abs(currentLon - resolved.lon) > 0.0001) {
+      if (
+        Math.abs(currentLat - resolved.lat) > 0.0001 ||
+        Math.abs(currentLon - resolved.lon) > 0.0001
+      ) {
         updateDraftFields({
           latitude: String(resolved.lat),
-          longitude: String(resolved.lon)
+          longitude: String(resolved.lon),
         });
         setSelectedCoords({ lat: resolved.lat, lon: resolved.lon });
         return;
@@ -3828,7 +4018,7 @@ function AddressStep({
       if (!draft.address.trim() && (draft.latitude || draft.longitude)) {
         updateDraftFields({
           latitude: "",
-          longitude: ""
+          longitude: "",
         });
         setSelectedCoords(null);
         return;
@@ -3863,7 +4053,9 @@ function AddressStep({
 
         let apiSuggestions: AddressSuggestion[] = [];
 
-        const geocodeRes = await fetch(`/api/geocode/autocomplete?q=${encodeURIComponent(query)}`);
+        const geocodeRes = await fetch(
+          `/api/geocode/autocomplete?q=${encodeURIComponent(query)}`,
+        );
         if (geocodeRes.ok) {
           const data = await geocodeRes.json();
           if (data && data.length > 0) {
@@ -3883,7 +4075,8 @@ function AddressStep({
         const merged = [...apiSuggestions];
         mockSuggestions.forEach((item) => {
           const exists = merged.some(
-            (m) => m.fullAddress.toLowerCase() === item.fullAddress.toLowerCase()
+            (m) =>
+              m.fullAddress.toLowerCase() === item.fullAddress.toLowerCase(),
           );
           if (!exists) {
             merged.push(item);
@@ -3909,7 +4102,7 @@ function AddressStep({
       latitude: "",
       longitude: "",
       city: "",
-      district: ""
+      district: "",
     });
     setSelectedCoords(null);
     setMapAddress(value || mapQuery || DEFAULT_MAP_ADDRESS);
@@ -3918,7 +4111,7 @@ function AddressStep({
 
   const handleSuggestionClick = (suggestion: AddressSuggestion) => {
     ignoreSearchRef.current = true;
-    
+
     const lat = suggestion.lat;
     const lon = suggestion.lon;
     let city = suggestion.city;
@@ -3940,7 +4133,7 @@ function AddressStep({
       district,
       country: sanitizeText(suggestion.country || draft.country || ""),
       latitude: String(lat),
-      longitude: String(lon)
+      longitude: String(lon),
     });
 
     setSearchInput(suggestion.fullAddress);
@@ -3957,7 +4150,7 @@ function AddressStep({
       latitude: "",
       longitude: "",
       city: "",
-      district: ""
+      district: "",
     });
     setSelectedCoords(null);
     setMapAddress(mapQuery || DEFAULT_MAP_ADDRESS);
@@ -3966,27 +4159,32 @@ function AddressStep({
 
   const handleContinue = async () => {
     setTouched((prev) => ({ ...prev, address: true }));
-    
+
     // If they typed something but coordinates or city are missing, try to resolve it first
-    if (searchInput.trim() && (!draft.latitude || !draft.longitude || !draft.city)) {
+    if (
+      searchInput.trim() &&
+      (!draft.latitude || !draft.longitude || !draft.city)
+    ) {
       try {
-        const res = await fetch(`/api/geocode/autocomplete?q=${encodeURIComponent(searchInput.trim())}`);
+        const res = await fetch(
+          `/api/geocode/autocomplete?q=${encodeURIComponent(searchInput.trim())}`,
+        );
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {
             const first = data[0];
             const city = sanitizeText(first.city || "");
             const district = sanitizeText(first.district || "");
-            
+
             updateDraftFields({
               address: searchInput.trim(),
               city,
               district,
               country: sanitizeText(first.country || draft.country || ""),
               latitude: String(first.lat),
-              longitude: String(first.lon)
+              longitude: String(first.lon),
             });
-            
+
             setTimeout(() => {
               onNext();
             }, 100);
@@ -3997,7 +4195,7 @@ function AddressStep({
         console.error("Geocoding on continue failed:", err);
       }
     }
-    
+
     if (canContinue) onNext();
   };
 
@@ -4008,7 +4206,7 @@ function AddressStep({
         mapType={mapType}
         onCoordsChange={async (coords) => {
           setSelectedCoords(coords);
-          
+
           const fieldsToUpdate: Partial<Draft> = {
             latitude: String(coords.lat),
             longitude: String(coords.lon),
@@ -4017,19 +4215,23 @@ function AddressStep({
           // If current address is empty, reverse geocode to populate it
           if (!draft.address.trim()) {
             try {
-              const res = await fetch(`/api/geocode/reverse?lat=${coords.lat}&lon=${coords.lon}`);
+              const res = await fetch(
+                `/api/geocode/reverse?lat=${coords.lat}&lon=${coords.lon}`,
+              );
               if (res.ok) {
                 const data = await res.json();
                 if (data && data.address) {
                   const city = sanitizeText(data.city || "");
                   const district = sanitizeText(data.district || "");
                   const fullAddress = data.address;
-                  
+
                   fieldsToUpdate.address = fullAddress;
                   fieldsToUpdate.city = city;
                   fieldsToUpdate.district = district;
-                  fieldsToUpdate.country = sanitizeText(data.country || draft.country || "");
-                  
+                  fieldsToUpdate.country = sanitizeText(
+                    data.country || draft.country || "",
+                  );
+
                   setSearchInput(fullAddress);
                   setMapAddress(fullAddress);
                 }
@@ -4038,7 +4240,7 @@ function AddressStep({
               console.error("Reverse geocoding error:", err);
             }
           }
-          
+
           updateDraftFields(fieldsToUpdate);
         }}
       />
@@ -4162,7 +4364,9 @@ function AddressStep({
             </label>
             <input
               value={draft.locationNote}
-              onChange={(event) => updateDraft("locationNote", event.target.value)}
+              onChange={(event) =>
+                updateDraft("locationNote", event.target.value)
+              }
               className="mt-1.5 h-[42px] w-full rounded-sm border border-gray-500 px-3 text-base outline-none focus:border-[#f60057] focus:ring-2 focus:ring-rose-100"
               placeholder="Căn hộ, tòa nhà, tầng, v.v."
             />
@@ -4195,7 +4399,9 @@ function AddressStep({
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
             <label className="block">
-              <span className="block text-base font-bold text-gray-950">Thành phố</span>
+              <span className="block text-base font-bold text-gray-950">
+                Thành phố
+              </span>
               <input
                 value={draft.city}
                 onChange={(event) => updateDraft("city", event.target.value)}
@@ -4204,10 +4410,14 @@ function AddressStep({
               />
             </label>
             <label className="block">
-              <span className="block text-base font-bold text-gray-950">Mã bưu chính</span>
+              <span className="block text-base font-bold text-gray-950">
+                Mã bưu chính
+              </span>
               <input
                 value={draft.businessPostalCode}
-                onChange={(event) => updateDraft("businessPostalCode", event.target.value)}
+                onChange={(event) =>
+                  updateDraft("businessPostalCode", event.target.value)
+                }
                 className="mt-1.5 h-[42px] w-full rounded-sm border border-gray-500 px-3 text-base outline-none focus:border-[#f60057] focus:ring-2 focus:ring-rose-100"
               />
               <span className="mt-1.5 flex items-start gap-2 text-sm text-gray-800">
@@ -4415,7 +4625,7 @@ function BottomNav({
             confirmMessage={confirmMessage}
             className="h-14 flex-1 rounded-sm bg-[#f60057] font-bold text-white hover:bg-[#d9004c]"
           >
-            Mở để nhận đặt phòng
+            Gửi duyệt
           </PendingSubmitButton>
         ) : (
           <button
@@ -4791,7 +5001,13 @@ function bedSummary(room: Bedroom) {
 }
 
 function bedroomCapacity(room: Bedroom) {
-  return room.single + room.bunk + room.sofa + room.futon + (room.double + room.king + room.superKing) * 2;
+  return (
+    room.single +
+    room.bunk +
+    room.sofa +
+    room.futon +
+    (room.double + room.king + room.superKing) * 2
+  );
 }
 
 function totalBedroomCapacity(rooms: Bedroom[]) {
@@ -4956,7 +5172,11 @@ function HiddenFields({
         }
         readOnly
       />
-      <input name="availability_start" value={draft.availabilityStart} readOnly />
+      <input
+        name="availability_start"
+        value={draft.availabilityStart}
+        readOnly
+      />
       <input
         name="availability_open_mode"
         value={draft.availabilityOpenMode}
