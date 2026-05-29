@@ -61,26 +61,67 @@ https://your-domain.com/auth/callback
 
 ## Docker
 
-Build va chay production container:
+Build va chay production container voi file moi truong local:
 
 ```bash
-docker compose up --build
+docker compose --env-file .env.local up --build -d
 ```
 
-Mac dinh app lang nghe tai `http://localhost:3000`. Doi cong bang bien `APP_PORT`.
+Mac dinh app lang nghe tai `http://localhost:3000`. Doi cong bang bien `APP_PORT`, vi du tren PowerShell:
 
-## Deploy VPS goi y
+```powershell
+$env:APP_PORT="3001"
+docker compose --env-file .env.local up --build -d
+```
 
-1. Clone repository len VPS.
-2. Tao `.env` hoac export cac bien trong `.env.example`.
-3. Chay:
+Kiem tra va dung container:
 
 ```bash
-docker compose up --build -d
+docker ps
+docker compose down
 ```
 
-4. Cau hinh reverse proxy Nginx/Caddy tro domain ve port container.
-5. Cap SSL bang Cloudflare, Caddy tu dong, hoac Certbot.
+## Deploy VPS
+
+VPS Ubuntu can cai Docker va Docker Compose plugin. Sau khi clone repository vao `/var/www/staysaga`, tao file `.env.production` truc tiep tren VPS, khong commit file nay:
+
+```env
+APP_PORT=3000
+NEXT_PUBLIC_SITE_URL=http://4.190.160.57
+NEXT_PUBLIC_SUPABASE_URL=<dien-tren-vps>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<dien-tren-vps>
+SUPABASE_SERVICE_ROLE_KEY=<dien-tren-vps>
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+```
+
+Build va chay production:
+
+```bash
+docker compose --env-file .env.production up --build -d
+```
+
+Kiem tra:
+
+```bash
+docker ps
+docker logs staysaga-web --tail=100
+curl -I http://localhost:3000
+curl -I http://4.190.160.57:3000
+```
+
+Neu VPS chi co 1GB RAM, nen tao swap 2GB truoc khi build Docker:
+
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+free -h
+```
+
+Khi co domain, co the dat Caddy/Nginx lam reverse proxy port 80/443 vao service `staysaga-web:3000` va cap SSL HTTPS.
 
 ## Kiem tra
 

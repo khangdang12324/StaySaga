@@ -1,5 +1,5 @@
 services:
-  staysaga:
+  staysaga-web:
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,6 +10,9 @@ services:
         SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
     container_name: staysaga-web
     restart: unless-stopped
+    env_file:
+      - path: .env.production
+        required: false
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
