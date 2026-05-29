@@ -65,17 +65,27 @@ export async function logout() {
   redirect("/login");
 }
 
+async function getRedirectOrigin(): Promise<string> {
+  let origin = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!origin) {
+    const headerStore = await headers();
+    const host = headerStore.get("host");
+    const protocol =
+      host?.includes("localhost") || host?.match(/^\d+\.\d+\.\d+\.\d+/)
+        ? "http"
+        : "https";
+    origin = host ? `${protocol}://${host}` : "http://localhost:3000";
+  }
+  // Sanity check: never redirect to 0.0.0.0
+  if (origin.includes("0.0.0.0")) {
+    origin = "http://localhost:3000";
+  }
+  return origin;
+}
+
 export async function signInWithGoogle() {
   const supabase = await createClient();
-  const headerStore = await headers();
-  const host = headerStore.get("host");
-  const protocol =
-    host?.includes("localhost") || host?.match(/^\d+\.\d+\.\d+\.\d+/)
-      ? "http"
-      : "https";
-  const origin = host
-    ? `${protocol}://${host}`
-    : process.env.NEXT_PUBLIC_SITE_URL;
+  const origin = await getRedirectOrigin();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -96,15 +106,7 @@ export async function signInWithGoogle() {
 
 export async function signInWithFacebook() {
   const supabase = await createClient();
-  const headerStore = await headers();
-  const host = headerStore.get("host");
-  const protocol =
-    host?.includes("localhost") || host?.match(/^\d+\.\d+\.\d+\.\d+/)
-      ? "http"
-      : "https";
-  const origin = host
-    ? `${protocol}://${host}`
-    : process.env.NEXT_PUBLIC_SITE_URL;
+  const origin = await getRedirectOrigin();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "facebook",
@@ -132,15 +134,7 @@ export async function requestPasswordReset(formData: FormData) {
     return { error: "Vui lòng nhập email." };
   }
 
-  const headerStore = await headers();
-  const host = headerStore.get("host");
-  const protocol =
-    host?.includes("localhost") || host?.match(/^\d+\.\d+\.\d+\.\d+/)
-      ? "http"
-      : "https";
-  const origin = host
-    ? `${protocol}://${host}`
-    : process.env.NEXT_PUBLIC_SITE_URL;
+  const origin = await getRedirectOrigin();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/reset-password`,

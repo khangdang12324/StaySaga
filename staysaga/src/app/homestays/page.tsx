@@ -79,6 +79,25 @@ function HomestaysPageContent() {
   const [destinationInput, setDestinationInput] = useState(selectedCity);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
 
+  const checkInParam = searchParams.get("checkIn") || searchParams.get("checkin") || "";
+  const checkOutParam = searchParams.get("checkOut") || searchParams.get("checkout") || "";
+  const guestsParam = searchParams.get("guests") || "";
+
+  const nights = useMemo(() => {
+    if (!checkInParam || !checkOutParam) return 1;
+    const start = new Date(checkInParam);
+    const end = new Date(checkOutParam);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 1;
+    const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 1;
+  }, [checkInParam, checkOutParam]);
+
+  const guestsCount = useMemo(() => {
+    if (!guestsParam) return 2;
+    const g = parseInt(guestsParam);
+    return isNaN(g) || g <= 0 ? 2 : g;
+  }, [guestsParam]);
+
   const sourceHotels = useMemo(() => {
     const filtered = allHotels.filter(h => normalizeText(h.city) === normalizeText(selectedCity));
     // Fallback: If no hotels for the city exist, we just return empty array
@@ -163,7 +182,15 @@ function HomestaysPageContent() {
             {filteredHotels.length > 0 ? (
               <div className="space-y-4">
                 {filteredHotels.map((hotel) => (
-                  <SearchResultCard key={`${hotel.slug}-${hotel.id}`} hotel={hotel} selectedCity={selectedCity} />
+                  <SearchResultCard
+                    key={`${hotel.slug}-${hotel.id}`}
+                    hotel={hotel}
+                    selectedCity={selectedCity}
+                    nights={nights}
+                    guests={guestsCount}
+                    checkIn={checkInParam}
+                    checkOut={checkOutParam}
+                  />
                 ))}
               </div>
             ) : (
@@ -219,16 +246,43 @@ function StaySagaHeader() {
 
 
 
-function SearchResultCard({ hotel, selectedCity }: { hotel: Hotel; selectedCity?: string | null }) {
+function SearchResultCard({
+  hotel,
+  selectedCity,
+  nights = 1,
+  guests = 2,
+  checkIn = "",
+  checkOut = "",
+}: {
+  hotel: Hotel;
+  selectedCity?: string | null;
+  nights?: number;
+  guests?: number;
+  checkIn?: string;
+  checkOut?: string;
+}) {
   const facets = inferFacets(hotel, selectedCity);
   const rating = normalizeRating(hotel);
   const displayCity = getDisplayCity(hotel, selectedCity);
   const distanceKm = getDistanceKm(hotel, selectedCity);
   const canonical = resolveToCanonicalSlug(hotel.slug || String(hotel.id));
-  const href = canonical ? `/homestays/${canonical}` : `/homestays?location=${encodeURIComponent(displayCity)}`;
-  const currentPrice = hotel.discounted_price ?? hotel.price ?? 0;
-  const originalPrice = hotel.original_price ?? (hotel.discounted_price && hotel.price ? hotel.price : null);
-  const taxAmount = Math.max(30000, Math.round(currentPrice * 0.08));
+
+  // Build the details href with selected dates and guests count
+  const params = new URLSearchParams();
+  if (checkIn) params.set("checkIn", checkIn);
+  if (checkOut) params.set("checkOut", checkOut);
+  if (guests > 1) params.set("guests", guests.toString());
+  const href = canonical 
+    ? `/homestays/${canonical}?${params.toString()}` 
+    : `/homestays?location=${encodeURIComponent(displayCity)}`;
+
+  const pricePerNight = hotel.discounted_price ?? hotel.price ?? 0;
+  const currentPrice = pricePerNight * nights;
+  
+  const originalPricePerNight = hotel.original_price ?? (hotel.discounted_price && hotel.price ? hotel.price : null);
+  const originalPrice = originalPricePerNight ? originalPricePerNight * nights : null;
+  
+  const taxAmount = Math.max(30000 * nights, Math.round(currentPrice * 0.08));
 
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -297,7 +351,7 @@ function SearchResultCard({ hotel, selectedCity }: { hotel: Hotel; selectedCity?
           </div>
 
           <div>
-            <p className="text-xs text-gray-600">1 đêm, 2 người lớn</p>
+            <p className="text-xs text-gray-600">{nights} đêm, {guests} người lớn</p>
             {originalPrice && originalPrice > currentPrice ? (
               <p className="text-sm text-red-700 line-through">{formatVnd(originalPrice)}</p>
             ) : null}

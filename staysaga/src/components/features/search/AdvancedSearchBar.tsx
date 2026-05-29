@@ -201,8 +201,8 @@ export function AdvancedSearchBar() {
     if (loc) {
       setLocationInput(loc);
     }
-    const inDateStr = searchParams.get("checkIn");
-    const outDateStr = searchParams.get("checkOut");
+    const inDateStr = searchParams.get("checkIn") || searchParams.get("checkin");
+    const outDateStr = searchParams.get("checkOut") || searchParams.get("checkout");
     if (inDateStr) {
       const inDate = new Date(inDateStr);
       if (!isNaN(inDate.getTime())) {
@@ -321,6 +321,7 @@ export function AdvancedSearchBar() {
     const totalGuests = adults + children;
     if (totalGuests > 1) params.set("guests", totalGuests.toString());
     if (rooms > 1) params.set("rooms", rooms.toString());
+    setActivePanel(null);
     router.push(`/homestays?${params.toString()}`);
   };
 

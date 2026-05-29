@@ -42,10 +42,10 @@ export function BookingWidget({
   const guestsRef = useRef<HTMLSelectElement>(null);
   const [todayParam] = useState(() => new Date().toISOString().split("T")[0]);
   const [checkIn, setCheckIn] = useState<string>(() =>
-    getValidDateParam(searchParams.get("checkIn")),
+    getValidDateParam(searchParams.get("checkIn") || searchParams.get("checkin")),
   );
   const [checkOut, setCheckOut] = useState<string>(() =>
-    getValidDateParam(searchParams.get("checkOut")),
+    getValidDateParam(searchParams.get("checkOut") || searchParams.get("checkout")),
   );
   const [guests, setGuests] = useState<number>(() =>
     getValidGuestsParam(searchParams.get("guests")),

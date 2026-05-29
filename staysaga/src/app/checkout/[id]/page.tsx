@@ -48,8 +48,8 @@ export default async function CheckoutPage({ params, searchParams }: Props) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
 
-  const checkIn = resolvedSearchParams.checkIn;
-  const checkOut = resolvedSearchParams.checkOut;
+  const checkIn = resolvedSearchParams.checkIn || resolvedSearchParams.checkin;
+  const checkOut = resolvedSearchParams.checkOut || resolvedSearchParams.checkout;
   const guests = resolvedSearchParams.guests
     ? parseInt(resolvedSearchParams.guests)
     : 1;

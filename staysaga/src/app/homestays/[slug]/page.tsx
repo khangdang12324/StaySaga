@@ -40,6 +40,7 @@ import AvailabilityTable from "./AvailabilityTable";
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 const reviews = [
@@ -57,7 +58,7 @@ const rooms = [
   { name: "Phòng Superior Có Giường Cỡ Queen", size: "25 m²", price: "306.000", original: "850.000", savings: "64%", capacity: 2, left: 1 },
 ];
 
-export default async function HotelDetailPage({ params }: Props) {
+export default async function HotelDetailPage({ params, searchParams }: Props) {
   const cookieStore = await cookies();
   const currency = cookieStore.get("currency")?.value || "VND";
 
@@ -81,6 +82,16 @@ export default async function HotelDetailPage({ params }: Props) {
     return priceFormatted;
   };
   const { slug } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const queryCheckIn = typeof resolvedSearchParams.checkIn === "string" ? resolvedSearchParams.checkIn : 
+                       typeof resolvedSearchParams.checkin === "string" ? resolvedSearchParams.checkin : "";
+  const queryCheckOut = typeof resolvedSearchParams.checkOut === "string" ? resolvedSearchParams.checkOut : 
+                        typeof resolvedSearchParams.checkout === "string" ? resolvedSearchParams.checkout : "";
+  const queryGuests = typeof resolvedSearchParams.guests === "string" ? resolvedSearchParams.guests : "";
+  
+  const guestsCount = queryGuests ? parseInt(queryGuests) : 2;
+  const validGuestsCount = isNaN(guestsCount) || guestsCount <= 0 ? 2 : guestsCount;
+
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
 
   const supabase = await createClient();
@@ -163,8 +174,8 @@ export default async function HotelDetailPage({ params }: Props) {
   const defaultCheckIn = new Date();
   const defaultCheckOut = new Date(defaultCheckIn);
   defaultCheckOut.setDate(defaultCheckIn.getDate() + 1);
-  const defaultCheckInParam = defaultCheckIn.toISOString().split("T")[0];
-  const defaultCheckOutParam = defaultCheckOut.toISOString().split("T")[0];
+  const defaultCheckInParam = queryCheckIn || defaultCheckIn.toISOString().split("T")[0];
+  const defaultCheckOutParam = queryCheckOut || defaultCheckOut.toISOString().split("T")[0];
 
   const tabs = [
     { label: "Tổng quan", icon: FileText, href: "#overview", active: true },
@@ -314,6 +325,7 @@ Các cặp đôi đặc biệt thích địa điểm này — họ cho điểm 8
                 defaultCheckInParam={defaultCheckInParam}
                 defaultCheckOutParam={defaultCheckOutParam}
                 currency={currency}
+                guests={validGuestsCount}
               />
             </section>
 
