@@ -66,21 +66,33 @@ export async function logout() {
 }
 
 async function getRedirectOrigin(): Promise<string> {
-  let origin = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!origin) {
-    const headerStore = await headers();
-    const host = headerStore.get("host");
-    const protocol =
-      host?.includes("localhost") || host?.match(/^\d+\.\d+\.\d+\.\d+/)
-        ? "http"
-        : "https";
-    origin = host ? `${protocol}://${host}` : "http://localhost:3000";
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+  if (configuredSiteUrl) {
+    return normalizeOrigin(configuredSiteUrl);
   }
-  // Sanity check: never redirect to 0.0.0.0
-  if (origin.includes("0.0.0.0")) {
-    origin = "http://localhost:3000";
+
+  const headerStore = await headers();
+  const forwardedHost = headerStore.get("x-forwarded-host");
+  const forwardedProto = headerStore.get("x-forwarded-proto");
+  const host = forwardedHost ?? headerStore.get("host");
+
+  if (!host || isInternalHost(host)) {
+    return "http://localhost:3000";
   }
-  return origin;
+
+  const protocol = forwardedProto ?? (host.includes("localhost") ? "http" : "https");
+  return normalizeOrigin(`${protocol}://${host}`);
+}
+
+function normalizeOrigin(url: string): string {
+  const parsed = new URL(url);
+  return parsed.origin;
+}
+
+function isInternalHost(host: string): boolean {
+  const hostname = host.split(":")[0];
+  return hostname === "0.0.0.0";
 }
 
 export async function signInWithGoogle() {

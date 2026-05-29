@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type ReactNode } from "react";
 import { Bell, ChevronDown, CircleHelp, Globe2, Search } from "lucide-react";
 import { HostAccountMenu } from "./HostAccountMenu";
+import { HostTopNav } from "@/components/host/HostTopNav";
 
 type HostNavKey =
   | "home"
@@ -93,42 +94,7 @@ export function HostExtranetShell({
           <HostAccountMenu userName={userName} />
         </div>
 
-        {!hideNav ? (
-          <nav className="mx-auto flex max-w-[1400px] flex-wrap items-end overflow-visible px-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.key}
-                href={item.href}
-                className={`whitespace-nowrap px-4 py-5 text-[15px] font-medium transition ${
-                  active === item.key ? "bg-white/12 text-white" : "text-white hover:bg-white/10"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="group relative inline-flex items-center text-white">
-              <button
-                type="button"
-                className={`inline-flex items-center gap-1 whitespace-nowrap px-4 py-5 text-[15px] font-medium transition-colors hover:bg-white/10 ${
-                  active === "market-data" ? "bg-white/12 text-white" : "text-white"
-                }`}
-              >
-                Khác
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              <div className="invisible absolute right-0 top-full z-50 w-48 rounded-sm border border-slate-200 bg-white py-1 text-[#1a1a1a] opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
-                <Link
-                  href="/host/market-data"
-                  className={`block px-4 py-3 text-[14px] font-semibold transition hover:bg-slate-50 ${
-                    active === "market-data" ? "text-[#f60057]" : "text-slate-800"
-                  }`}
-                >
-                  Dữ liệu thị trường
-                </Link>
-              </div>
-            </div>
-          </nav>
-        ) : null}
+        {!hideNav ? <HostTopNav /> : null}
       </header>
 
       {children}

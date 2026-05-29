@@ -36,7 +36,7 @@ export default function SecurityPage() {
     setMessage(null);
 
     try {
-      const origin = window.location.origin;
+      const origin = getPublicSiteOrigin();
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
         redirectTo: `${origin}/auth/callback?next=/reset-password`,
       });
@@ -137,4 +137,14 @@ export default function SecurityPage() {
       </div>
     </div>
   );
+}
+
+function getPublicSiteOrigin(): string {
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+  if (configuredSiteUrl) {
+    return new URL(configuredSiteUrl).origin;
+  }
+
+  return window.location.origin;
 }
