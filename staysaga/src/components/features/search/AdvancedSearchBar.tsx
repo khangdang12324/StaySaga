@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   MapPin,
@@ -179,6 +179,7 @@ function isPast(date: Date) {
 /* ===== COMPONENT ===== */
 export function AdvancedSearchBar() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [locationInput, setLocationInput] = useState("");
 
   // Calendar state
@@ -193,6 +194,44 @@ export function AdvancedSearchBar() {
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState(1);
+
+  // Sync state with URL search params
+  useEffect(() => {
+    const loc = searchParams.get("location");
+    if (loc) {
+      setLocationInput(loc);
+    }
+    const inDateStr = searchParams.get("checkIn");
+    const outDateStr = searchParams.get("checkOut");
+    if (inDateStr) {
+      const inDate = new Date(inDateStr);
+      if (!isNaN(inDate.getTime())) {
+        setCheckInDate(inDate);
+        setCalendarBaseMonth({ year: inDate.getFullYear(), month: inDate.getMonth() });
+      }
+    }
+    if (outDateStr) {
+      const outDate = new Date(outDateStr);
+      if (!isNaN(outDate.getTime())) {
+        setCheckOutDate(outDate);
+      }
+    }
+    const guests = searchParams.get("guests");
+    if (guests) {
+      const numGuests = Number(guests);
+      if (!isNaN(numGuests) && numGuests > 0) {
+        setAdults(numGuests);
+        setChildren(0);
+      }
+    }
+    const roomsParam = searchParams.get("rooms");
+    if (roomsParam) {
+      const numRooms = Number(roomsParam);
+      if (!isNaN(numRooms) && numRooms > 0) {
+        setRooms(numRooms);
+      }
+    }
+  }, [searchParams]);
 
   // Panel states
   const [activePanel, setActivePanel] = useState<

@@ -25,6 +25,7 @@ import SafeImage from "@/components/ui/SafeImage";
 import { fallbackHotelNames, locationHotelNames } from "@/data/location-hotel-names";
 import { getAllHotels, getAvailableCities, resolveToCanonicalSlug, type Hotel, supportedCities } from "@/lib/hotel-parser";
 import { resolveHotelImage } from "@/lib/hotel-images";
+import { AdvancedSearchBar } from "@/components/features/search/AdvancedSearchBar";
 import HomestaysLoading from "./loading";
 
 const getCleanHotelTitle = (hotel: Hotel) => hotel.title;
@@ -105,11 +106,9 @@ function HomestaysPageContent() {
       <StaySagaHeader />
 
       <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-        <SearchBar
-          destination={destinationInput}
-          onDestinationChange={setDestinationInput}
-          onSubmit={handleSearch}
-        />
+        <div className="relative z-30 mt-4 w-full">
+          <AdvancedSearchBar />
+        </div>
 
         <nav className="mt-4 flex flex-wrap items-center gap-1 text-sm text-rose-600">
           {["Trang chủ", "Việt Nam", selectedCity, "Kết quả tìm kiếm"].map((item, index) => (
@@ -218,65 +217,7 @@ function StaySagaHeader() {
   );
 }
 
-function SearchBar({
-  destination,
-  onDestinationChange,
-  onSubmit,
-}: {
-  destination: string;
-  onDestinationChange: (value: string) => void;
-  onSubmit: (event: React.FormEvent) => void;
-}) {
-  return (
-    <form
-      onSubmit={onSubmit}
-      className="-mt-1 grid overflow-hidden rounded-md border-4 border-rose-500 bg-rose-500 shadow-lg md:grid-cols-[1.2fr_1fr_1fr_1.35fr_auto]"
-    >
-      <SearchField icon={<MapPin className="h-5 w-5" />} label="Điểm đến">
-        <input
-          value={destination}
-          onChange={(event) => onDestinationChange(event.target.value)}
-          className="w-full bg-transparent font-bold text-gray-950 outline-none"
-        />
-      </SearchField>
-      <SearchField icon={<CalendarDays className="h-5 w-5" />} label="Ngày nhận phòng">
-        <span className="font-bold text-gray-950">T7, 16 tháng 5</span>
-      </SearchField>
-      <SearchField icon={<CalendarDays className="h-5 w-5" />} label="Ngày trả phòng">
-        <span className="font-bold text-gray-950">CN, 17 tháng 5</span>
-      </SearchField>
-      <SearchField icon={<Users className="h-5 w-5" />} label="Số khách">
-        <span className="font-bold text-gray-950">2 người lớn · 0 trẻ em · 1 phòng</span>
-      </SearchField>
-      <button
-        type="submit"
-        className="min-h-16 bg-rose-600 px-8 text-lg font-bold text-white hover:bg-rose-700"
-      >
-        Tìm
-      </button>
-    </form>
-  );
-}
 
-function SearchField({
-  icon,
-  label,
-  children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex min-h-16 items-center gap-3 border-b-4 border-rose-500 bg-white px-4 py-3 md:border-b-0 md:border-r-4">
-      <span className="text-gray-500">{icon}</span>
-      <span className="min-w-0">
-        <span className="block text-xs font-semibold text-gray-500">{label}</span>
-        <span className="block truncate">{children}</span>
-      </span>
-    </label>
-  );
-}
 
 function SearchResultCard({ hotel, selectedCity }: { hotel: Hotel; selectedCity?: string | null }) {
   const facets = inferFacets(hotel, selectedCity);
