@@ -42,12 +42,8 @@ function getSiteOrigin(request: Request, requestOrigin: string): string {
   const host = forwardedHost ?? request.headers.get('host')
 
   if (host && !isInternalHost(host)) {
-    const protocol = forwardedProto ?? (host.includes('localhost') ? 'http' : 'https')
+    const protocol = forwardedProto ?? (process.env.NODE_ENV === 'development' ? 'http' : 'https')
     return new URL(`${protocol}://${host}`).origin
-  }
-
-  if (isInternalHost(new URL(requestOrigin).host)) {
-    return 'http://localhost:3000'
   }
 
   return requestOrigin

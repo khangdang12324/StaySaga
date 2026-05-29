@@ -77,11 +77,11 @@ async function getRedirectOrigin(): Promise<string> {
   const forwardedProto = headerStore.get("x-forwarded-proto");
   const host = forwardedHost ?? headerStore.get("host");
 
-  if (!host || isInternalHost(host)) {
-    return "http://localhost:3000";
+  if (!host) {
+    throw new Error("NEXT_PUBLIC_SITE_URL is not defined and Host header is missing");
   }
 
-  const protocol = forwardedProto ?? (host.includes("localhost") ? "http" : "https");
+  const protocol = forwardedProto ?? (process.env.NODE_ENV === "development" ? "http" : "https");
   return normalizeOrigin(`${protocol}://${host}`);
 }
 
