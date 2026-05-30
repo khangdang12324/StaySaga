@@ -409,7 +409,7 @@ export function AmenitiesForm({
                   <div className="px-5 pb-1 text-[13px] font-black uppercase tracking-wide text-slate-400 select-none">
                     TÌNH TRẠNG PHÒNG TRỐNG
                   </div>
-                  <div className="px-2">
+                  <div>
                     {[
                       ["Lịch", `/host/${propertyId}/calendar`],
                       ["Mở/đóng phòng", `/host/${propertyId}/availability`],
@@ -431,7 +431,7 @@ export function AmenitiesForm({
                         key={label}
                         href={href}
                         onClick={() => setRatesMenuOpen(false)}
-                        className="block px-3 py-2.5 text-[15px] font-medium text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
+                        className="block px-5 py-2 text-[14px] font-normal text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
                       >
                         {label}
                       </Link>
@@ -451,7 +451,7 @@ export function AmenitiesForm({
                         key={label}
                         href={href}
                         onClick={() => setRatesMenuOpen(false)}
-                        className="block px-3 py-2.5 text-[15px] font-medium text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
+                        className="block px-5 py-2 text-[14px] font-normal text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
                       >
                         {label}
                       </Link>
@@ -470,7 +470,7 @@ export function AmenitiesForm({
                         key={label}
                         href={href}
                         onClick={() => setRatesMenuOpen(false)}
-                        className="block px-3 py-2.5 text-[15px] font-medium text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
+                        className="block px-5 py-2 text-[14px] font-normal text-slate-800 transition hover:bg-rose-50 hover:text-[#f60057]"
                       >
                         {label}
                       </Link>

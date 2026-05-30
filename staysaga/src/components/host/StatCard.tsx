@@ -19,22 +19,28 @@ export function StatCard({
   trend,
 }: StatCardProps) {
   return (
-    <div className="border border-gray-250 bg-white p-5 shadow-sm rounded-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-[13.5px] font-semibold text-slate-500 uppercase tracking-wider">
+    <div className="border border-slate-200 bg-white p-6 shadow-sm rounded-xl hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-[13px] font-extrabold text-slate-500 uppercase tracking-wider">
           {title}
         </span>
-        {icon && <div className="text-slate-400">{icon}</div>}
+        {icon && (
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-50 text-[#f60057]">
+            {icon}
+          </div>
+        )}
       </div>
 
-      <div className="mt-3 flex items-baseline gap-2">
-        <span className="text-2xl font-black text-slate-900 md:text-3xl">
+      <div className="mt-4 flex items-baseline gap-2">
+        <span className="text-3xl font-black text-slate-900 tracking-tight">
           {value}
         </span>
         {trend && (
           <span
-            className={`text-xs font-bold ${
-              trend.isPositive ? "text-emerald-600" : "text-rose-600"
+            className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs font-bold ${
+              trend.isPositive 
+                ? "bg-emerald-50 text-emerald-700" 
+                : "bg-rose-50 text-rose-700"
             }`}
           >
             {trend.isPositive ? "↑" : "↓"} {trend.value}
@@ -43,7 +49,7 @@ export function StatCard({
       </div>
 
       {description && (
-        <p className="mt-2 text-xs font-medium text-slate-500">
+        <p className="mt-2 text-xs font-medium text-slate-500 leading-normal">
           {description}
         </p>
       )}

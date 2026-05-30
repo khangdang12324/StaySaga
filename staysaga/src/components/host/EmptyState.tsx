@@ -22,34 +22,34 @@ export function EmptyState({
     : description;
 
   return (
-    <div className="flex flex-col items-center justify-center border border-dashed border-gray-300 bg-white px-6 py-16 text-center rounded-sm">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-[#f60057]">
+    <div className="flex flex-col items-center justify-center border border-dashed border-slate-350 bg-white px-8 py-16 text-center rounded-xl shadow-sm">
+      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 text-[#f60057]">
         {isDeveloping ? (
-          <HelpCircle className="h-7 w-7" />
+          <HelpCircle className="h-8 w-8" />
         ) : (
-          <AlertCircle className="h-7 w-7" />
+          <AlertCircle className="h-8 w-8" />
         )}
       </div>
 
-      <h3 className="text-[17px] font-bold text-slate-800">
+      <h3 className="text-[19px] font-black text-slate-900 leading-tight">
         {displayTitle}
       </h3>
-      <p className="mt-2 text-sm text-slate-600 max-w-sm">
+      <p className="mt-3 text-[14px] text-slate-650 max-w-sm leading-relaxed">
         {displayDescription}
       </p>
 
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
         {actionHref && actionLabel ? (
           <Link
             href={actionHref}
-            className="inline-flex items-center gap-2 rounded bg-[#f60057] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#d9004c] transition"
+            className="inline-flex h-11 items-center gap-2 rounded-lg bg-[#f60057] px-6 text-sm font-bold text-white shadow-md shadow-rose-900/10 hover:bg-[#d9004c] hover:shadow-lg transition-all"
           >
             {actionLabel}
           </Link>
         ) : (
           <Link
             href="/host"
-            className="inline-flex items-center gap-2 border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-all"
           >
             <ArrowLeft className="h-4 w-4" />
             Quay lại trang chủ Host

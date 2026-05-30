@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { HostDropdownMenu } from "./HostDropdownMenu";
 import {
   BarChart3,
   Bookmark,
@@ -218,30 +219,31 @@ function isRouteActive(pathname: string, href: string) {
   return pathname.startsWith(`${href}/`);
 }
 
-export function HostTopNav() {
+export function HostTopNav({ propertyId }: { propertyId?: string }) {
   const pathname = usePathname() || "";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdownIndex, setActiveDropdownIndex] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setActiveDropdownIndex(null);
-      }
+  const getDynamicHref = (href?: string) => {
+    if (!href) return undefined;
+    if (!propertyId) return href;
+    // Replace /host/xxx with /host/[id]/xxx
+    if (href === "/host") return `/host/${propertyId}`;
+    if (href.startsWith("/host/")) {
+      return `/host/${propertyId}/${href.slice(6)}`;
     }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    return href;
+  };
 
   const isItemActive = (item: MenuItem) => {
-    if (item.href) return isRouteActive(pathname, item.href);
-    return item.groups?.some((group) => group.items.some((sub) => isRouteActive(pathname, sub.href))) ?? false;
+    const dynamicHref = getDynamicHref(item.href);
+    if (dynamicHref) return isRouteActive(pathname, dynamicHref);
+    return item.groups?.some((group) => group.items.some((sub) => isRouteActive(pathname, getDynamicHref(sub.href) || ""))) ?? false;
   };
 
   const handleDropdownClick = (index: number) => {
-    setActiveDropdownIndex((current) => (current === index ? null : index));
+    setActiveDropdownIndex(activeDropdownIndex === index ? null : index);
   };
 
   const closeMenus = () => {
@@ -252,47 +254,39 @@ export function HostTopNav() {
   return (
     <div ref={dropdownRef} className="border-t border-white/15 bg-[#f60057] text-white">
       <div className="w-full">
-        <div className="flex h-12 items-center justify-between px-4 lg:hidden">
-          <span className="text-sm font-bold">Menu quản trị</span>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-md p-1 hover:bg-white/10 focus:outline-none"
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </div>
+        {/* Mobile menu toggle removed */}
 
-        <nav className="hidden h-[104px] min-w-0 lg:flex lg:flex-nowrap lg:items-stretch">
+        <div className="mx-auto max-w-[1400px] px-6">
+          <nav className="hidden h-[72px] min-w-0 lg:flex lg:flex-nowrap lg:items-stretch">
           {menuConfig.map((item, index) => {
             const active = isItemActive(item);
             const Icon = item.icon;
-            const isOpen = activeDropdownIndex === index;
             const triggerButtonContent = (
               <>
-                <span className="relative flex h-9 items-center justify-center">
-                  <Icon className="h-8 w-8 stroke-[1.8]" />
+                <span className="relative flex h-8 items-center justify-center mt-1">
+                  <Icon className="h-[26px] w-[26px] stroke-[1.8]" />
                   {item.badge ? (
-                    <span className="absolute -right-3 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-black text-[#f60057] shadow-sm">
+                    <span className="absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-black text-[#f60057] shadow-sm">
                       {item.badge}
                     </span>
                   ) : null}
                 </span>
-                <span className="flex min-w-0 max-w-[190px] items-center justify-center gap-1 text-balance text-center text-[13px] font-bold leading-tight xl:text-[15px]">
+                <span className="flex min-w-0 max-w-[160px] items-center justify-center gap-1 text-balance text-center text-[13px] leading-tight mb-1">
                   {item.label}
-                  {item.groups ? <ChevronDown className={`h-4 w-4 shrink-0 opacity-90 transition-transform ${isOpen ? "rotate-180" : ""}`} /> : null}
+                  {item.groups ? <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-80" /> : null}
                 </span>
               </>
             );
 
             if (item.href) {
+              const dynamicHref = getDynamicHref(item.href)!;
               return (
                 <Link
                   key={item.label}
-                  href={item.href}
+                  href={dynamicHref}
                   onClick={closeMenus}
-                  className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-2 px-2 text-center text-white/95 transition-colors hover:bg-white/10 select-none xl:px-4 ${
-                    active ? "bg-white/15 shadow-[inset_0_-4px_0_#fff] text-white" : ""
+                  className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-1 text-center text-white/95 transition-colors hover:bg-white/10 select-none xl:px-2 ${
+                    active ? "bg-white/10 shadow-[inset_0_-3px_0_#fff] text-white font-bold" : "font-semibold"
                   }`}
                 >
                   {triggerButtonContent}
@@ -300,45 +294,48 @@ export function HostTopNav() {
               );
             }
 
-            return (
-              <div key={item.label} className="relative flex min-w-0 flex-1 group/menu">
-                <button
-                  onClick={() => handleDropdownClick(index)}
-                  className={`flex w-full min-w-0 flex-col items-center justify-center gap-2 px-2 text-center text-white/95 transition-colors hover:bg-white/10 focus:outline-none cursor-pointer select-none xl:px-4 ${
-                    active || isOpen ? "bg-white/15 shadow-[inset_0_-4px_0_#fff] text-white" : ""
-                  }`}
-                  aria-expanded={isOpen}
-                >
-                  {triggerButtonContent}
-                </button>
+            const trigger = (
+              <button
+                className={`flex w-full h-full min-w-0 flex-col items-center justify-center gap-1.5 px-1 text-center text-white/95 transition-colors hover:bg-white/10 focus:outline-none cursor-pointer select-none xl:px-2 ${
+                  active ? "bg-white/10 shadow-[inset_0_-3px_0_#fff] text-white font-bold" : "font-semibold"
+                }`}
+              >
+                {triggerButtonContent}
+              </button>
+            );
 
-                <div
-                  className={`absolute left-0 top-full z-50 min-w-[374px] max-w-[374px] border border-slate-200 bg-white py-4 text-slate-800 shadow-2xl transition ${
-                    isOpen ? "block" : "hidden group-hover/menu:block"
-                  }`}
-                >
+            return (
+              <HostDropdownMenu
+                key={item.label}
+                trigger={trigger}
+                className="flex min-w-0 flex-1 h-full"
+              >
+                <div className="py-2 text-left">
                   {item.groups?.map((group, gIdx) => (
-                    <div key={group.header ?? gIdx} className={gIdx > 0 ? "mt-4 border-t border-slate-200 pt-3" : ""}>
+                    <div key={group.header ?? gIdx} className={gIdx > 0 ? "mt-4 border-t border-slate-100 pt-3" : ""}>
                       {group.header ? (
-                        <div className="px-5 pb-1 text-[13px] font-black uppercase tracking-wide text-slate-400 select-none">
+                        <div className="px-5 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 select-none">
                           {group.header}
                         </div>
                       ) : null}
                       <div>
                         {group.items.map((sub) => {
-                          const subActive = isRouteActive(pathname, sub.href);
+                          const subHref = getDynamicHref(sub.href)!;
+                          const subActive = isRouteActive(pathname, subHref);
                           return (
                             <Link
                               key={sub.label}
-                              href={sub.href}
+                              href={subHref}
                               onClick={closeMenus}
-                              className={`flex min-h-11 items-center justify-between gap-4 px-5 py-2.5 text-[16px] font-normal leading-snug transition ${
-                                subActive ? "bg-rose-50 text-[#f60057]" : "text-slate-800 hover:bg-slate-50 hover:text-[#f60057]"
+                              className={`flex min-h-11 items-center justify-between gap-4 px-5 py-2.5 text-[14px] font-semibold transition ${
+                                subActive 
+                                  ? "bg-rose-50 text-[#f60057] font-bold" 
+                                  : "text-slate-700 hover:bg-rose-50 hover:text-[#f60057]"
                               }`}
                             >
                               <span>{sub.label}</span>
                               {sub.tag ? (
-                                <span className="shrink-0 rounded-[3px] bg-[#008009] px-2 py-1 text-[12px] font-black leading-none text-white">
+                                <span className="shrink-0 rounded bg-[#008009] px-1.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
                                   {sub.tag}
                                 </span>
                               ) : null}
@@ -349,10 +346,11 @@ export function HostTopNav() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </HostDropdownMenu>
             );
           })}
-        </nav>
+          </nav>
+        </div>
 
         {mobileMenuOpen ? (
           <div className="lg:hidden border-t border-white/15 px-4 py-2 space-y-1">

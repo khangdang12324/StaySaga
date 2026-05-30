@@ -66,7 +66,7 @@ export default function ChatReplyButton({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="inline-flex items-center gap-1 bg-[#006ce4] hover:bg-[#005bb8] text-white font-bold px-3 py-1.5 rounded-sm text-xs transition-colors cursor-pointer shadow-sm"
+          className="inline-flex items-center gap-1 bg-[#f60057] hover:bg-[#d9004c] text-white font-bold px-3 py-1.5 rounded-sm text-xs transition-colors cursor-pointer shadow-sm"
         >
           <MessageSquareReply className="w-3.5 h-3.5" />
           Trả lời

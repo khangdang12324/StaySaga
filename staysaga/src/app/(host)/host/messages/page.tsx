@@ -39,7 +39,7 @@ export default async function HostMessagesPage() {
 
   return (
     <HostExtranetShell active="messages" userName={userName}>
-      <main className="mx-auto grid max-w-[1180px] gap-8 px-6 py-10 lg:grid-cols-[1fr_340px]">
+      <main className="mx-auto grid max-w-[1400px] gap-8 px-6 py-10 lg:grid-cols-[1fr_340px]">
         <section>
           <h1 className="text-[32px] font-bold">Hộp thư</h1>
 
@@ -121,31 +121,6 @@ export default async function HostMessagesPage() {
           </div>
         </aside>
       </main>
-
-      <footer className="mt-10 bg-[#f60057] text-white">
-        <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-6 px-6 py-9">
-          <div className="flex flex-wrap gap-8">
-            <Link href="/help">Giới thiệu về chúng tôi</Link>
-            <Link href="/settings">Chính sách Bảo mật và Cookie</Link>
-            <Link href="/help">Các Câu Hỏi Thường Gặp</Link>
-          </div>
-          <div className="flex gap-4">
-            <Link
-              href="/host/register?new=1"
-              className="rounded-sm bg-white/15 px-5 py-3 font-bold ring-1 ring-white/25"
-            >
-              Thêm chỗ nghỉ mới
-            </Link>
-            <Link
-              href="/help"
-              className="rounded-sm bg-white/15 px-5 py-3 font-bold ring-1 ring-white/25"
-            >
-              Chia sẻ góp ý của Quý vị
-            </Link>
-          </div>
-          <p className="w-full text-sm">© Bản quyền StaySaga 2026</p>
-        </div>
-      </footer>
     </HostExtranetShell>
   );
 }

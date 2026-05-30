@@ -20,7 +20,7 @@ export default async function HostReviewsPage() {
 
   return (
     <HostExtranetShell active="reviews" userName={userName}>
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1400px] px-6 py-10">
         <h1 className="text-3xl font-black">Đánh giá</h1>
         <div className="mt-8 flex flex-wrap items-end gap-6">
           <label>
@@ -31,7 +31,7 @@ export default async function HostReviewsPage() {
             <span className="mb-2 block font-bold">Lọc theo một hoặc nhiều ID chỗ nghỉ</span>
             <input className="w-72 border border-slate-400 bg-white px-4 py-3 outline-[#f60057]" placeholder="Nhập một hoặc nhiều ID chỗ nghỉ" />
           </label>
-          <button className="rounded bg-[#f60057] px-6 py-3 font-bold text-white hover:bg-[#f60057]">Hiển thị đánh giá</button>
+          <button className="rounded bg-[#f60057] px-6 py-3 font-bold text-white hover:bg-[#d9004c]">Hiển thị đánh giá</button>
           <input className="ml-auto w-full max-w-sm border border-slate-400 bg-white px-4 py-3 outline-[#f60057]" placeholder="Tìm theo điểm, ngày, bình luận..." />
         </div>
 

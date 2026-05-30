@@ -20,7 +20,7 @@ export default async function HostFinancePage() {
 
   return (
     <HostExtranetShell active="finance" userName={userName}>
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1400px] px-6 py-10">
         {/* Header Row */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-3xl font-black text-slate-900">Hóa đơn</h1>

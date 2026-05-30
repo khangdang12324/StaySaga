@@ -249,7 +249,8 @@ INSERT INTO public.site_settings (key, value) VALUES
   ('hero_title', 'Khám phá những điểm lưu trú tuyệt vời nhất Việt Nam'),
   ('hero_subtitle', 'Đặt homestay, villa và căn hộ nghỉ dưỡng theo phong cách hiện đại với StaySaga.'),
   ('featured_destinations', 'Đà Lạt,Hồ Chí Minh,Hội An,Phú Quốc,Vũng Tàu'),
-  ('accent_color', 'rose')
+  ('accent_color', 'rose'),
+  ('hero_image', '/images/hero-bg.jpg')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
 

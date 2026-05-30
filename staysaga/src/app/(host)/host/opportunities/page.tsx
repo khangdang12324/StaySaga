@@ -26,7 +26,7 @@ export default async function HostOpportunitiesPage() {
 
   return (
     <HostExtranetShell active="opportunities" userName={userName}>
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1400px] px-6 py-10">
         <h1 className="text-3xl font-black text-slate-900">Trung tâm Cơ hội dành cho Nhóm chỗ nghỉ</h1>
         <p className="mt-3 text-slate-700 max-w-4xl text-sm leading-relaxed">
           Giúp nâng cao hiệu suất hoạt động bằng các cơ hội cải thiện nhiều khía cạnh khác nhau của chỗ nghỉ

@@ -5,6 +5,7 @@ import { HostAccountMenu } from "../../_components/HostAccountMenu";
 import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/roles";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
+import { HostTopNav } from "@/components/host/HostTopNav";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -65,28 +66,7 @@ export default async function AvailabilityCalendarPage({ params }: Props) {
           </div>
           <HostAccountMenu userName={userName} />
         </div>
-        <nav className="border-t border-white/10">
-          <div className="mx-auto flex max-w-[1400px] overflow-x-auto px-6 text-sm font-semibold">
-            <Link href={`/host/${property.id}`} className="px-5 py-4 hover:bg-white/10">
-              Trang chủ
-            </Link>
-            <Link href={`/host/${property.id}/calendar`} className="bg-white/10 px-5 py-4 shadow-[inset_0_-4px_0_#fff]">
-              Giá & Tình trạng phòng trống
-            </Link>
-            <Link href={`/host/${property.id}/promotions`} className="px-5 py-4 hover:bg-white/10">
-              Chương trình khuyến mãi
-            </Link>
-            <Link href="/host/bookings" className="px-5 py-4 hover:bg-white/10">
-              Đặt phòng
-            </Link>
-            <Link href={`/host/${property.id}/amenities`} className="px-5 py-4 hover:bg-white/10">
-              Chỗ nghỉ
-            </Link>
-            <Link href="/host/revenue" className="px-5 py-4 hover:bg-white/10">
-              Phân tích
-            </Link>
-          </div>
-        </nav>
+        <HostTopNav propertyId={property.id} />
       </header>
       <AvailabilityCalendar propertyName={property.name || "Chỗ nghỉ"} propertyId={property.id} />
     </div>

@@ -33,7 +33,7 @@ export default async function AdminSettingsPage({
   const defaultAmenities =
     settings.default_amenities ||
     "Wifi, Điều hòa, Hồ bơi, Chỗ đỗ xe, Bếp, Máy giặt";
-  const heroImage = settings.hero_image || "";
+  const heroImage = settings.hero_image || "/images/hero-bg.jpg";
 
   return (
     <AdminShell

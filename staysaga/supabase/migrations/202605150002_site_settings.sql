@@ -41,5 +41,6 @@ insert into public.site_settings (key, value) values
   ('site_name', 'StaySaga'),
   ('hero_title', 'Khám phá những điểm lưu trú tuyệt vời nhất'),
   ('hero_subtitle', 'Đặt homestay, khách sạn và trải nghiệm nghỉ dưỡng theo phong cách Booking/Agoda với giao diện nhẹ, nhanh và rõ ràng.'),
-  ('accent_color', 'rose')
+  ('accent_color', 'rose'),
+  ('hero_image', '/images/hero-bg.jpg')
 on conflict (key) do update set value = excluded.value;

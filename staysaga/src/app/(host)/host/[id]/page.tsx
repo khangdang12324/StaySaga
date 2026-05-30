@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { PartnerPropertyActions } from "../_components/PartnerPropertyActions";
 import { HostAccountMenu } from "../_components/HostAccountMenu";
+import { HostTopNav } from "@/components/host/HostTopNav";
 import {
   isBookableProperty,
   isPropertyStatus,
@@ -190,25 +191,7 @@ export default async function PropertyDashboardPage({
           </span>
           <HostAccountMenu userName={userName} />
         </div>
-        <nav className="border-t border-white/10">
-          <div className="mx-auto flex h-[104px] max-w-[1400px] items-stretch px-6">
-            <NavItem active icon={<Home />} label="Trang chủ" />
-            <NavItem
-              icon={<CalendarDays />}
-              label="Giá & Tình trạng phòng trống"
-              dropdown
-              href={`/host/${detail.id}/calendar`}
-            />
-            <NavItem icon={<Tag />} label="Chương trình khuyến mãi" dropdown href={`/host/${detail.id}/promotions`} />
-            <NavItem icon={<CalendarDays />} label="Đặt phòng" />
-            <NavItem icon={<Home />} label="Chỗ nghỉ" dropdown />
-            <NavItem icon={<Megaphone />} label="Thúc đẩy hiệu suất" dropdown />
-            <NavItem icon={<Mail />} label="Hộp thư" dropdown badge={5} />
-            <NavItem icon={<Star />} label="Đánh giá của khách" dropdown />
-            <NavItem icon={<WalletCards />} label="Tài chính" dropdown />
-            <NavItem icon={<BarChart3 />} label="Phân tích" dropdown />
-          </div>
-        </nav>
+        <HostTopNav propertyId={detail.id} />
       </header>
 
       <main className="mx-auto grid max-w-[1400px] gap-8 px-6 py-8 lg:grid-cols-[1fr_360px]">
@@ -359,6 +342,11 @@ export default async function PropertyDashboardPage({
   );
 }
 
+type DropdownGroup = {
+  title?: string;
+  items: { label: string; href: string; badge?: string }[];
+};
+
 function NavItem({
   icon,
   label,
@@ -366,6 +354,7 @@ function NavItem({
   dropdown,
   badge,
   href,
+  dropdownGroups,
 }: {
   icon: ReactNode;
   label: string;
@@ -373,10 +362,14 @@ function NavItem({
   dropdown?: boolean;
   badge?: number;
   href?: string;
+  dropdownGroups?: DropdownGroup[];
 }) {
-  const className = `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-2 py-4 text-center text-[13px] font-semibold leading-tight hover:bg-white/10 xl:text-sm ${
+  const outerClassName = `group relative flex min-w-0 flex-1 flex-col hover:bg-white/10 transition-colors ${
     active ? "bg-white/10 shadow-[inset_0_-4px_0_#fff]" : ""
   }`;
+  
+  const innerClassName = "flex flex-1 w-full flex-col items-center justify-center gap-1 px-2 py-4 text-center text-[13px] font-semibold leading-tight xl:text-sm";
+
   const content = (
     <>
       <span className="relative [&>svg]:h-7 [&>svg]:w-7">
@@ -394,18 +387,47 @@ function NavItem({
     </>
   );
 
-  if (href) {
-    return (
-      <Link href={href} className={className}>
-        {content}
-      </Link>
-    );
-  }
-
   return (
-    <button className={className}>
-      {content}
-    </button>
+    <div className={outerClassName}>
+      {href ? (
+        <Link href={href} className={innerClassName}>
+          {content}
+        </Link>
+      ) : (
+        <button className={innerClassName}>
+          {content}
+        </button>
+      )}
+
+      {dropdownGroups ? (
+        <div className="absolute left-0 top-[104px] z-50 hidden w-[340px] border border-gray-200 bg-white py-1 shadow-2xl group-hover:block text-left text-[#1a1a1a] font-normal cursor-default">
+          <div className="absolute -top-2 left-10 h-4 w-4 rotate-45 border-l border-t border-gray-200 bg-white" />
+          <div className="relative bg-white z-10">
+            {dropdownGroups.map((group, idx) => (
+              <div key={idx} className={idx !== 0 ? "border-t border-gray-100 mt-1 pt-1" : ""}>
+                {group.title && (
+                  <div className="px-6 py-3 text-[12px] font-bold text-gray-400">
+                    {group.title}
+                  </div>
+                )}
+                <div className="py-1">
+                  {group.items.map((item, itemIdx) => (
+                    <Link key={itemIdx} href={item.href} className="flex items-center px-6 py-2.5 text-[15px] hover:bg-gray-100 hover:text-[#0071c2] transition-colors">
+                      <span className="text-gray-700 hover:text-[#0071c2]">{item.label}</span>
+                      {item.badge && (
+                        <span className="ml-3 rounded bg-[#008009] px-1.5 py-0.5 text-[11px] font-bold text-white">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

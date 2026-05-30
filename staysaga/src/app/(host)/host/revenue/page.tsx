@@ -267,7 +267,7 @@ export default async function HostRevenuePage({
 
   return (
     <HostExtranetShell active="revenue" userName={userName}>
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1400px] px-6 py-10">
         <h1 className="text-3xl font-black text-slate-900">Doanh thu chiến lược</h1>
         <p className="mt-3 text-slate-700">
           Tại đây, Quý vị có thể xem chiến lược kinh doanh hiện tại đang hoạt động ra sao và khám phá các cơ hội để phát triển doanh nghiệp.

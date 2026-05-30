@@ -247,7 +247,7 @@ export default async function HostDashboardPage({
 
   return (
     <HostExtranetShell active="home" userName={userName}>
-      <main className="mx-auto max-w-[1180px] px-6 py-10">
+      <main className="mx-auto max-w-[1400px] px-6 py-8">
         {successMessages[params.status || ""] ? (
           <div className="mb-6 border border-emerald-300 bg-emerald-50 px-5 py-4 font-semibold text-emerald-800">
             {successMessages[params.status || ""]}

@@ -13,7 +13,7 @@ type HeroSectionProps = {
 export default function HeroSection({
   title = "Khám phá những điểm lưu trú tuyệt vời nhất",
   subtitle = "Đặt phòng nhanh, rõ ràng và đẹp mắt theo phong cách hiện đại dành cho trải nghiệm Việt Nam.",
-  heroImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2062&auto=format&fit=crop",
+  heroImage = "/images/hero-bg.jpg",
 }: HeroSectionProps) {
   const displaySubtitle =
     subtitle?.includes("Booking") || subtitle?.includes("Agoda")

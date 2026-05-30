@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { HostExtranetShell } from "../_components/HostExtranetShell";
 import { canAccessPartner, getUserRole, type SupabaseLike } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -37,7 +37,7 @@ export default async function HostBulkPage() {
 
   return (
     <HostExtranetShell active="bulk" userName={userName}>
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[1400px] px-6 py-10">
         <h1 className="text-3xl font-black">Chỉnh sửa đồng loạt</h1>
         <p className="mt-2 text-slate-700">Chỉnh sửa chi tiết nhiều chỗ nghỉ trong một lần.</p>
 

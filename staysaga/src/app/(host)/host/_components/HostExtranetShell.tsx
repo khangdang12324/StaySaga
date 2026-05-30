@@ -117,7 +117,7 @@ export function HostExtranetShell({
   return (
     <div className="min-h-screen bg-[#f3f3f3] text-[#1a1a1a]">
       <header className="bg-[#f60057] text-white">
-        <div className="flex h-[86px] w-full items-center gap-6 px-12">
+        <div className="mx-auto flex h-20 max-w-[1400px] w-full items-center gap-6 px-6">
           <Link href="/host" className="shrink-0 text-[28px] font-black leading-none tracking-tight hover:opacity-90 transition">
             StaySaga
           </Link>
@@ -147,13 +147,13 @@ export function HostExtranetShell({
           )}
 
           {/* Search bar middle (Booking.com style) */}
-          <div className="relative ml-auto hidden h-12 min-w-[360px] flex-1 lg:block xl:min-w-[520px]">
+          <div className="relative ml-auto hidden h-12 w-full max-w-[540px] flex-1 lg:block">
             <input
               type="text"
               placeholder="Tìm kiếm..."
-              className="h-12 w-full rounded bg-white/10 pl-5 pr-12 text-[16px] font-semibold text-white placeholder-white/90 outline-none ring-1 ring-white/10 transition-colors focus:bg-white focus:text-slate-900 focus:ring-white focus:placeholder-slate-500"
+              className="h-12 w-full rounded-sm bg-white/10 pl-5 pr-12 text-[15px] font-semibold text-white placeholder-white/90 outline-none ring-1 ring-white/10 transition-colors focus:bg-white focus:text-slate-900 focus:ring-white focus:placeholder-slate-500"
             />
-            <Search className="pointer-events-none absolute right-5 top-3.5 h-5 w-5 text-white/90" />
+            <Search className="pointer-events-none absolute right-4 top-3.5 h-5 w-5 text-white/90" />
           </div>
 
           {/* Right side helper items */}
@@ -220,51 +220,11 @@ export function HostExtranetShell({
                     </div>
                   </div>
                 </nav>
-
-                {/* Mobile Hamburger Header */}
-                <div className="flex h-12 items-center justify-between lg:hidden border-t border-white/10 px-6">
-                  <span className="text-xs font-black uppercase tracking-wider text-white/95">Menu quản trị nhóm</span>
-                  <button
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="rounded-md p-1 hover:bg-white/10 focus:outline-none text-white cursor-pointer"
-                    aria-label="Toggle menu"
-                  >
-                    {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                  </button>
-                </div>
-
-                {/* Mobile Drawer */}
-                {mobileMenuOpen && (
-                  <div className="lg:hidden border-t border-white/15 py-2 px-6 space-y-1">
-                    {groupNavItems.map((item) => {
-                      const active = pathname === item.href;
-                      return (
-                        <Link
-                          key={item.key}
-                          href={item.href}
-                          className={`flex items-center justify-between rounded-md px-3 py-2 text-xs font-black text-white hover:bg-white/10 ${
-                            active ? "bg-white/15" : ""
-                          }`}
-                        >
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                    <Link
-                      href="/host/market-data"
-                      className={`flex items-center justify-between rounded-md px-3 py-2 text-xs font-black text-white hover:bg-white/10 ${
-                        pathname === "/host/market-data" ? "bg-white/15" : ""
-                      }`}
-                    >
-                      <span>Dữ liệu thị trường</span>
-                    </Link>
-                  </div>
-                )}
               </div>
             </div>
           ) : (
             // Property-level Navigation Menu (10 items)
-            <HostTopNav />
+            <HostTopNav propertyId={pathname.match(/^\/host\/([a-f0-9-]+)/)?.[1] || property?.id} />
           )
         )}
       </header>
